@@ -13,7 +13,7 @@
   "environment": "*",
   "entrypoints": {
     "client": [
-      "com.restonic4.logistics.client.LogisticsClient"
+      "com.restonic4.logistics.LogisticsClient"
     ],
     "main": [
       "com.restonic4.logistics.Logistics"
