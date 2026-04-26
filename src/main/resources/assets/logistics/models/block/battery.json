@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "logistics:block/batery_front",
+    "north": "logistics:block/batery_front",
+    "south": "logistics:block/batery_back",
+    "east": "logistics:block/batery_side",
+    "west": "logistics:block/batery_side",
+    "up": "logistics:block/battery_top",
+    "down": "logistics:block/batery_down"
+  }
+}
