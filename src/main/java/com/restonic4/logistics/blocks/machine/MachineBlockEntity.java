@@ -1,15 +1,12 @@
-package com.restonic4.logistics.blocks.entity;
+package com.restonic4.logistics.blocks.machine;
 
-import com.restonic4.logistics.blocks.BlockEntityRegistry;
-import com.restonic4.logistics.energy.EnergyNetwork;
+import com.restonic4.logistics.blocks.BlockRegistry;
+import com.restonic4.logistics.blocks.base.BaseNetworkBlockEntity;
 import com.restonic4.logistics.energy.EnergyConsumer;
-import com.restonic4.logistics.energy.EnergyNode;
 import com.restonic4.logistics.energy.OfflineEnergyProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Consumes 15 EU/t.
@@ -18,33 +15,17 @@ import org.jetbrains.annotations.Nullable;
  * It has a small internal buffer (50 EU) so it doesn't immediately stall
  * on a single-tick supply gap (e.g. battery handoff between ticks).
  */
-public class MachineBlockEntity extends BlockEntity implements EnergyNode, EnergyConsumer {
+public class MachineBlockEntity extends BaseNetworkBlockEntity implements EnergyConsumer {
     public static final long CONSUMPTION_PER_TICK = 15L;
     public static final long INTERNAL_BUFFER_MAX  = 50L;
-
-    @Nullable
-    private EnergyNetwork network;
 
     private long internalBuffer = 0;
     private boolean poweredLastTick = false;
     private long lastConsumed = 0;
 
     public MachineBlockEntity(BlockPos pos, BlockState state) {
-        super(BlockEntityRegistry.MACHINE, pos, state);
+        super(BlockRegistry.MACHINE_BLOCK.getBlockEntityType(), pos, state);
     }
-
-    // -------------------------------------------------------------------------
-    // IEnergyNode
-    // -------------------------------------------------------------------------
-
-    @Override
-    public EnergyNetwork getEnergyNetwork() { return network; }
-
-    @Override
-    public void setEnergyNetwork(EnergyNetwork network) { this.network = network; }
-
-    @Override
-    public BlockPos getEnergyPos() { return getBlockPos(); }
 
     // -------------------------------------------------------------------------
     // IEnergyConsumer
@@ -63,7 +44,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, Energ
         }
 
         lastConsumed = canAccept;
-        this.checkAndTriggerAutoSave();
+        this.setChanged();
         return canAccept;
     }
 

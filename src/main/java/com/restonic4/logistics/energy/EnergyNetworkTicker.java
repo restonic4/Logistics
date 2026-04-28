@@ -15,11 +15,7 @@ public class EnergyNetworkTicker {
     private static void onServerTick(MinecraftServer server) {
         for (ServerLevel level : server.getAllLevels()) {
             EnergyNetworkManager manager = EnergyNetworkManager.get(level);
-            long currentTick = level.getGameTime();
-
-            for (EnergyNetwork network : manager.getAllNetworks()) {
-                network.tick(currentTick);
-            }
+            manager.tick(level.getGameTime());
         }
     }
 }

@@ -1,13 +1,9 @@
-package com.restonic4.logistics.blocks.machine;
+package com.restonic4.logistics.blocks.generator;
 
-import com.restonic4.logistics.blocks.BlockEntityRegistry;
-import com.restonic4.logistics.blocks.entity.GeneratorBlockEntity;
-import com.restonic4.logistics.energy.EnergyNetworkManager;
+import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.energy.EnergyNodeBlock;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -20,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * Produces GENERATOR_PRODUCTION_PER_TICK EU/t constantly.
  * No fuel, no crafting — just a test source.
  */
-public class GeneratorBlock extends BaseEntityBlock implements EnergyNodeBlock {
+public class GeneratorBlock extends BaseNetworkBlock implements EnergyNodeBlock {
 
     public GeneratorBlock(Properties properties) {
         super(properties);
@@ -35,24 +31,6 @@ public class GeneratorBlock extends BaseEntityBlock implements EnergyNodeBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new GeneratorBlockEntity(pos, state);
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-            EnergyNetworkManager.get(serverLevel).onMemberPlaced(serverLevel, pos);
-        }
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-                EnergyNetworkManager.get(serverLevel).onMemberRemoved(serverLevel, pos);
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Nullable

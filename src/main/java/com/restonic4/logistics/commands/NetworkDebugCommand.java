@@ -1,27 +1,5 @@
 package com.restonic4.logistics.commands;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.context.CommandContext;
-import com.restonic4.logistics.blocks.entity.BatteryBlockEntity;
-import com.restonic4.logistics.blocks.entity.GeneratorBlockEntity;
-import com.restonic4.logistics.blocks.entity.MachineBlockEntity;
-import com.restonic4.logistics.energy.EnergyNetwork;
-import com.restonic4.logistics.energy.EnergyNetworkManager;
-import com.restonic4.logistics.energy.EnergyNode;
-import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 
 public class NetworkDebugCommand {
 /*

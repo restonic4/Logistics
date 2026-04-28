@@ -36,9 +36,22 @@ public final class OfflineEnergyProfile {
         };
     }
 
-    public boolean contributesToAggregate() { return mode == Mode.STABLE; }
+    public boolean isStable() { return mode == Mode.STABLE; }
 
     public Mode getMode() { return mode; }
 
     public long getRatePerTick() { return ratePerTick; }
 }
+
+/*
+OfflineEnergyProfile.custom(
+    (node, ticks, available) -> {
+        long energyPerItem = 200;
+        long itemsProcessable = Math.min(inventory.count(), available / energyPerItem);
+        long consumed = itemsProcessable * energyPerItem;
+        inventory.shrink((int) itemsProcessable); // update real state
+        processedOffline += itemsProcessable;
+        return consumed;
+    }
+);
+ */

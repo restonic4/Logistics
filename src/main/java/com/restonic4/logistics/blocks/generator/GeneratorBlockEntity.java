@@ -1,44 +1,26 @@
-package com.restonic4.logistics.blocks.entity;
+package com.restonic4.logistics.blocks.generator;
 
-import com.restonic4.logistics.blocks.BlockEntityRegistry;
-import com.restonic4.logistics.energy.EnergyNetwork;
-import com.restonic4.logistics.energy.EnergyNode;
+import com.restonic4.logistics.blocks.BlockRegistry;
+import com.restonic4.logistics.blocks.base.BaseNetworkBlockEntity;
 import com.restonic4.logistics.energy.EnergyProducer;
 import com.restonic4.logistics.energy.OfflineEnergyProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Produces 20 EU/t constantly.
  * In a real mod you'd consume fuel here and call network.recalculateRates()
  * when you run out.
  */
-public class GeneratorBlockEntity extends BlockEntity implements EnergyNode, EnergyProducer {
+public class GeneratorBlockEntity extends BaseNetworkBlockEntity implements EnergyProducer {
     public static final long PRODUCTION_PER_TICK = 20L;
 
-    @Nullable
-    private EnergyNetwork network;
     private long lastProduced = 0;
 
     public GeneratorBlockEntity(BlockPos pos, BlockState state) {
-        super(BlockEntityRegistry.GENERATOR, pos, state);
+        super(BlockRegistry.GENERATOR_BLOCK.getBlockEntityType(), pos, state);
     }
-
-    // -------------------------------------------------------------------------
-    // IEnergyNode
-    // -------------------------------------------------------------------------
-
-    @Override
-    public EnergyNetwork getEnergyNetwork() { return network; }
-
-    @Override
-    public void setEnergyNetwork(EnergyNetwork network) { this.network = network; }
-
-    @Override
-    public BlockPos getEnergyPos() { return getBlockPos(); }
 
     // -------------------------------------------------------------------------
     // IEnergyProducer
@@ -47,7 +29,7 @@ public class GeneratorBlockEntity extends BlockEntity implements EnergyNode, Ene
     @Override
     public long produceEnergy(long budgetAvailable) {
         lastProduced = PRODUCTION_PER_TICK;
-        this.checkAndTriggerAutoSave();
+        this.setChanged();
         return lastProduced;
     }
 

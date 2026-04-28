@@ -40,7 +40,7 @@ public interface EnergyNode {
         return false;
     }
 
-    default boolean checkAndTriggerAutoSave() {
+    /*default boolean checkAndTriggerAutoSave() {
         if (!(this instanceof BlockEntity blockEntity)) {
             return false;
         }
@@ -51,7 +51,7 @@ public interface EnergyNode {
             return true;
         }
         return false;
-    }
+    }*/
 
     default boolean isChunkTicking() {
         if (this instanceof BlockEntity blockEntity) {

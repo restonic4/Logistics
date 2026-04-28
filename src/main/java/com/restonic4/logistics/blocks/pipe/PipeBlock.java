@@ -1,18 +1,15 @@
-package com.restonic4.logistics.blocks;
+package com.restonic4.logistics.blocks.pipe;
 
+import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.energy.EnergyConnectable;
-import com.restonic4.logistics.energy.EnergyNetworkManager;
 import com.restonic4.logistics.energy.EnergyNodeBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.AmethystBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.TorchBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -20,10 +17,11 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class PipeBlock extends Block implements EnergyConnectable {
+public class PipeBlock extends BaseNetworkBlock implements EnergyConnectable {
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST  = BlockStateProperties.EAST;
     public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
@@ -60,27 +58,6 @@ public class PipeBlock extends Block implements EnergyConnectable {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.makeConnections(context.getLevel(), context.getClickedPos());
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-
-        // Only run on the server — the manager lives server-side only.
-        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-            EnergyNetworkManager.get(serverLevel).onMemberPlaced(serverLevel, pos);
-        }
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // Only fire if the block is actually changing (not just state update).
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-                EnergyNetworkManager.get(serverLevel).onMemberRemoved(serverLevel, pos);
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     // -------------------------------------------------------------------------
@@ -169,4 +146,9 @@ public class PipeBlock extends Block implements EnergyConnectable {
 
     @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) { return true; }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+        return null;
+    }
 }

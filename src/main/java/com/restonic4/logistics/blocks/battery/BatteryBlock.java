@@ -1,4 +1,4 @@
-package com.restonic4.logistics.blocks.machine;
+package com.restonic4.logistics.blocks.battery;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.energy.EnergyNodeBlock;
@@ -12,12 +12,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A machine that consumes energy each tick.
- * When it has enough power it is "running" (you'd drive crafting/processing here).
- * When it doesn't, it stalls.
+ * A battery block that buffers energy for the network.
+ * Charges when the network has surplus, discharges when the network is short.
  */
-public class MachineBlock extends BaseNetworkBlock implements EnergyNodeBlock {
-    public MachineBlock(Properties properties) {
+public class BatteryBlock extends BaseNetworkBlock implements EnergyNodeBlock {
+
+    public BatteryBlock(Properties properties) {
         super(properties);
     }
 
@@ -29,12 +29,12 @@ public class MachineBlock extends BaseNetworkBlock implements EnergyNodeBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineBlockEntity(pos, state);
+        return new BatteryBlockEntity(pos, state);
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null; // driven by the network tick
+        return null;
     }
 }

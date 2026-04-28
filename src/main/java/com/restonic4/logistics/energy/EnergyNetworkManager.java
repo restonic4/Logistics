@@ -110,34 +110,45 @@ public class EnergyNetworkManager extends SavedData {
         TOPOLOGY EVENTS
      */
 
+    public void tick(long currentTick) {
+        for (EnergyNetwork network : this.getAllNetworks()) {
+            network.tick(currentTick);
+        }
+
+        setDirty();
+    }
+
     public void onMemberPlaced(ServerLevel level, BlockPos pos) {
-        Set<UUID> neighborNetworkIds = getNeighborNetworkIds(level, pos);
+        BlockPos immutablePos = pos.immutable();
+        Set<UUID> neighborNetworkIds = getNeighborNetworkIds(level, immutablePos);
 
         if (neighborNetworkIds.isEmpty()) {
-            createNetwork(level, pos);
+            createNetwork(level, immutablePos);
         } else if (neighborNetworkIds.size() == 1) {
             UUID id = neighborNetworkIds.iterator().next();
-            attachToNetwork(level, id, pos);
+            attachToNetwork(level, id, immutablePos);
         } else {
-            mergeNetworks(level, pos, neighborNetworkIds);
+            mergeNetworks(level, immutablePos, neighborNetworkIds);
         }
 
         setDirty();
     }
 
     public void onMemberRemoved(ServerLevel level, BlockPos pos) {
-        UUID networkId = posToNetwork.remove(pos);
+        BlockPos immutablePos = pos.immutable();
+
+        UUID networkId = posToNetwork.remove(immutablePos);
         if (networkId == null) return;
 
-        EnergyNetwork oldNetwork = networks.get(networkId);
-        if (oldNetwork == null) return;
+        EnergyNetwork network = networks.get(networkId);
+        if (network == null) return;
 
-        oldNetwork.removePosition(pos);
+        network.removePosition(immutablePos);
 
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
-        for (BlockPos neighbor : getCardinalNeighbors(pos)) {
-            if (oldNetwork.containsPosition(neighbor)) {
+        for (BlockPos neighbor : getCardinalNeighbors(immutablePos)) {
+            if (network.containsPosition(neighbor)) {
                 neighborsInNetwork.add(neighbor);
             }
         }
@@ -152,14 +163,14 @@ public class EnergyNetworkManager extends SavedData {
         // Case 2: only one neighbor, no split possible
         // The network is still intact, just smaller. Keep the same object.
         if (neighborsInNetwork.size() == 1) {
-            oldNetwork.recalculateRates();
+            network.recalculateRates();
             setDirty();
             return;
         }
 
         // Case 3: multiple neighbors, check if they're still connected
         // If all neighbors end up in the same component, there was no split.
-        Set<BlockPos> remaining = new HashSet<>(oldNetwork.getMemberPositions());
+        Set<BlockPos> remaining = new HashSet<>(network.getMemberPositions());
 
         Set<BlockPos> visited = new HashSet<>();
         List<Set<BlockPos>> components = new ArrayList<>();
@@ -173,16 +184,16 @@ public class EnergyNetworkManager extends SavedData {
 
         // If only one component, the network is still fully connected, keep it as-is.
         if (components.size() == 1) {
-            oldNetwork.recalculateRates();
+            network.recalculateRates();
             setDirty();
             return;
         }
 
+        long totalMembers = network.getMemberCount();
+        long oldBuffer = network.getEnergyBuffer();
+
         // Split: dissolve the old network and create one new network per component
         networks.remove(networkId);
-
-        long totalMembers = oldNetwork.getMemberCount();
-        long oldBuffer = oldNetwork.getEnergyBuffer();
 
         for (Set<BlockPos> component : components) {
             EnergyNetwork newNetwork = EnergyNetwork.create();
@@ -218,7 +229,7 @@ public class EnergyNetworkManager extends SavedData {
         long currentTick = level.getGameTime();
         for (BlockEntity be : blockEntities) {
             if (be instanceof EnergyNode node) {
-                BlockPos pos = be.getBlockPos();
+                BlockPos pos = be.getBlockPos().immutable();
                 UUID networkId = posToNetwork.get(pos);
                 if (networkId != null) {
                     EnergyNetwork network = networks.get(networkId);
@@ -234,7 +245,7 @@ public class EnergyNetworkManager extends SavedData {
     public void onChunkUnloaded(Iterable<BlockEntity> blockEntities) {
         for (BlockEntity be : blockEntities) {
             if (be instanceof EnergyNode node) {
-                BlockPos pos = be.getBlockPos();
+                BlockPos pos = be.getBlockPos().immutable();
                 UUID networkId = posToNetwork.get(pos);
                 if (networkId != null) {
                     EnergyNetwork network = networks.get(networkId);

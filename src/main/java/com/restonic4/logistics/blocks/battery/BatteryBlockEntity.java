@@ -1,12 +1,11 @@
-package com.restonic4.logistics.blocks.entity;
+package com.restonic4.logistics.blocks.battery;
 
-import com.restonic4.logistics.blocks.BlockEntityRegistry;
+import com.restonic4.logistics.blocks.BlockRegistry;
+import com.restonic4.logistics.blocks.base.BaseNetworkBlockEntity;
 import com.restonic4.logistics.energy.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Stores up to 10,000 EU.
@@ -16,31 +15,16 @@ import org.jetbrains.annotations.Nullable;
  * when producers can't meet demand — automatically, because it implements
  * IEnergyStorage (both producer and consumer).
  */
-public class BatteryBlockEntity extends BlockEntity implements EnergyNode, EnergyStorage {
+public class BatteryBlockEntity extends BaseNetworkBlockEntity implements EnergyStorage {
     public static final long MAX_STORAGE     = 10_000L;
     public static final long CHARGE_RATE     = 40L;   // EU/t max charge
     public static final long DISCHARGE_RATE  = 40L;   // EU/t max discharge
 
-    @Nullable
-    private EnergyNetwork network;
     private long stored = 0;
 
     public BatteryBlockEntity(BlockPos pos, BlockState state) {
-        super(BlockEntityRegistry.BATTERY, pos, state);
+        super(BlockRegistry.BATTERY_BLOCK.getBlockEntityType(), pos, state);
     }
-
-    // -------------------------------------------------------------------------
-    // IEnergyNode
-    // -------------------------------------------------------------------------
-
-    @Override
-    public EnergyNetwork getEnergyNetwork() { return network; }
-
-    @Override
-    public void setEnergyNetwork(EnergyNetwork network) { this.network = network; }
-
-    @Override
-    public BlockPos getEnergyPos() { return getBlockPos(); }
 
     // -------------------------------------------------------------------------
     // IEnergyStorage (IEnergyProducer side — discharging)
@@ -51,7 +35,7 @@ public class BatteryBlockEntity extends BlockEntity implements EnergyNode, Energ
         long canProvide = Math.min(DISCHARGE_RATE, stored);
         long actual = Math.min(canProvide, budgetAvailable);
         stored -= actual;
-        this.checkAndTriggerAutoSave();
+        this.setChanged();
         return actual;
     }
 
@@ -60,7 +44,7 @@ public class BatteryBlockEntity extends BlockEntity implements EnergyNode, Energ
         long canAccept = Math.min(CHARGE_RATE, MAX_STORAGE - stored);
         long actual = Math.min(canAccept, offered);
         stored += actual;
-        this.checkAndTriggerAutoSave();
+        this.setChanged();
         return actual;
     }
 

@@ -58,12 +58,6 @@ public class EnergyNetwork {
         unregisterNode(pos);
     }
 
-    /*public void registerLoadedNode(BlockPos pos, EnergyNode node) {
-        if (memberPositions.contains(pos)) {
-            loadedNodes.put(pos.immutable(), node);
-            node.setEnergyNetwork(this);
-        }
-    }*/
     public void registerLoadedNode(BlockPos pos, EnergyNode node) {
         if (memberPositions.contains(pos)) {
             pendingRegistrations.add(Map.entry(pos.immutable(), node));
@@ -71,9 +65,6 @@ public class EnergyNetwork {
         }
     }
 
-    /*public void unregisterNode(BlockPos pos) {
-        loadedNodes.remove(pos);
-    }*/
     public void unregisterNode(BlockPos pos) {
         pendingRemovals.add(pos.immutable());
         System.out.println("Un-Registering node for " + this.id);
@@ -123,7 +114,7 @@ public class EnergyNetwork {
         return changed; // true if rates need recalculating
     }
 
-    public void recalculateRates() {
+    /*public void recalculateRates() {
         long production = 0;
         long consumption = 0;
         long buffer = 0;
@@ -138,6 +129,35 @@ public class EnergyNetwork {
             if (node instanceof EnergyConsumer consumer) {
                 OfflineEnergyProfile profile = consumer.getOfflineConsumerProfile();
                 if (profile.contributesToAggregate()) {
+                    consumption += profile.getRatePerTick();
+                }
+            }
+            if (node instanceof EnergyStorage storage) {
+                buffer += storage.getMaxStoredEnergy();
+            }
+        }
+
+        this.stableProductionPerTick = production;
+        this.stableConsumptionPerTick = consumption;
+        this.maxBuffer = Math.max(buffer, 1); // never 0 to avoid division issues
+    }*/
+
+    public void recalculateRates() {
+        long production = 0;
+        long consumption = 0;
+        long buffer = 0;
+
+        // Stable loaded nodes
+        for (EnergyNode node : loadedNodes.values()) {
+            if (node instanceof EnergyProducer producer) {
+                OfflineEnergyProfile profile = producer.getOfflineProducerProfile();
+                if (profile.isStable()) {
+                    production += profile.getRatePerTick();
+                }
+            }
+            if (node instanceof EnergyConsumer consumer) {
+                OfflineEnergyProfile profile = consumer.getOfflineConsumerProfile();
+                if (profile.isStable()) {
                     consumption += profile.getRatePerTick();
                 }
             }
@@ -174,7 +194,7 @@ public class EnergyNetwork {
             }
         }
 
-        energyBuffer = Math.min(energyBuffer + produced, maxBuffer);
+        //energyBuffer = Math.min(energyBuffer + produced, maxBuffer);
 
         long consumed = stableConsumptionPerTick * ticksElapsed;
         for (EnergyNode node : loadedNodes.values()) {
@@ -189,7 +209,9 @@ public class EnergyNetwork {
             }
         }
 
-        energyBuffer = Math.max(0, energyBuffer - consumed);
+        long net = produced - consumed;
+        energyBuffer = energyBuffer + net;
+        this.clampBuffer();
         lastSimulatedTick = currentTick;
     }
 
@@ -221,16 +243,6 @@ public class EnergyNetwork {
     public void tick(long currentTick) {
         boolean changed = drainPendingChanges();
 
-        if (needsCatchUp) {
-            catchUpSimulation(catchUpTargetTick);
-            needsCatchUp = false;
-            changed = true;
-        }
-
-        if (changed) {
-            recalculateRates();
-        }
-
         if (this.getLoadedNodes().isEmpty()) {
             return;
         }
@@ -244,6 +256,16 @@ public class EnergyNetwork {
 
         if (activeNodes.isEmpty()) {
             return;
+        }
+
+        if (needsCatchUp) {
+            catchUpSimulation(catchUpTargetTick);
+            needsCatchUp = false;
+            changed = true;
+        }
+
+        if (changed) {
+            recalculateRates();
         }
 
         long available = energyBuffer;
