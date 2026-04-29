@@ -1,7 +1,7 @@
 package com.restonic4.logistics.blocks.machine;
 
+import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
-import com.restonic4.logistics.energy.EnergyNodeBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
@@ -11,12 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A machine that consumes energy each tick.
- * When it has enough power it is "running" (you'd drive crafting/processing here).
- * When it doesn't, it stalls.
- */
-public class MachineBlock extends BaseNetworkBlock implements EnergyNodeBlock {
+public class MachineBlock extends BaseNetworkBlock {
     public MachineBlock(Properties properties) {
         super(properties);
     }
@@ -24,17 +19,5 @@ public class MachineBlock extends BaseNetworkBlock implements EnergyNodeBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineBlockEntity(pos, state);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null; // driven by the network tick
     }
 }

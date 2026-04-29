@@ -128,8 +128,8 @@ public final class EnergyNetworkDebugRenderer {
         ServerLevel serverLevel = mc.getSingleplayerServer().getLevel(mc.level.dimension());
         if (serverLevel == null) return;
 
-        EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
-        Collection<EnergyNetwork> networks = manager.getAllNetworks();
+        NetworkManager manager = NetworkManager.get(serverLevel);
+        Collection<Network> networks = manager.getAllNetworks();
         try {
             networks = new ArrayList<>(networks.stream().toList());
         } catch (ConcurrentModificationException e) {
@@ -158,33 +158,21 @@ public final class EnergyNetworkDebugRenderer {
         // ── Pass 1: draw filled transparent cubes ────────────────────────────
         buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        for (EnergyNetwork network : networks) {
-            float[] tint = networkTints.get(network.getId());
+        for (Network network : networks) {
+            float[] tint = networkTints.get(network.getUUID());
 
-            for (EnergyNode node : network.getLoadedNodes()) {
-                float[] roleColor = roleColor(node);
-                float r = lerp(roleColor[0], tint[0], 0.3f);
-                float g = lerp(roleColor[1], tint[1], 0.3f);
-                float b = lerp(roleColor[2], tint[2], 0.3f);
-                addFilledCube(buf, matrix, node.getEnergyPos(), camPos, r, g, b, CUBE_ALPHA);
-            }
-
-            Set<BlockPos> loadedPoses = new HashSet<>();
-            for (EnergyNode n : network.getLoadedNodes()) loadedPoses.add(n.getEnergyPos());
-
-            List<BlockPos> memberPositions = network.getMemberPositions().stream().toList();
+            List<NetworkNode> memberPositions;
             try {
+                memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
                 memberPositions = Collections.emptyList();
             }
 
-            for (BlockPos pos : memberPositions) {
-                if (!loadedPoses.contains(pos)) {
-                    addFilledCube(buf, matrix, pos, camPos,
-                            tint[0] * 0.4f, tint[1] * 0.4f, tint[2] * 0.4f,
-                            CUBE_ALPHA * 0.5f);
-                }
+            for (NetworkNode node : memberPositions) {
+                addFilledCube(buf, matrix, node.getBlockPos(), camPos,
+                        tint[0] * 0.4f, tint[1] * 0.4f, tint[2] * 0.4f,
+                        CUBE_ALPHA * 0.5f);
             }
         }
         tessellator.end();
@@ -192,33 +180,20 @@ public final class EnergyNetworkDebugRenderer {
         // ── Pass 2: draw wireframe outlines ──────────────────────────────────
         buf.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-        for (EnergyNetwork network : networks) {
-            float[] tint = networkTints.get(network.getId());
+        for (Network network : networks) {
+            float[] tint = networkTints.get(network.getUUID());
 
-            for (EnergyNode node : network.getLoadedNodes()) {
-                float[] roleColor = roleColor(node);
-                float r = lerp(roleColor[0], tint[0], 0.2f);
-                float g = lerp(roleColor[1], tint[1], 0.2f);
-                float b = lerp(roleColor[2], tint[2], 0.2f);
-                addWireframeCube(buf, matrix, node.getEnergyPos(), camPos, r, g, b, WIRE_ALPHA);
-            }
-
-            Set<BlockPos> loadedPoses = new HashSet<>();
-            for (EnergyNode n : network.getLoadedNodes()) loadedPoses.add(n.getEnergyPos());
-
-            List<BlockPos> memberPositions = network.getMemberPositions().stream().toList();
+            List<NetworkNode> memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
             try {
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
                 memberPositions = Collections.emptyList();
             }
 
-            for (BlockPos pos : memberPositions) {
-                if (!loadedPoses.contains(pos)) {
-                    addWireframeCube(buf, matrix, pos, camPos,
-                            tint[0] * 0.5f, tint[1] * 0.5f, tint[2] * 0.5f,
-                            WIRE_ALPHA * 0.4f);
-                }
+            for (NetworkNode node : memberPositions) {
+                addWireframeCube(buf, matrix, node.getBlockPos(), camPos,
+                        tint[0] * 0.5f, tint[1] * 0.5f, tint[2] * 0.5f,
+                        WIRE_ALPHA * 0.4f);
             }
         }
         tessellator.end();
@@ -235,13 +210,13 @@ public final class EnergyNetworkDebugRenderer {
     // Label rendering
     // -------------------------------------------------------------------------
 
-    private static void renderLabels(PoseStack poseStack, Camera camera, Collection<EnergyNetwork> networks, Map<UUID, float[]> tints) {
+    private static void renderLabels(PoseStack poseStack, Camera camera, Collection<Network> networks, Map<UUID, float[]> tints) {
         Vec3 camPos = camera.getPosition();
         Font font = Minecraft.getInstance().font;
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
-        for (EnergyNetwork network : networks) {
-            List<BlockPos> memberPositions = network.getMemberPositions().stream().toList();
+        for (Network network : networks) {
+            List<NetworkNode> memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
             try {
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
@@ -255,7 +230,7 @@ public final class EnergyNetworkDebugRenderer {
             double distSq = targetPos.distanceToSqr(camPos);
             if (distSq > LABEL_MAX_DIST * LABEL_MAX_DIST) continue;
 
-            float[] t = tints.get(network.getId());
+            float[] t = tints.get(network.getUUID());
             int color = packColor(t[0], t[1], t[2], 1.0f);
 
             poseStack.pushPose();
@@ -271,11 +246,11 @@ public final class EnergyNetworkDebugRenderer {
             scale = Math.max(scale, 0.025f);
             poseStack.scale(-scale, -scale, scale);
 
-            String text = String.format("Net %s | %d members | %d/%d FE",
-                    network.getId().toString().substring(0, 4),
-                    network.getMemberCount(),
-                    network.getEnergyBuffer(),
-                    network.getMaxBuffer());
+            String text = String.format("Net %s | %d members | %d/%d EU",
+                    network.getUUID().toString().substring(0, 4),
+                    network.getNodeRegistry().getAllNodes().size(),
+                    network.getStoredEnergyBuffer(),
+                    network.getTotalEnergyBuffer());
 
             float textWidth = font.width(text);
             float x = -textWidth / 2f;
@@ -373,13 +348,13 @@ public final class EnergyNetworkDebugRenderer {
     // -------------------------------------------------------------------------
 
     /** Assigns a stable hue to each network based on its UUID. */
-    private static Map<UUID, float[]> buildNetworkTints(Collection<EnergyNetwork> networks) {
+    private static Map<UUID, float[]> buildNetworkTints(Collection<Network> networks) {
         Map<UUID, float[]> map = new HashMap<>();
-        for (EnergyNetwork net : networks) {
+        for (Network net : networks) {
             // Derive hue from UUID bits — stable across frames
-            long bits = net.getId().getLeastSignificantBits();
+            long bits = net.getUUID().getLeastSignificantBits();
             float hue = (float) ((bits & 0xFFFFFFFFL) / (double) 0x100000000L);
-            map.put(net.getId(), hsvToRgb(hue, 0.85f, 1.0f));
+            map.put(net.getUUID(), hsvToRgb(hue, 0.85f, 1.0f));
         }
         return map;
     }
@@ -402,11 +377,7 @@ public final class EnergyNetworkDebugRenderer {
         return new float[]{ r + m, g + m, b + m };
     }
 
-    private static float[] roleColor(EnergyNode node) {
-        if (node.isPipe())                  return COLOR_PIPE;
-        if (node instanceof EnergyStorage)  return COLOR_STORAGE;
-        if (node instanceof EnergyProducer) return COLOR_PRODUCER;
-        if (node instanceof EnergyConsumer) return COLOR_CONSUMER;
+    private static float[] roleColor(NetworkNode node) {
         return COLOR_UNKNOWN;
     }
 
@@ -439,13 +410,14 @@ public final class EnergyNetworkDebugRenderer {
         return eu + " EU";
     }
 
-    private static Vec3 closestTo(Set<BlockPos> positions, Vec3 camPos) {
+    private static Vec3 closestTo(Set<NetworkNode> positions, Vec3 camPos) {
         if (positions.isEmpty()) return null;
 
         double minDistSq = Double.MAX_VALUE;
         Vec3 closestCenter = null;
 
-        for (BlockPos p : positions) {
+        for (NetworkNode node : positions) {
+            BlockPos p = node.getBlockPos();
             // Get the absolute center of the block
             Vec3 center = new Vec3(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5);
             double distSq = center.distanceToSqr(camPos);

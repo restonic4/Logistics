@@ -1,8 +1,9 @@
 package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
-import com.restonic4.logistics.energy.EnergyNetworkTicker;
+import com.restonic4.logistics.energy.NetworkManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -30,10 +31,7 @@ public class Logistics implements ModInitializer {
     @Override
     public void onInitialize() {
         BlockRegistry.register();
-
-        EnergyNetworkTicker.register();
-
-        //CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> NetworkDebugCommand.register(dispatcher));
+        NetworkManager.register();
     }
 
     public static ResourceLocation id(String id) {
