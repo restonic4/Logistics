@@ -8,10 +8,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -163,7 +161,7 @@ public final class EnergyNetworkDebugRenderer {
 
             List<NetworkNode> memberPositions;
             try {
-                memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
+                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
                 memberPositions = Collections.emptyList();
@@ -183,7 +181,7 @@ public final class EnergyNetworkDebugRenderer {
         for (Network network : networks) {
             float[] tint = networkTints.get(network.getUUID());
 
-            List<NetworkNode> memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
+            List<NetworkNode> memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
             try {
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
@@ -216,7 +214,7 @@ public final class EnergyNetworkDebugRenderer {
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
         for (Network network : networks) {
-            List<NetworkNode> memberPositions = network.getNodeRegistry().getAllNodes().stream().toList();
+            List<NetworkNode> memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
             try {
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
@@ -248,7 +246,7 @@ public final class EnergyNetworkDebugRenderer {
 
             String text = String.format("Net %s | %d members | %d/%d EU",
                     network.getUUID().toString().substring(0, 4),
-                    network.getNodeRegistry().getAllNodes().size(),
+                    network.getNodeIndex().getAllNodes().size(),
                     network.getStoredEnergyBuffer(),
                     network.getTotalEnergyBuffer());
 

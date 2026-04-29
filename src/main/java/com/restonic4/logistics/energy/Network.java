@@ -8,14 +8,14 @@ import java.util.UUID;
 
 public class Network {
     private final UUID uuid;
-    private final NodeRegistry nodeRegistry;
+    private final NodeIndex nodeIndex;
 
     private long cacheStoredEnergyBuffer = 0;
     private long cacheTotalEnergyBuffer = 0;
 
     private Network(UUID uuid) {
         this.uuid = uuid;
-        this.nodeRegistry = new NodeRegistry(this);
+        this.nodeIndex = new NodeIndex(this);
     }
 
     public static Network create() {
@@ -23,19 +23,17 @@ public class Network {
     }
 
     public void tick() {
-        nodeRegistry.applyChanges();
-
-        for (NetworkNode node : nodeRegistry.getAllNodes()) {
+        for (NetworkNode node : nodeIndex.getAllNodes()) {
             node.tick();
         }
 
-        cacheStoredEnergyBuffer = nodeRegistry.getAllNodes().stream().mapToLong(NetworkNode::getStoredEnergy).sum();
-        cacheTotalEnergyBuffer = nodeRegistry.getAllNodes().stream().mapToLong(NetworkNode::getMaxStorage).sum();
+        cacheStoredEnergyBuffer = nodeIndex.getAllNodes().stream().mapToLong(NetworkNode::getStoredEnergy).sum();
+        cacheTotalEnergyBuffer = nodeIndex.getAllNodes().stream().mapToLong(NetworkNode::getMaxStorage).sum();
     }
 
     public long requestEnergyConsumption(long desired) {
         long extracted = 0;
-        for (NetworkNode node : nodeRegistry.getAllNodes()) {
+        for (NetworkNode node : nodeIndex.getAllNodes()) {
             long toGet = desired - extracted;
             extracted += node.extractEnergy(toGet, false);
             if (extracted >= desired) break;
@@ -45,15 +43,15 @@ public class Network {
 
     public long reportEnergyProduction(long produced) {
         long remaining = produced;
-        for (NetworkNode node : nodeRegistry.getAllNodes()) {
+        for (NetworkNode node : nodeIndex.getAllNodes()) {
             remaining = node.receiveEnergy(remaining, false);
             if (remaining <= 0) break;
         }
         return remaining;
     }
 
-    public NodeRegistry getNodeRegistry() {
-        return nodeRegistry;
+    public NodeIndex getNodeIndex() {
+        return nodeIndex;
     }
 
     public CompoundTag save() {
@@ -61,7 +59,7 @@ public class Network {
 
         tag.putUUID("uuid", uuid);
         ListTag nodes = new ListTag();
-        for (NetworkNode node : nodeRegistry.getAllNodes()) {
+        for (NetworkNode node : nodeIndex.getAllNodes()) {
             nodes.add(node.save());
         }
         tag.put("nodes", nodes);
@@ -75,7 +73,7 @@ public class Network {
 
         ListTag nodesList = tag.getList("nodes", Tag.TAG_COMPOUND);
         for (int i = 0; i < nodesList.size(); i++) {
-            network.nodeRegistry.registerFromCompoundTag(nodesList.getCompound(i));
+            network.nodeIndex.registerFromCompoundTag(nodesList.getCompound(i));
         }
 
         return network;

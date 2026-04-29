@@ -6,7 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +68,7 @@ public class NetworkManager extends SavedData {
             Network network = Network.load((CompoundTag) t);
             manager.networks.put(network.getUUID(), network);
 
-            for (NetworkNode node : network.getNodeRegistry().getAllNodes()) {
+            for (NetworkNode node : network.getNodeIndex().getAllNodes()) {
                 manager.nodePositionIndex.put(node.getBlockPos(), network);
             }
         }
@@ -117,30 +116,30 @@ public class NetworkManager extends SavedData {
         if (neighborNetworks.isEmpty()) {
             // Create brand-new network
             Network network = Network.create();
-            network.getNodeRegistry().internalRegister(node);
+            network.getNodeIndex().register(node);
             networks.put(network.getUUID(), network);
             nodePositionIndex.put(node.getBlockPos(), network);
         } else if (neighborNetworks.size() == 1) {
             // Attach to existing network
             Network target = neighborNetworks.iterator().next();
-            target.getNodeRegistry().internalRegister(node);
+            target.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), target);
         } else {
             // Merge all networks into 1
             Iterator<Network> iter = neighborNetworks.iterator();
             Network survivor = iter.next();
 
-            survivor.getNodeRegistry().internalRegister(node);
+            survivor.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), survivor);
 
             while (iter.hasNext()) {
                 Network otherNetwork = iter.next();
                 if (otherNetwork == null) continue;
 
-                List<NetworkNode> toMove = new ArrayList<>(otherNetwork.getNodeRegistry().getAllNodes());
+                List<NetworkNode> toMove = new ArrayList<>(otherNetwork.getNodeIndex().getAllNodes());
                 for (NetworkNode otherNode : toMove) {
-                    otherNetwork.getNodeRegistry().internalUnregister(otherNode);
-                    survivor.getNodeRegistry().internalRegister(otherNode);
+                    otherNetwork.getNodeIndex().unregister(otherNode);
+                    survivor.getNodeIndex().register(otherNode);
                     nodePositionIndex.put(otherNode.getBlockPos(), survivor);
                 }
 
@@ -155,23 +154,23 @@ public class NetworkManager extends SavedData {
         Network network = getNetworkByBlockPos(blockPos);
         if (network == null) return;
 
-        NetworkNode node = network.getNodeRegistry().findByBlockPos(blockPos);
+        NetworkNode node = network.getNodeIndex().findByBlockPos(blockPos);
         if (node == null) return;
 
-        network.getNodeRegistry().internalUnregister(node);
+        network.getNodeIndex().unregister(node);
         nodePositionIndex.remove(blockPos);
 
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
         for (BlockPos neighbor : getCardinalNeighbors(blockPos)) {
-            if (network.getNodeRegistry().findByBlockPos(neighbor) != null) {
+            if (network.getNodeIndex().findByBlockPos(neighbor) != null) {
                 neighborsInNetwork.add(neighbor);
             }
         }
 
         // Case 1: was the only member, network is now empty
         if (neighborsInNetwork.isEmpty()) {
-            if (network.getNodeRegistry().getAllNodes().isEmpty()) {
+            if (network.getNodeIndex().getAllNodes().isEmpty()) {
                 networks.remove(network.getUUID());
             }
             return;
@@ -185,7 +184,7 @@ public class NetworkManager extends SavedData {
 
         // Case 3: multiple neighbors, check if they're still connected
         // If all neighbors end up in the same component, there was no split.
-        Set<BlockPos> remaining = network.getNodeRegistry().getAllNodes().stream().map(NetworkNode::getBlockPos).collect(Collectors.toSet());
+        Set<BlockPos> remaining = network.getNodeIndex().getAllNodes().stream().map(NetworkNode::getBlockPos).collect(Collectors.toSet());
 
         Set<BlockPos> visited = new HashSet<>();
         List<Set<NetworkNode>> components = new ArrayList<>();
@@ -197,7 +196,7 @@ public class NetworkManager extends SavedData {
             visited.addAll(componentPositions);
 
             Set<NetworkNode> componentNodes = componentPositions.stream()
-                    .map(p -> network.getNodeRegistry().findByBlockPos(p))
+                    .map(p -> network.getNodeIndex().findByBlockPos(p))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
@@ -218,7 +217,7 @@ public class NetworkManager extends SavedData {
             Network newNetwork = Network.create();
 
             for (NetworkNode foundNode : nodeSet) {
-                newNetwork.getNodeRegistry().internalRegister(foundNode);
+                newNetwork.getNodeIndex().register(foundNode);
                 nodePositionIndex.put(foundNode.getBlockPos(), newNetwork);
             }
 
