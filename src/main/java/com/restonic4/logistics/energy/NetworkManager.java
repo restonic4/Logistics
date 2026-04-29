@@ -1,5 +1,6 @@
 package com.restonic4.logistics.energy;
 
+import com.restonic4.logistics.utils.MinecraftUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -81,14 +82,6 @@ public class NetworkManager extends SavedData {
      */
 
     private void applyPendingChanges() {
-        /*networks.values().removeIf(n -> {
-            if (n.getNodeRegistry().getAllNodes().isEmpty()) {
-                nodePositionIndex.values().removeIf(net -> net == n);
-                return true;
-            }
-            return false;
-        });*/
-
         if (pendingChanges.isEmpty()) return;
 
         while (!pendingChanges.isEmpty()) {
@@ -162,11 +155,11 @@ public class NetworkManager extends SavedData {
 
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
-        for (BlockPos neighbor : getCardinalNeighbors(blockPos)) {
-            if (network.getNodeIndex().findByBlockPos(neighbor) != null) {
-                neighborsInNetwork.add(neighbor);
+        MinecraftUtils.forEachNeighbor(blockPos, (neighborPos) -> {
+            if (network.getNodeIndex().findByBlockPos(neighborPos) != null) {
+                neighborsInNetwork.add(neighborPos);
             }
-        }
+        });
 
         // Case 1: was the only member, network is now empty
         if (neighborsInNetwork.isEmpty()) {
@@ -227,7 +220,6 @@ public class NetworkManager extends SavedData {
         setDirty();
     }
 
-    // TODO: optimize?
     private Set<BlockPos> floodFill(Set<BlockPos> allowedPositions, BlockPos start) {
         Set<BlockPos> result = new HashSet<>();
         Queue<BlockPos> queue = new ArrayDeque<>();
@@ -237,35 +229,25 @@ public class NetworkManager extends SavedData {
             BlockPos current = queue.poll();
             if (!result.add(current)) continue; // already visited
 
-            for (BlockPos neighbor : getCardinalNeighbors(current)) {
-                if (!result.contains(neighbor) && allowedPositions.contains(neighbor)) {
-                    queue.add(neighbor);
+            MinecraftUtils.forEachNeighbor(current, (neighborPos) -> {
+                if (!result.contains(neighborPos) && allowedPositions.contains(neighborPos)) {
+                    queue.add(neighborPos);
                 }
-            }
+            });
         }
 
         return result;
     }
 
-    // TODO: optimize?
     private Set<Network> getNeighborNetworks(BlockPos pos) {
         Set<Network> networkSet = new HashSet<>();
-        for (BlockPos neighbor : getCardinalNeighbors(pos)) {
-            Network network = getNetworkByBlockPos(neighbor);
+        MinecraftUtils.forEachNeighbor(pos, (neighborPos) -> {
+            Network network = getNetworkByBlockPos(neighborPos);
             if (network != null) {
                 networkSet.add(network);
             }
-        }
+        });
         return networkSet;
-    }
-
-    // TODO: optimize?
-    private static List<BlockPos> getCardinalNeighbors(BlockPos pos) {
-        return List.of(
-                pos.north(), pos.south(),
-                pos.east(),  pos.west(),
-                pos.above(), pos.below()
-        );
     }
 
     public Network getNetworkByBlockPos(BlockPos blockPos) {
@@ -278,7 +260,6 @@ public class NetworkManager extends SavedData {
     }
 
     private enum ChangeType { ADD, REMOVE }
-
     private record NetworkChange(ChangeType type, NetworkNode node, BlockPos blockPos) {
         static NetworkChange add(NetworkNode node) {
             return new NetworkChange(ChangeType.ADD, node, null);
