@@ -2,6 +2,7 @@ package com.restonic4.logistics.blocks.pipe;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
+import com.restonic4.logistics.blocks.base.NetworkBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -72,7 +73,7 @@ public class PipeBlock extends BaseNetworkBlock {
     }
 
     private boolean canConnectTo(BlockState state) {
-        return state.getBlock() instanceof BaseNetworkBlock;
+        return state.getBlock() instanceof NetworkBlock;
     }
 
     private static final VoxelShape CORE = Block.box(6, 6, 6, 10, 10, 10);

@@ -18,22 +18,23 @@ public class CreateMotorNode extends NetworkNode {
 
         ServerLevel level = network.getServerLevel();
 
-        if (!(level.getBlockEntity(getBlockPos()) instanceof CreateMotorBlockEntity be)) return;
+        if (!(level.getBlockEntity(getBlockPos()) instanceof CreateMotorBlockEntity motor)) return;
 
-        float speed = Math.abs(be.getSpeedSetting());
-        if (speed == 0) return;
+        float speedSetting = Math.abs(motor.getSpeedSetting());
+        if (speedSetting == 0) return;
 
-        long consumed = network.requestEnergyConsumption((long) speed);
-        boolean hasEnough = consumed >= speed;
+        long requiredEnergy = (long) speedSetting;
+        long consumed = network.requestEnergyConsumption(requiredEnergy);
 
-        if (be.hasEnoughEnergy != hasEnough) {
-            be.hasEnoughEnergy = hasEnough;
-            be.updateGeneratedRotation();
-            be.setChanged();
-            be.sendData();
+        boolean hasEnoughToRun = consumed >= requiredEnergy;
+
+        if (motor.hasEnoughEnergy() != hasEnoughToRun) {
+            motor.setEnergyState(hasEnoughToRun);
         }
 
-        if (!hasEnough) {
+        boolean actuallyUsed = hasEnoughToRun && !motor.isOverloaded();
+
+        if (!actuallyUsed && consumed > 0) {
             network.reportEnergyProduction(consumed);
         }
     }
