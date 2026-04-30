@@ -163,7 +163,7 @@ public final class EnergyNetworkDebugRenderer {
             try {
                 memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
-            } catch (ConcurrentModificationException e) {
+            } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
             }
 
