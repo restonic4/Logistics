@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'fabric-loom' version '1.10-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -11,11 +11,20 @@ base {
 }
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    // Create, Registrate, Milk Lib, Dripstone Fluid Lib
+    maven { url = "https://mvn.devos.one/snapshots/" }
+
+    // Porting Lib
+    maven { url = "https://mvn.devos.one/releases/" }
+
+    // Flywheel, Ponder, Catnip
+    maven { url = "https://maven.createmod.net/" }
+
+    // Forge Config API Port
+    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" }
+
+    // Reach Entity Attributes
+    maven { url = "https://maven.jamieswhiteshirt.com/libs-release" }
 }
 
 dependencies {
@@ -26,6 +35,10 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Create compatibility
+    //modCompileOnly "maven.modrinth:create-fabric:${project.create_version}"
+    modCompileOnly "com.simibubi.create:create-fabric:6.0.8.1+build.1744-mc1.20.1"
 }
 
 processResources {

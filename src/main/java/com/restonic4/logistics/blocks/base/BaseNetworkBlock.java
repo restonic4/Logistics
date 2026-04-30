@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.function.Supplier;
 
-public abstract class BaseNetworkBlock extends Block  {
+public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
     private NodeTypeRegistry.NetworkNodeType<?> nodeType;
 
     public BaseNetworkBlock(Properties properties) {
@@ -24,7 +24,8 @@ public abstract class BaseNetworkBlock extends Block  {
         this.nodeType = nodeType;
     }
 
-    protected NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
+    @Override
+    public NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
         return nodeType;
     }
 
@@ -54,6 +55,4 @@ public abstract class BaseNetworkBlock extends Block  {
 
         super.onRemove(blockState, level, blockPos, newBlockState, isMoving);
     }
-
-    protected void onNodeCreated(NetworkNode node, ServerLevel level, BlockPos pos) {}
 }

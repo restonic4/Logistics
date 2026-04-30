@@ -1,0 +1,26 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "logistics:block/create_motor/block_vertical",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "logistics:block/create_motor/block",
+      "y": 270
+    },
+    "facing=north": {
+      "model": "logistics:block/create_motor/block",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "logistics:block/create_motor/block"
+    },
+    "facing=up": {
+      "model": "logistics:block/create_motor/block_vertical"
+    },
+    "facing=west": {
+      "model": "logistics:block/create_motor/block",
+      "y": 90
+    }
+  }
+}

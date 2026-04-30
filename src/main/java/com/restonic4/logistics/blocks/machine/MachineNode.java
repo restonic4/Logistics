@@ -7,9 +7,11 @@ import com.restonic4.logistics.energy.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public class MachineNode extends NetworkNode {
-    public static final long CONSUMPTION_PER_TICK = 15L;
+    public static final long CONSUMPTION_PER_TICK = 200L;
 
     public MachineNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
@@ -20,6 +22,24 @@ public class MachineNode extends NetworkNode {
         Network network = getNetwork();
         if (network == null) return;
 
-        network.requestEnergyConsumption(CONSUMPTION_PER_TICK);
+        long extracted = network.requestEnergyConsumption(CONSUMPTION_PER_TICK);
+        float minThreshold = CONSUMPTION_PER_TICK / 2.0f;
+
+        if (extracted >= minThreshold) {
+            BlockPos pos = this.getBlockPos();
+
+            float progress = (extracted - minThreshold) / (CONSUMPTION_PER_TICK - minThreshold);
+            float volume = 0.1f + (progress * 0.9f);
+
+            network.getServerLevel().playSound(
+                    null,
+                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    SoundEvents.AMETHYST_BLOCK_BREAK,
+                    SoundSource.BLOCKS,
+                    volume, 1
+            );
+        } else {
+            network.reportEnergyProduction(extracted);
+        }
     }
 }

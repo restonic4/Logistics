@@ -214,8 +214,9 @@ public final class EnergyNetworkDebugRenderer {
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
         for (Network network : networks) {
-            List<NetworkNode> memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
+            List<NetworkNode> memberPositions;
             try {
+                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (ConcurrentModificationException e) {
                 memberPositions = Collections.emptyList();

@@ -17,16 +17,26 @@ import java.util.stream.Collectors;
 public class NetworkManager extends SavedData {
     private static final String DATA_NAME = "logistics_energy_networks";
 
+    private final ServerLevel serverLevel;
+
     private final Map<UUID, Network> networks = new HashMap<>();
     private final Map<BlockPos, Network> nodePositionIndex = new HashMap<>();
     private final Queue<NetworkChange> pendingChanges = new ConcurrentLinkedQueue<>();
+
+    private NetworkManager(ServerLevel serverLevel) {
+        this.serverLevel = serverLevel;
+    }
 
     /*
         LIFECYCLE
      */
 
-    public static NetworkManager get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(NetworkManager::load, NetworkManager::new, DATA_NAME);
+    public static NetworkManager get(ServerLevel serverLevel) {
+        return serverLevel.getDataStorage().computeIfAbsent(
+                tag -> NetworkManager.load(tag, serverLevel),
+                () -> new NetworkManager(serverLevel),
+                DATA_NAME
+        );
     }
 
     public static void register() {
@@ -40,9 +50,7 @@ public class NetworkManager extends SavedData {
     public void tick() {
         applyPendingChanges();
 
-        for (Network network : networks.values()) {
-            network.tick();
-        }
+        networks.forEach((uuid, network) -> network.tick());
 
         applyPendingChanges();
     }
@@ -61,12 +69,12 @@ public class NetworkManager extends SavedData {
         return tag;
     }
 
-    private static NetworkManager load(CompoundTag tag) {
-        NetworkManager manager = new NetworkManager();
+    private static NetworkManager load(CompoundTag tag, ServerLevel serverLevel) {
+        NetworkManager manager = new NetworkManager(serverLevel);
 
         ListTag networkList = tag.getList("networks", Tag.TAG_COMPOUND);
         for (Tag t : networkList) {
-            Network network = Network.load((CompoundTag) t);
+            Network network = Network.load((CompoundTag) t, serverLevel);
             manager.networks.put(network.getUUID(), network);
 
             for (NetworkNode node : network.getNodeIndex().getAllNodes()) {
@@ -108,7 +116,7 @@ public class NetworkManager extends SavedData {
 
         if (neighborNetworks.isEmpty()) {
             // Create brand-new network
-            Network network = Network.create();
+            Network network = Network.create(serverLevel);
             network.getNodeIndex().register(node);
             networks.put(network.getUUID(), network);
             nodePositionIndex.put(node.getBlockPos(), network);
@@ -207,7 +215,7 @@ public class NetworkManager extends SavedData {
         networks.remove(network.getUUID());
 
         for (Set<NetworkNode> nodeSet : components) {
-            Network newNetwork = Network.create();
+            Network newNetwork = Network.create(serverLevel);
 
             for (NetworkNode foundNode : nodeSet) {
                 newNetwork.getNodeIndex().register(foundNode);
@@ -252,6 +260,10 @@ public class NetworkManager extends SavedData {
 
     public Network getNetworkByBlockPos(BlockPos blockPos) {
         return nodePositionIndex.get(blockPos);
+    }
+
+    public ServerLevel getServerLevel() {
+        return serverLevel;
     }
 
     @Deprecated

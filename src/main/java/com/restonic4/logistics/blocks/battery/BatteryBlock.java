@@ -33,7 +33,7 @@ public class BatteryBlock extends BaseNetworkBlock {
     }
 
     @Override
-    protected void onNodeCreated(NetworkNode node, ServerLevel level, BlockPos pos) {
+    public void onNodeCreated(NetworkNode node, ServerLevel level, BlockPos pos) {
         if (node instanceof BatteryNode battery) {
             Long energy = pendingEnergy.remove(pos.asLong());
             if (energy != null) {

@@ -3,29 +3,30 @@ package com.restonic4.logistics.energy;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
 
 import java.util.UUID;
 
 public class Network {
     private final UUID uuid;
     private final NodeIndex nodeIndex;
+    private final ServerLevel serverLevel;
 
     private long cacheStoredEnergyBuffer = 0;
     private long cacheTotalEnergyBuffer = 0;
 
-    private Network(UUID uuid) {
+    private Network(UUID uuid, ServerLevel serverLevel) {
         this.uuid = uuid;
+        this.serverLevel = serverLevel;
         this.nodeIndex = new NodeIndex(this);
     }
 
-    public static Network create() {
-        return new Network(UUID.randomUUID());
+    public static Network create(ServerLevel serverLevel) {
+        return new Network(UUID.randomUUID(), serverLevel);
     }
 
     public void tick() {
-        for (NetworkNode node : nodeIndex.getAllNodes()) {
-            node.tick();
-        }
+        nodeIndex.getAllNodes().forEach(NetworkNode::tick);
 
         cacheStoredEnergyBuffer = nodeIndex.getAllNodes().stream().mapToLong(NetworkNode::getStoredEnergy).sum();
         cacheTotalEnergyBuffer = nodeIndex.getAllNodes().stream().mapToLong(NetworkNode::getMaxStorage).sum();
@@ -67,9 +68,9 @@ public class Network {
         return tag;
     }
 
-    public static Network load(CompoundTag tag) {
+    public static Network load(CompoundTag tag, ServerLevel serverLevel) {
         UUID id = tag.getUUID("uuid");
-        Network network = new Network(id);
+        Network network = new Network(id, serverLevel);
 
         ListTag nodesList = tag.getList("nodes", Tag.TAG_COMPOUND);
         for (int i = 0; i < nodesList.size(); i++) {
@@ -81,6 +82,10 @@ public class Network {
 
     public UUID getUUID() {
         return uuid;
+    }
+
+    public ServerLevel getServerLevel() {
+        return serverLevel;
     }
 
     public long getStoredEnergyBuffer() {
