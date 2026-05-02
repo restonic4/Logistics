@@ -181,10 +181,11 @@ public final class EnergyNetworkDebugRenderer {
         for (Network network : networks) {
             float[] tint = networkTints.get(network.getUUID());
 
-            List<NetworkNode> memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
+            List<NetworkNode> memberPositions;
             try {
+                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
-            } catch (ConcurrentModificationException e) {
+            } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
             }
 
@@ -218,7 +219,7 @@ public final class EnergyNetworkDebugRenderer {
             try {
                 memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
-            } catch (ConcurrentModificationException e) {
+            } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
             }
 

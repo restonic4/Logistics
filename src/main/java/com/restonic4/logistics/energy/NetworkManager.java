@@ -139,9 +139,13 @@ public class NetworkManager extends SavedData {
             survivor.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), survivor);
 
+            long mergedCableEnergyBuffer = survivor.getStoredCableEnergyBuffer();
+
             while (iter.hasNext()) {
                 Network otherNetwork = iter.next();
                 if (otherNetwork == null) continue;
+
+                mergedCableEnergyBuffer += otherNetwork.getStoredCableEnergyBuffer();
 
                 List<NetworkNode> toMove = new ArrayList<>(otherNetwork.getNodeIndex().getAllNodes());
                 for (NetworkNode otherNode : toMove) {
@@ -152,6 +156,8 @@ public class NetworkManager extends SavedData {
 
                 networks.remove(otherNetwork.getUUID());
             }
+
+            survivor.setStoredCableEnergyBuffer(mergedCableEnergyBuffer);
         }
 
         setDirty();
@@ -220,6 +226,9 @@ public class NetworkManager extends SavedData {
         // Split: dissolve the old network and create one new network per component
         networks.remove(network.getUUID());
 
+        long bufferToDistribute = network.getStoredCableEnergyBuffer();
+        List<Network> newChildren = new ArrayList<>();
+
         for (Set<NetworkNode> nodeSet : components) {
             Network newNetwork = Network.create(serverLevel);
 
@@ -229,9 +238,31 @@ public class NetworkManager extends SavedData {
             }
 
             networks.put(newNetwork.getUUID(), newNetwork);
+            newChildren.add(newNetwork);
         }
 
+        distributeBufferAcrossSplit(bufferToDistribute, newChildren);
+
         setDirty();
+    }
+
+    private void distributeBufferAcrossSplit(long totalBuffer, List<Network> children) {
+        if (totalBuffer <= 0 || children.isEmpty()) return;
+
+        children.forEach(Network::recalculateCaches);
+        children.sort(Comparator.comparingLong(Network::getTotalCableEnergyBuffer));
+
+        long remaining = totalBuffer;
+        int unfilled = children.size();
+
+        for (Network child : children) {
+            long share = remaining / unfilled;
+            long capacity = child.getTotalCableEnergyBuffer();
+            long actual = Math.min(share, capacity);
+            child.setStoredCableEnergyBuffer(actual);
+            remaining -= actual;
+            unfilled--;
+        }
     }
 
     private Set<BlockPos> floodFill(Set<BlockPos> allowedPositions, BlockPos start) {

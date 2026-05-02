@@ -28,7 +28,7 @@ public class CreateTransformerBlockEntity extends KineticBlockEntity {
     }
 
     public long getEnergy() {
-        return (long) (getAvailableStress() * CreateCompatibility.CONVERSION_RATE);
+        return (long) Math.floor(getAvailableStress() * CreateCompatibility.CONVERSION_RATE);
     }
 
     @Override

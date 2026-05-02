@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 
 // TODO: Fix create nodes, they load chunks lmao
 public class CreateCompatibility {
-    public static final float CONVERSION_RATE = 0.1f;
+    public static final float CONVERSION_RATE = 0.00390625f; // 256 = 1
     public static final long CONVERSION_LOSS_TICKS = 5;
 
     public static final ResourceLocation CREATE_MOTOR_ID = Logistics.id("create_motor");

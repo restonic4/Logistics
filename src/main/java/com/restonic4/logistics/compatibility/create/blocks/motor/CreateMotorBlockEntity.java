@@ -186,9 +186,13 @@ public class CreateMotorBlockEntity extends GeneratingKineticBlockEntity {
         this.sendData();
     }
 
+    public float getTheoreticalStressPerTick() {
+        return calculateAddedStressCapacity() * Math.abs(getSpeedSetting());
+    }
+
     public float getStressPerTick() {
         if (isOverStressed()) return 0;
-        return calculateAddedStressCapacity() * Math.abs(getTheoreticalSpeed());
+        return getTheoreticalStressPerTick();
     }
 
     @Override
@@ -208,6 +212,10 @@ public class CreateMotorBlockEntity extends GeneratingKineticBlockEntity {
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         boolean added = super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+        tooltip.add(Component.literal("Needed: " + (long) (getTheoreticalStressPerTick() * CreateCompatibility.CONVERSION_RATE)));
+        tooltip.add(Component.literal("Speed theory: " + getTheoreticalSpeed()));
+        tooltip.add(Component.literal("Speed setting: " + getSpeedSetting()));
 
         if (!hasEnoughEnergy || isOverloaded()) {
             tooltip.add(Component.empty());

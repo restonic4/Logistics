@@ -20,10 +20,8 @@ public class CreateMotorNode extends NetworkNode {
         ServerLevel level = network.getServerLevel();
         if (!(level.getBlockEntity(getBlockPos()) instanceof CreateMotorBlockEntity motor)) return;
 
-        float speedSetting = Math.abs(motor.getSpeedSetting());
-        if (speedSetting == 0) return;
-
-        long requiredEnergy = (long) (motor.getStressPerTick() * CreateCompatibility.CONVERSION_RATE);
+        long requiredEnergy = (long) Math.ceil(motor.getTheoreticalStressPerTick() * CreateCompatibility.CONVERSION_RATE);
+        if (requiredEnergy == 0) requiredEnergy = 1;
 
         long consumed = network.requestEnergyConsumption(requiredEnergy);
         boolean hasEnoughToRun = consumed >= requiredEnergy;
