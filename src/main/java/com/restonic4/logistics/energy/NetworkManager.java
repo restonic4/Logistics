@@ -50,7 +50,13 @@ public class NetworkManager extends SavedData {
     public void tick() {
         applyPendingChanges();
 
-        networks.forEach((uuid, network) -> network.tick());
+        networks.forEach((uuid, network) -> {
+            network.tick();
+            if (network.isDirty()) {
+                setDirty();
+                network.cleanDirtyFlag();
+            }
+        });
 
         applyPendingChanges();
     }

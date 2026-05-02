@@ -186,6 +186,11 @@ public class CreateMotorBlockEntity extends GeneratingKineticBlockEntity {
         this.sendData();
     }
 
+    public float getStressPerTick() {
+        if (isOverStressed()) return 0;
+        return calculateAddedStressCapacity() * Math.abs(getTheoreticalSpeed());
+    }
+
     @Override
     public void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);

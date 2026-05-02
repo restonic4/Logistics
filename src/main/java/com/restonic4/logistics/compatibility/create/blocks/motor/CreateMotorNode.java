@@ -1,5 +1,6 @@
 package com.restonic4.logistics.compatibility.create.blocks.motor;
 
+import com.restonic4.logistics.compatibility.create.CreateCompatibility;
 import com.restonic4.logistics.energy.Network;
 import com.restonic4.logistics.energy.NetworkNode;
 import com.restonic4.logistics.energy.NodeTypeRegistry;
@@ -17,15 +18,14 @@ public class CreateMotorNode extends NetworkNode {
         if (network == null) return;
 
         ServerLevel level = network.getServerLevel();
-
         if (!(level.getBlockEntity(getBlockPos()) instanceof CreateMotorBlockEntity motor)) return;
 
         float speedSetting = Math.abs(motor.getSpeedSetting());
         if (speedSetting == 0) return;
 
-        long requiredEnergy = (long) speedSetting;
-        long consumed = network.requestEnergyConsumption(requiredEnergy);
+        long requiredEnergy = (long) (motor.getStressPerTick() * CreateCompatibility.CONVERSION_RATE);
 
+        long consumed = network.requestEnergyConsumption(requiredEnergy);
         boolean hasEnoughToRun = consumed >= requiredEnergy;
 
         if (motor.hasEnoughEnergy() != hasEnoughToRun) {
@@ -33,9 +33,10 @@ public class CreateMotorNode extends NetworkNode {
         }
 
         boolean actuallyUsed = hasEnoughToRun && !motor.isOverloaded();
-
         if (!actuallyUsed && consumed > 0) {
             network.reportEnergyProduction(consumed);
+        } else if(level.getGameTime() % CreateCompatibility.CONVERSION_LOSS_TICKS == 0) {
+            network.requestEnergyConsumption(1);
         }
     }
 }

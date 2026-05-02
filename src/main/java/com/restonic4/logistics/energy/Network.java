@@ -14,6 +14,7 @@ public class Network {
 
     private long cacheStoredEnergyBuffer = 0;
     private long cacheTotalEnergyBuffer = 0;
+    private boolean isDirty = false;
 
     private Network(UUID uuid, ServerLevel serverLevel) {
         this.uuid = uuid;
@@ -39,6 +40,7 @@ public class Network {
             extracted += node.extractEnergy(toGet, false);
             if (extracted >= desired) break;
         }
+        setDirty();
         return extracted;
     }
 
@@ -48,6 +50,7 @@ public class Network {
             remaining = node.receiveEnergy(remaining, false);
             if (remaining <= 0) break;
         }
+        setDirty();
         return remaining;
     }
 
@@ -94,5 +97,17 @@ public class Network {
 
     public Object getTotalEnergyBuffer() {
         return cacheTotalEnergyBuffer;
+    }
+
+    public void setDirty() {
+        this.isDirty = true;
+    }
+
+    public void cleanDirtyFlag() {
+        this.isDirty = false;
+    }
+
+    public boolean isDirty() {
+        return this.isDirty;
     }
 }
