@@ -1,7 +1,6 @@
-package com.restonic4.logistics.networks.registries;
+package com.restonic4.logistics.registry;
 
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 

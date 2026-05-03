@@ -1,7 +1,6 @@
 package com.restonic4.logistics.networks;
 
-import com.restonic4.logistics.networks.nodes.EnergyNode;
-import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
+import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -9,7 +8,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 public abstract class Network {

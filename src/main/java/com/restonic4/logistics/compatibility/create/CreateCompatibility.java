@@ -7,21 +7,12 @@ import com.restonic4.logistics.compatibility.create.blocks.motor.CreateMotorNode
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerBlock;
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerBlockEntity;
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerNode;
-import com.restonic4.logistics.networks.registries.BuiltInNetworks;
-import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
+import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.LogisticsRegistryEntry;
 import com.restonic4.logistics.registry.Registrate;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllCreativeModeTabs;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
-import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 
 // TODO: Fix create nodes, they load chunks lmao
 public class CreateCompatibility {

@@ -4,8 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
-import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.client.Camera;

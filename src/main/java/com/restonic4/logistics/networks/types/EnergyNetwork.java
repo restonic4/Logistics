@@ -3,18 +3,12 @@ package com.restonic4.logistics.networks.types;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.NodeIndex;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
-import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
+import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
 
 public class EnergyNetwork extends Network {
     public static final int PIPE_EXTRA_BUFFER = 1;

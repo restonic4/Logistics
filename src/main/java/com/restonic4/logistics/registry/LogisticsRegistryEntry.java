@@ -1,7 +1,6 @@
 package com.restonic4.logistics.registry;
 
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;

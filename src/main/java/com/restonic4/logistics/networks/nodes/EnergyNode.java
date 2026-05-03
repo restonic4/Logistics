@@ -1,7 +1,7 @@
 package com.restonic4.logistics.networks.nodes;
 
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.core.BlockPos;
 

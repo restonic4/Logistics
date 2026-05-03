@@ -2,8 +2,6 @@ package com.restonic4.logistics.registry;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.networks.NetworkNode;
-import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
-import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;

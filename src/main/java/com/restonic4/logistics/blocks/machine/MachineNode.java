@@ -2,7 +2,7 @@ package com.restonic4.logistics.blocks.machine;
 
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
-import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;

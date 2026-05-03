@@ -1,8 +1,6 @@
 package com.restonic4.logistics.networks;
 
-import com.restonic4.logistics.networks.nodes.EnergyNode;
-import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
-import com.restonic4.logistics.networks.types.EnergyNetwork;
+import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;

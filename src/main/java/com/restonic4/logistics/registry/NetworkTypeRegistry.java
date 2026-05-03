@@ -1,9 +1,8 @@
-package com.restonic4.logistics.networks.registries;
+package com.restonic4.logistics.registry;
 
 import com.restonic4.logistics.networks.Network;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;

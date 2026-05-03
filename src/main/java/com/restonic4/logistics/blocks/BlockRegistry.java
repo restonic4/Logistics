@@ -10,11 +10,10 @@ import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
-import com.restonic4.logistics.networks.registries.BuiltInNetworks;
+import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.LogisticsRegistryEntry;
 import com.restonic4.logistics.registry.Registrate;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 
