@@ -1,5 +1,8 @@
-package com.restonic4.logistics.networks.energy;
+package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
@@ -15,7 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 public class NetworkManager extends SavedData {
-    private static final String DATA_NAME = "logistics_energy_networks";
+    private static final String DATA_NAME = "logistics_networks";
 
     private final ServerLevel serverLevel;
 
@@ -66,7 +69,7 @@ public class NetworkManager extends SavedData {
      */
 
     @Override
-    public @NotNull CompoundTag save(CompoundTag tag) {
+    public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag networkList = new ListTag();
         for (Network network : networks.values()) {
             networkList.add(network.save());
@@ -80,7 +83,7 @@ public class NetworkManager extends SavedData {
 
         ListTag networkList = tag.getList("networks", Tag.TAG_COMPOUND);
         for (Tag t : networkList) {
-            Network network = Network.load((CompoundTag) t, serverLevel);
+            Network network = Network.createFromTag((CompoundTag) t, serverLevel);
             manager.networks.put(network.getUUID(), network);
 
             for (NetworkNode node : network.getNodeIndex().getAllNodes()) {
@@ -112,17 +115,16 @@ public class NetworkManager extends SavedData {
     public void onMemberPlaced(NetworkNode node) {
         pendingChanges.add(NetworkChange.add(node));
     }
-
     public void onMemberRemoved(BlockPos blockPos) {
         pendingChanges.add(NetworkChange.remove(blockPos));
     }
 
     public void internalOnMemberPlaced(NetworkNode node) {
-        Set<Network> neighborNetworks = getNeighborNetworks(node.getBlockPos());
+        Set<Network> neighborNetworks = getNeighborNetworks(node.getBlockPos(), node.getType().networkType());
 
         if (neighborNetworks.isEmpty()) {
             // Create brand-new network
-            Network network = Network.create(serverLevel);
+            Network network = Network.create(node.getType().networkType(), serverLevel);
             network.getNodeIndex().register(node);
             networks.put(network.getUUID(), network);
             nodePositionIndex.put(node.getBlockPos(), network);
@@ -139,13 +141,11 @@ public class NetworkManager extends SavedData {
             survivor.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), survivor);
 
-            long mergedCableEnergyBuffer = survivor.getStoredCableEnergyBuffer();
-
             while (iter.hasNext()) {
                 Network otherNetwork = iter.next();
                 if (otherNetwork == null) continue;
 
-                mergedCableEnergyBuffer += otherNetwork.getStoredCableEnergyBuffer();
+                survivor.mergeDataFrom(otherNetwork);
 
                 List<NetworkNode> toMove = new ArrayList<>(otherNetwork.getNodeIndex().getAllNodes());
                 for (NetworkNode otherNode : toMove) {
@@ -156,8 +156,6 @@ public class NetworkManager extends SavedData {
 
                 networks.remove(otherNetwork.getUUID());
             }
-
-            survivor.setStoredCableEnergyBuffer(mergedCableEnergyBuffer);
         }
 
         setDirty();
@@ -176,9 +174,14 @@ public class NetworkManager extends SavedData {
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
         MinecraftUtils.forEachNeighbor(blockPos, (neighborPos) -> {
-            if (network.getNodeIndex().findByBlockPos(neighborPos) != null) {
-                neighborsInNetwork.add(neighborPos);
-            }
+            NetworkNode neighborNode = network.getNodeIndex().findByBlockPos(neighborPos);
+            if (neighborNode == null) return;
+
+            Network neighborNetwork = neighborNode.getNetwork();
+            if (neighborNetwork == null) return;
+            if (neighborNetwork.getType() != network.getType()) return;
+
+            neighborsInNetwork.add(neighborPos);
         });
 
         // Case 1: was the only member, network is now empty
@@ -191,9 +194,8 @@ public class NetworkManager extends SavedData {
 
         // Case 2: only one neighbor, no split possible
         // The network is still intact, just smaller. Keep the same object.
-        if (neighborsInNetwork.size() == 1) {
-            return;
-        }
+        if (neighborsInNetwork.size() == 1) return;
+
 
         // Case 3: multiple neighbors, check if they're still connected
         // If all neighbors end up in the same component, there was no split.
@@ -219,18 +221,15 @@ public class NetworkManager extends SavedData {
         }
 
         // If only one component, the network is still fully connected, keep it as-is.
-        if (components.size() == 1) {
-            return;
-        }
+        if (components.size() <= 1) return;
 
         // Split: dissolve the old network and create one new network per component
         networks.remove(network.getUUID());
 
-        long bufferToDistribute = network.getStoredCableEnergyBuffer();
         List<Network> newChildren = new ArrayList<>();
 
         for (Set<NetworkNode> nodeSet : components) {
-            Network newNetwork = Network.create(serverLevel);
+            Network newNetwork = Network.create(network.getType(), serverLevel);
 
             for (NetworkNode foundNode : nodeSet) {
                 newNetwork.getNodeIndex().register(foundNode);
@@ -241,28 +240,9 @@ public class NetworkManager extends SavedData {
             newChildren.add(newNetwork);
         }
 
-        distributeBufferAcrossSplit(bufferToDistribute, newChildren);
+        network.onSplit(newChildren);
 
         setDirty();
-    }
-
-    private void distributeBufferAcrossSplit(long totalBuffer, List<Network> children) {
-        if (totalBuffer <= 0 || children.isEmpty()) return;
-
-        children.forEach(Network::recalculateCaches);
-        children.sort(Comparator.comparingLong(Network::getTotalCableEnergyBuffer));
-
-        long remaining = totalBuffer;
-        int unfilled = children.size();
-
-        for (Network child : children) {
-            long share = remaining / unfilled;
-            long capacity = child.getTotalCableEnergyBuffer();
-            long actual = Math.min(share, capacity);
-            child.setStoredCableEnergyBuffer(actual);
-            remaining -= actual;
-            unfilled--;
-        }
     }
 
     private Set<BlockPos> floodFill(Set<BlockPos> allowedPositions, BlockPos start) {
@@ -284,11 +264,11 @@ public class NetworkManager extends SavedData {
         return result;
     }
 
-    private Set<Network> getNeighborNetworks(BlockPos pos) {
+    private Set<Network> getNeighborNetworks(BlockPos pos, NetworkTypeRegistry.NetworkType<?> networkType) {
         Set<Network> networkSet = new HashSet<>();
         MinecraftUtils.forEachNeighbor(pos, (neighborPos) -> {
             Network network = getNetworkByBlockPos(neighborPos);
-            if (network != null) {
+            if (network != null && network.getType() == networkType) {
                 networkSet.add(network);
             }
         });

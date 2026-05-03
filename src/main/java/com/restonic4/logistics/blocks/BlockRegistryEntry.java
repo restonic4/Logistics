@@ -1,8 +1,9 @@
 package com.restonic4.logistics.blocks;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
-import com.restonic4.logistics.networks.energy.NetworkNode;
-import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.registries.NetworkTypeRegistry;
+import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends NetworkNode> {
+public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends EnergyNode> {
     private ResourceLocation resourceLocation;
 
     private final Supplier<B> blockFactory;
@@ -30,6 +31,7 @@ public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends NetworkNod
 
     public void register(
             ResourceLocation id,
+            NetworkTypeRegistry.NetworkType<?> networkType,
             NodeTypeRegistry.NodeFactory<N> nodeFactory,
             Function<B, Item> itemFactory,
             BlockEntityType.BlockEntitySupplier<?> blockEntitySupplier
@@ -38,7 +40,7 @@ public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends NetworkNod
         this.resourceLocation = id;
 
         // Node type
-        this.nodeType = NodeTypeRegistry.register(id, nodeFactory);
+        this.nodeType = NodeTypeRegistry.register(id, networkType, nodeFactory);
 
         // Block
         this.block = blockFactory.get();
@@ -60,10 +62,11 @@ public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends NetworkNod
 
     public void register(
             ResourceLocation id,
+            NetworkTypeRegistry.NetworkType<?> networkType,
             NodeTypeRegistry.NodeFactory<N> nodeFactory,
             Function<B, Item> itemFactory
     ) {
-        register(id, nodeFactory, itemFactory, null);
+        register(id, networkType, nodeFactory, itemFactory, null);
     }
 
     public B getBlock() {
@@ -73,6 +76,6 @@ public class BlockRegistryEntry<B extends BaseNetworkBlock, N extends NetworkNod
 
     public Item getItem() { return item; }
     public @Nullable BlockEntityType<? extends BlockEntity> getBlockEntityType() { return blockEntityType; }
-    public NodeTypeRegistry.NetworkNodeType<? extends NetworkNode> getNodeType() { return nodeType; }
+    public NodeTypeRegistry.NetworkNodeType<? extends EnergyNode> getNodeType() { return nodeType; }
     public ResourceLocation getResourceLocation() { return resourceLocation; }
 }

@@ -1,5 +1,7 @@
-package com.restonic4.logistics.networks.energy;
+package com.restonic4.logistics.networks.registries;
 
+import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
@@ -9,8 +11,8 @@ import java.util.Map;
 public final class NodeTypeRegistry {
     private static final Map<ResourceLocation, NetworkNodeType<?>> REGISTRY = new HashMap<>();
 
-    public static <T extends NetworkNode> NetworkNodeType<T> register(ResourceLocation id, NodeFactory<T> factory) {
-        NetworkNodeType<T> type = new NetworkNodeType<>(factory);
+    public static <T extends EnergyNode> NetworkNodeType<T> register(ResourceLocation id, NetworkTypeRegistry.NetworkType<?> networkType, NodeFactory<T> factory) {
+        NetworkNodeType<T> type = new NetworkNodeType<>(networkType, factory);
         REGISTRY.put(id, type);
         return type;
     }
@@ -28,7 +30,7 @@ public final class NodeTypeRegistry {
         return null;
     }
 
-    public record NetworkNodeType<T extends NetworkNode>(NodeFactory<T> factory) {
+    public record NetworkNodeType<T extends NetworkNode>(NetworkTypeRegistry.NetworkType<?> networkType, NodeFactory<T> factory) {
         public T create(BlockPos pos) {
             return factory.create(this, pos);
         }

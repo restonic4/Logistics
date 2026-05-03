@@ -1,5 +1,7 @@
-package com.restonic4.logistics.networks.energy;
+package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.registries.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -18,50 +20,17 @@ public abstract class NetworkNode {
         this.blockPos = blockPos;
     }
 
-    public void tick() { };
-
     public void setNetwork(Network network) {
         this.network = network;
     }
 
+    public NodeTypeRegistry.NetworkNodeType<?> getType() { return type; }
     public ResourceLocation getResourceLocation() { return NodeTypeRegistry.get(this.type); }
     public UUID getUUID() { return uuid; }
     public Network getNetwork() { return network; }
     public BlockPos getBlockPos() { return blockPos; }
 
-    /*
-        ENERGY MANAGEMENT
-     */
-
-    /**
-     * @param amount The energy offered to this node.
-     * @param simulate If true, don't actually change the energy level.
-     * @return The amount of energy that was NOT accepted (overflow).
-     */
-    public long receiveEnergy(long amount, boolean simulate) {
-        return amount; // Default: doesn't accept energy
-    }
-
-    /**
-     * @param amount The energy requested from this node.
-     * @param simulate If true, don't actually change the energy level.
-     * @return The amount of energy actually extracted.
-     */
-    public long extractEnergy(long amount, boolean simulate) {
-        return 0; // Default: doesn't provide energy
-    }
-
-    public long getStoredEnergy() {
-        return 0;
-    }
-
-    public long getMaxStorage() {
-        return 0;
-    }
-
-    /*
-        DATA MANAGEMENT
-     */
+    public void tick() { }
 
     public final CompoundTag save() {
         CompoundTag tag = new CompoundTag();

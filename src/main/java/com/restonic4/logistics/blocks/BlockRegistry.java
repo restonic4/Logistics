@@ -10,6 +10,7 @@ import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
+import com.restonic4.logistics.networks.registries.BuiltInNetworks;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -32,10 +33,16 @@ public class BlockRegistry {
             () -> new BatteryBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
     );
 
+    public static final BlockRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE_2 = new BlockRegistryEntry<>(
+            () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+    );
+
     public static void register() {
-        BASIC_PIPE.register(Logistics.id("basic_pipe"), PipeNode::new, block -> new BlockItem(block, new Item.Properties()));
-        GENERATOR_BLOCK.register(Logistics.id("generator"), GeneratorNode::new, block -> new BlockItem(block, new Item.Properties()));
-        MACHINE_BLOCK.register(Logistics.id("machine"), MachineNode::new, block -> new BlockItem(block, new Item.Properties()));
-        BATTERY_BLOCK.register(Logistics.id("battery"), BatteryNode::new, block -> new BatteryBlockItem(block, new Item.Properties()));
+        BASIC_PIPE.register(Logistics.id("basic_pipe"), BuiltInNetworks.ENERGY_NETWORK, PipeNode::new, block -> new BlockItem(block, new Item.Properties()));
+        GENERATOR_BLOCK.register(Logistics.id("generator"), BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new, block -> new BlockItem(block, new Item.Properties()));
+        MACHINE_BLOCK.register(Logistics.id("machine"), BuiltInNetworks.ENERGY_NETWORK, MachineNode::new, block -> new BlockItem(block, new Item.Properties()));
+        BATTERY_BLOCK.register(Logistics.id("battery"), BuiltInNetworks.ENERGY_NETWORK, BatteryNode::new, block -> new BatteryBlockItem(block, new Item.Properties()));
+
+        BASIC_PIPE_2.register(Logistics.id("basic_pipe_2"), BuiltInNetworks.ITEM_NETWORK, PipeNode::new, block -> new BlockItem(block, new Item.Properties()));
     }
 }

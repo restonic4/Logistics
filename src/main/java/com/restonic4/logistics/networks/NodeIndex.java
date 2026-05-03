@@ -1,5 +1,7 @@
-package com.restonic4.logistics.networks.energy;
+package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 
@@ -38,5 +40,8 @@ public final class NodeIndex {
 
     public Collection<NetworkNode> getAllNodes() {
         return byUUID.values();
+    }
+    public int size() {
+        return byUUID.size();
     }
 }

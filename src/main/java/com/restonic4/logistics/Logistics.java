@@ -2,7 +2,7 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
-import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.NetworkManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
