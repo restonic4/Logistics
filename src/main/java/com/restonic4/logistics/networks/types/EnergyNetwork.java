@@ -137,6 +137,12 @@ public class EnergyNetwork extends Network {
         cacheTotalCableEnergyBuffer = this.getNodeIndex().getAllNodes().stream().filter(n -> n instanceof PipeNode).count() * PIPE_EXTRA_BUFFER;
     }
 
+    public static String formatEnergy(long eu) {
+        if (eu >= 1_000_000) return String.format("%.1fMEU", eu / 1_000_000.0);
+        if (eu >= 1_000) return String.format("%.1fkEU", eu / 1_000.0);
+        return eu + " EU";
+    }
+
     public long getStoredEnergyBuffer() { return cacheStoredNodeEnergyBuffer + getStoredCableEnergyBuffer(); }
     public long getTotalEnergyBuffer() { return cacheTotalNodeEnergyBuffer + getTotalCableEnergyBuffer(); }
 
