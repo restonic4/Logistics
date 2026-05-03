@@ -1,11 +1,11 @@
 package com.restonic4.logistics.blocks.battery;
 
-import com.restonic4.logistics.networks.energy.NetworkNode;
-import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 
-public class BatteryNode extends NetworkNode {
+public class BatteryNode extends EnergyNode {
     public static final long MAX_STORAGE = 10_000L;
     public static final long CHARGE_RATE = 40L;
     public static final long DISCHARGE_RATE = 40L;

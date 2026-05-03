@@ -2,7 +2,7 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
-import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.NetworkManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
@@ -25,12 +25,6 @@ public class Logistics implements ModInitializer {
             FabricItemGroup.builder()
                     .title(Component.translatable("itemGroup." + Constants.MOD_ID + ".custom_tab"))
                     .icon(() -> new ItemStack(BlockRegistry.BATTERY_BLOCK.getItem()))
-                    .displayItems((parameters, output) -> {
-                        output.accept(BlockRegistry.BASIC_PIPE.getItem());
-                        output.accept(BlockRegistry.BATTERY_BLOCK.getItem());
-                        output.accept(BlockRegistry.GENERATOR_BLOCK.getItem());
-                        output.accept(BlockRegistry.MACHINE_BLOCK.getItem());
-                    })
                     .build()
     );
 

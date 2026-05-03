@@ -2,9 +2,9 @@ package com.restonic4.logistics.compatibility.create.blocks.motor;
 
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.compatibility.create.CreateCompatibility;
-import com.restonic4.logistics.networks.energy.NetworkManager;
-import com.restonic4.logistics.networks.energy.NetworkNode;
-import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.NetworkManager;
+import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
@@ -54,12 +54,12 @@ public class CreateMotorBlock extends DirectionalKineticBlock implements Network
     }
 
     public BlockEntityType<? extends CreateMotorBlockEntity> getBlockEntityType() {
-        return CreateCompatibility.CREATE_MOTOR_BLOCK_ENTITY_TYPE;
+        return CreateCompatibility.CREATE_MOTOR.getBlockEntityType(CreateMotorBlockEntity.class);
     }
 
     @Override
     public NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
-        return CreateCompatibility.CREATE_MOTOR_NODE_TYPE;
+        return CreateCompatibility.CREATE_MOTOR.getNodeType();
     }
 
     @Override

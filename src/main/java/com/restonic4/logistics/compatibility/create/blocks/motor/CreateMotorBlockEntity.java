@@ -42,7 +42,7 @@ public class CreateMotorBlockEntity extends GeneratingKineticBlockEntity {
     public AbstractComputerBehaviour computerBehaviour;
 
     public CreateMotorBlockEntity(BlockPos pos, BlockState state) {
-        super(CreateCompatibility.CREATE_MOTOR_BLOCK_ENTITY_TYPE, pos, state);
+        super(CreateCompatibility.CREATE_MOTOR.getBlockEntityType(CreateMotorBlockEntity.class), pos, state);
     }
 
     public CreateMotorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -79,7 +79,7 @@ public class CreateMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     public float getSpeedSetting() {
-        if (!getBlockState().is(CreateCompatibility.CREATE_MOTOR_BLOCK))
+        if (!getBlockState().is(CreateCompatibility.CREATE_MOTOR.getBlock()))
             return 0;
         return convertToDirection(generatedSpeed.getValue(), getBlockState().getValue(CreateMotorBlock.FACING));
     }

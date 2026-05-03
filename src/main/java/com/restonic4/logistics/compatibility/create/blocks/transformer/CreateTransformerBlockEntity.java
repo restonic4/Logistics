@@ -20,7 +20,7 @@ import java.util.List;
 
 public class CreateTransformerBlockEntity extends KineticBlockEntity {
     public CreateTransformerBlockEntity(BlockPos pos, BlockState state) {
-        super(CreateCompatibility.CREATE_TRANSFORMER_BLOCK_ENTITY_TYPE, pos, state);
+        super(CreateCompatibility.CREATE_TRANSFORMER.getBlockEntityType(CreateTransformerBlockEntity.class), pos, state);
     }
 
     public float getAvailableStress() {

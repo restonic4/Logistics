@@ -10,11 +10,11 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 public class CreateClientCompatibility {
     public static void register() {
         BlockEntityRenderers.register(
-                CreateCompatibility.CREATE_MOTOR_BLOCK_ENTITY_TYPE,
+                CreateCompatibility.CREATE_MOTOR.getBlockEntityType(CreateMotorBlockEntity.class),
                 CreateMotorRenderer::new
         );
 
-        SimpleBlockEntityVisualizer.builder(CreateCompatibility.CREATE_MOTOR_BLOCK_ENTITY_TYPE)
+        SimpleBlockEntityVisualizer.builder(CreateCompatibility.CREATE_MOTOR.getBlockEntityType(CreateMotorBlockEntity.class))
                 .factory(OrientedRotatingVisual.<CreateMotorBlockEntity>of(AllPartialModels.SHAFT_HALF)::create)
                 .skipVanillaRender(be -> false)
                 .apply();

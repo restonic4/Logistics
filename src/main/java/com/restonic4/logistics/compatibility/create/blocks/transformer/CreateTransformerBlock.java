@@ -2,9 +2,9 @@ package com.restonic4.logistics.compatibility.create.blocks.transformer;
 
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.compatibility.create.CreateCompatibility;
-import com.restonic4.logistics.networks.energy.NetworkManager;
-import com.restonic4.logistics.networks.energy.NetworkNode;
-import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.NetworkManager;
+import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
@@ -37,12 +37,12 @@ public class CreateTransformerBlock extends DirectionalKineticBlock implements N
 
     @Override
     public BlockEntityType<? extends CreateTransformerBlockEntity> getBlockEntityType() {
-        return CreateCompatibility.CREATE_TRANSFORMER_BLOCK_ENTITY_TYPE;
+        return CreateCompatibility.CREATE_TRANSFORMER.getBlockEntityType(CreateTransformerBlockEntity.class);
     }
 
     @Override
     public NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
-        return CreateCompatibility.CREATE_TRANSFORMER_NODE_TYPE;
+        return CreateCompatibility.CREATE_TRANSFORMER.getNodeType();
     }
 
     @Override

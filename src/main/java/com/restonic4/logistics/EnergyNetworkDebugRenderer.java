@@ -2,9 +2,10 @@ package com.restonic4.logistics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.restonic4.logistics.networks.energy.Network;
-import com.restonic4.logistics.networks.energy.NetworkManager;
-import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.Network;
+import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.NetworkManager;
+import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -129,17 +130,17 @@ public final class EnergyNetworkDebugRenderer {
         if (serverLevel == null) return;
 
         NetworkManager manager = NetworkManager.get(serverLevel);
-        Collection<Network> networks = manager.getAllNetworks();
+        Collection<Network> energyNetworks = manager.getAllNetworks();
         try {
-            networks = new ArrayList<>(networks.stream().toList());
+            energyNetworks = new ArrayList<>(energyNetworks.stream().toList());
         } catch (ConcurrentModificationException e) {
-            networks = Collections.emptyList();
+            energyNetworks = Collections.emptyList();
         }
 
-        if (networks.isEmpty()) return;
+        if (energyNetworks.isEmpty()) return;
 
         Vec3 camPos = camera.getPosition();
-        Map<UUID, float[]> networkTints = buildNetworkTints(networks);
+        Map<UUID, float[]> networkTints = buildNetworkTints(energyNetworks);
 
         // Bind the correct shader before drawing shapes
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -158,12 +159,12 @@ public final class EnergyNetworkDebugRenderer {
         // ── Pass 1: draw filled transparent cubes ────────────────────────────
         buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        for (Network network : networks) {
-            float[] tint = networkTints.get(network.getUUID());
+        for (Network energyNetwork : energyNetworks) {
+            float[] tint = networkTints.get(energyNetwork.getUUID());
 
             List<NetworkNode> memberPositions;
             try {
-                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
+                memberPositions = energyNetwork.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
@@ -180,12 +181,12 @@ public final class EnergyNetworkDebugRenderer {
         // ── Pass 2: draw wireframe outlines ──────────────────────────────────
         buf.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-        for (Network network : networks) {
-            float[] tint = networkTints.get(network.getUUID());
+        for (Network energyNetwork : energyNetworks) {
+            float[] tint = networkTints.get(energyNetwork.getUUID());
 
             List<NetworkNode> memberPositions;
             try {
-                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
+                memberPositions = energyNetwork.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
@@ -204,22 +205,22 @@ public final class EnergyNetworkDebugRenderer {
         RenderSystem.disableBlend();
 
         // ── Pass 3: draw floating labels ─────────────────────────────────────
-        renderLabels(poseStack, camera, networks, networkTints);
+        renderLabels(poseStack, camera, energyNetworks, networkTints);
     }
 
     // -------------------------------------------------------------------------
     // Label rendering
     // -------------------------------------------------------------------------
 
-    private static void renderLabels(PoseStack poseStack, Camera camera, Collection<Network> networks, Map<UUID, float[]> tints) {
+    private static void renderLabels(PoseStack poseStack, Camera camera, Collection<Network> energyNetworks, Map<UUID, float[]> tints) {
         Vec3 camPos = camera.getPosition();
         Font font = Minecraft.getInstance().font;
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
-        for (Network network : networks) {
+        for (Network energyNetwork : energyNetworks) {
             List<NetworkNode> memberPositions;
             try {
-                memberPositions = network.getNodeIndex().getAllNodes().stream().toList();
+                memberPositions = energyNetwork.getNodeIndex().getAllNodes().stream().toList();
                 memberPositions = new ArrayList<>(memberPositions.stream().toList());
             } catch (Exception ignored) {
                 memberPositions = Collections.emptyList();
@@ -232,7 +233,7 @@ public final class EnergyNetworkDebugRenderer {
             double distSq = targetPos.distanceToSqr(camPos);
             if (distSq > LABEL_MAX_DIST * LABEL_MAX_DIST) continue;
 
-            float[] t = tints.get(network.getUUID());
+            float[] t = tints.get(energyNetwork.getUUID());
             int color = packColor(t[0], t[1], t[2], 1.0f);
 
             poseStack.pushPose();
@@ -248,11 +249,10 @@ public final class EnergyNetworkDebugRenderer {
             scale = Math.max(scale, 0.025f);
             poseStack.scale(-scale, -scale, scale);
 
-            String text = String.format("Net %s | %d members | %d/%d EU",
-                    network.getUUID().toString().substring(0, 4),
-                    network.getNodeIndex().getAllNodes().size(),
-                    network.getStoredEnergyBuffer(),
-                    network.getTotalEnergyBuffer());
+            String text = String.format("Net %s | %s | %d members",
+                    energyNetwork.getUUID().toString().substring(0, 4),
+                    energyNetwork.getResourceLocation(),
+                    energyNetwork.getNodeIndex().getAllNodes().size());
 
             float textWidth = font.width(text);
             float x = -textWidth / 2f;
@@ -350,9 +350,9 @@ public final class EnergyNetworkDebugRenderer {
     // -------------------------------------------------------------------------
 
     /** Assigns a stable hue to each network based on its UUID. */
-    private static Map<UUID, float[]> buildNetworkTints(Collection<Network> networks) {
+    private static Map<UUID, float[]> buildNetworkTints(Collection<Network> energyNetworks) {
         Map<UUID, float[]> map = new HashMap<>();
-        for (Network net : networks) {
+        for (Network net : energyNetworks) {
             // Derive hue from UUID bits — stable across frames
             long bits = net.getUUID().getLeastSignificantBits();
             float hue = (float) ((bits & 0xFFFFFFFFL) / (double) 0x100000000L);
@@ -379,7 +379,7 @@ public final class EnergyNetworkDebugRenderer {
         return new float[]{ r + m, g + m, b + m };
     }
 
-    private static float[] roleColor(NetworkNode node) {
+    private static float[] roleColor(EnergyNode node) {
         return COLOR_UNKNOWN;
     }
 

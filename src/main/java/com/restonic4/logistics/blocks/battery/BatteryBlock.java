@@ -1,9 +1,11 @@
 package com.restonic4.logistics.blocks.battery;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
-import com.restonic4.logistics.networks.energy.Network;
-import com.restonic4.logistics.networks.energy.NetworkManager;
-import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.Network;
+import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
+import com.restonic4.logistics.networks.NetworkManager;
+import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -46,8 +48,8 @@ public class BatteryBlock extends BaseNetworkBlock {
     public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool) {
         if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
             Network network = NetworkManager.get(serverLevel).getNetworkByBlockPos(pos);
-            if (network != null) {
-                NetworkNode node = network.getNodeIndex().findByBlockPos(pos);
+            if (network instanceof EnergyNetwork energyNetwork) {
+                NetworkNode node = energyNetwork.getNodeIndex().findByBlockPos(pos);
                 if (node instanceof BatteryNode battery) {
                     ItemStack drop = new ItemStack(this);
                     drop.getOrCreateTag().putLong("stored_energy", battery.getStoredEnergy());
