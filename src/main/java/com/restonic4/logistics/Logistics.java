@@ -25,12 +25,6 @@ public class Logistics implements ModInitializer {
             FabricItemGroup.builder()
                     .title(Component.translatable("itemGroup." + Constants.MOD_ID + ".custom_tab"))
                     .icon(() -> new ItemStack(BlockRegistry.BATTERY_BLOCK.getItem()))
-                    .displayItems((parameters, output) -> {
-                        output.accept(BlockRegistry.BASIC_PIPE.getItem());
-                        output.accept(BlockRegistry.BATTERY_BLOCK.getItem());
-                        output.accept(BlockRegistry.GENERATOR_BLOCK.getItem());
-                        output.accept(BlockRegistry.MACHINE_BLOCK.getItem());
-                    })
                     .build()
     );
 

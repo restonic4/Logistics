@@ -11,7 +11,7 @@ import java.util.Map;
 public final class NodeTypeRegistry {
     private static final Map<ResourceLocation, NetworkNodeType<?>> REGISTRY = new HashMap<>();
 
-    public static <T extends EnergyNode> NetworkNodeType<T> register(ResourceLocation id, NetworkTypeRegistry.NetworkType<?> networkType, NodeFactory<T> factory) {
+    public static <T extends NetworkNode> NetworkNodeType<T> register(ResourceLocation id, NetworkTypeRegistry.NetworkType<?> networkType, NodeFactory<T> factory) {
         NetworkNodeType<T> type = new NetworkNodeType<>(networkType, factory);
         REGISTRY.put(id, type);
         return type;

@@ -38,12 +38,12 @@ public class CreateTransformerBlock extends DirectionalKineticBlock implements N
 
     @Override
     public BlockEntityType<? extends CreateTransformerBlockEntity> getBlockEntityType() {
-        return CreateCompatibility.CREATE_TRANSFORMER_BLOCK_ENTITY_TYPE;
+        return CreateCompatibility.CREATE_TRANSFORMER.getBlockEntityType(CreateTransformerBlockEntity.class);
     }
 
     @Override
     public NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
-        return CreateCompatibility.CREATE_TRANSFORMER_NODE_TYPE;
+        return CreateCompatibility.CREATE_TRANSFORMER.getNodeType();
     }
 
     @Override

@@ -55,12 +55,12 @@ public class CreateMotorBlock extends DirectionalKineticBlock implements Network
     }
 
     public BlockEntityType<? extends CreateMotorBlockEntity> getBlockEntityType() {
-        return CreateCompatibility.CREATE_MOTOR_BLOCK_ENTITY_TYPE;
+        return CreateCompatibility.CREATE_MOTOR.getBlockEntityType(CreateMotorBlockEntity.class);
     }
 
     @Override
     public NodeTypeRegistry.NetworkNodeType<?> getNodeType() {
-        return CreateCompatibility.CREATE_MOTOR_NODE_TYPE;
+        return CreateCompatibility.CREATE_MOTOR.getNodeType();
     }
 
     @Override

@@ -11,38 +11,62 @@ import com.restonic4.logistics.blocks.machine.MachineNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.networks.registries.BuiltInNetworks;
+import com.restonic4.logistics.registry.LogisticsRegistryEntry;
+import com.restonic4.logistics.registry.Registrate;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 
 public class BlockRegistry {
-    public static final BlockRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE = new BlockRegistryEntry<>(
-            () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
-    );
+    public static final LogisticsRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE = Registrate
+            .block(
+                    Logistics.id("basic_pipe"),
+                    () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+            )
+            .network(BuiltInNetworks.ENERGY_NETWORK, PipeNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB_KEY)
+            .register();
 
-    public static final BlockRegistryEntry<GeneratorBlock, GeneratorNode> GENERATOR_BLOCK = new BlockRegistryEntry<>(
-            () -> new GeneratorBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
-    );
+    public static final LogisticsRegistryEntry<GeneratorBlock, GeneratorNode> GENERATOR_BLOCK = Registrate
+            .block(
+                    Logistics.id("generator"),
+                    () -> new GeneratorBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .network(BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB_KEY)
+            .register();
 
-    public static final BlockRegistryEntry<MachineBlock, MachineNode> MACHINE_BLOCK = new BlockRegistryEntry<>(
-            () -> new MachineBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
-    );
+    public static final LogisticsRegistryEntry<MachineBlock, MachineNode> MACHINE_BLOCK = Registrate
+            .block(
+                    Logistics.id("machine"),
+                    () -> new MachineBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
+            .network(BuiltInNetworks.ENERGY_NETWORK, MachineNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB_KEY)
+            .register();
 
-    public static final BlockRegistryEntry<BatteryBlock, BatteryNode> BATTERY_BLOCK = new BlockRegistryEntry<>(
-            () -> new BatteryBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
-    );
+    public static final LogisticsRegistryEntry<BatteryBlock, BatteryNode> BATTERY_BLOCK = Registrate
+            .block(
+                    Logistics.id("battery"),
+                    () -> new BatteryBlock(FabricBlockSettings.copyOf(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
+            .network(BuiltInNetworks.ENERGY_NETWORK, BatteryNode::new)
+            .withItem(block -> new BatteryBlockItem(block, new Item.Properties()))   // custom item
+            .addToTab(Logistics.CUSTOM_TAB_KEY)
+            .register();
 
-    public static final BlockRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE_2 = new BlockRegistryEntry<>(
-            () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
-    );
+    public static final LogisticsRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE_2 = Registrate
+            .block(
+                    Logistics.id("basic_pipe_2"),
+                    () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops()))
+            .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB_KEY)
+            .register();
 
     public static void register() {
-        BASIC_PIPE.register(Logistics.id("basic_pipe"), BuiltInNetworks.ENERGY_NETWORK, PipeNode::new, block -> new BlockItem(block, new Item.Properties()));
-        GENERATOR_BLOCK.register(Logistics.id("generator"), BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new, block -> new BlockItem(block, new Item.Properties()));
-        MACHINE_BLOCK.register(Logistics.id("machine"), BuiltInNetworks.ENERGY_NETWORK, MachineNode::new, block -> new BlockItem(block, new Item.Properties()));
-        BATTERY_BLOCK.register(Logistics.id("battery"), BuiltInNetworks.ENERGY_NETWORK, BatteryNode::new, block -> new BatteryBlockItem(block, new Item.Properties()));
 
-        BASIC_PIPE_2.register(Logistics.id("basic_pipe_2"), BuiltInNetworks.ITEM_NETWORK, PipeNode::new, block -> new BlockItem(block, new Item.Properties()));
     }
 }
