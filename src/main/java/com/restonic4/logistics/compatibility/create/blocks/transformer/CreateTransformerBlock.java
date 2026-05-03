@@ -2,26 +2,18 @@ package com.restonic4.logistics.compatibility.create.blocks.transformer;
 
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.compatibility.create.CreateCompatibility;
-import com.restonic4.logistics.energy.NetworkManager;
-import com.restonic4.logistics.energy.NetworkNode;
-import com.restonic4.logistics.energy.NodeTypeRegistry;
-import com.simibubi.create.AllBlockEntityTypes;
-import com.simibubi.create.content.kinetics.base.AbstractEncasedShaftBlock;
+import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
-import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.content.kinetics.fan.EncasedFanBlockEntity;
-import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedShaftBlock;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.function.Supplier;
 
 public class CreateTransformerBlock extends DirectionalKineticBlock implements NetworkBlock, IBE<CreateTransformerBlockEntity> {
     public CreateTransformerBlock(Properties properties) {

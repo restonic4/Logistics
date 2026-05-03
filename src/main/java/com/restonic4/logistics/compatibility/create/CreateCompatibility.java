@@ -7,7 +7,7 @@ import com.restonic4.logistics.compatibility.create.blocks.motor.CreateMotorNode
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerBlock;
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerBlockEntity;
 import com.restonic4.logistics.compatibility.create.blocks.transformer.CreateTransformerNode;
-import com.restonic4.logistics.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
 import com.simibubi.create.AllBlocks;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;

@@ -1,9 +1,9 @@
 package com.restonic4.logistics.compatibility.create.blocks.motor;
 
 import com.restonic4.logistics.compatibility.create.CreateCompatibility;
-import com.restonic4.logistics.energy.Network;
-import com.restonic4.logistics.energy.NetworkNode;
-import com.restonic4.logistics.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.energy.Network;
+import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 

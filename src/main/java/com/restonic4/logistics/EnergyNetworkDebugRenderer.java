@@ -2,7 +2,9 @@ package com.restonic4.logistics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.restonic4.logistics.energy.*;
+import com.restonic4.logistics.networks.energy.Network;
+import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.energy.NetworkNode;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

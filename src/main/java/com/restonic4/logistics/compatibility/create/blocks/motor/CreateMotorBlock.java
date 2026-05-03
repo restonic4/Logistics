@@ -2,9 +2,9 @@ package com.restonic4.logistics.compatibility.create.blocks.motor;
 
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.compatibility.create.CreateCompatibility;
-import com.restonic4.logistics.energy.NetworkManager;
-import com.restonic4.logistics.energy.NetworkNode;
-import com.restonic4.logistics.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;

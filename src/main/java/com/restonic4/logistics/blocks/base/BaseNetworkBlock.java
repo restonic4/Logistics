@@ -1,17 +1,13 @@
 package com.restonic4.logistics.blocks.base;
 
-import com.restonic4.logistics.energy.NetworkManager;
-import com.restonic4.logistics.energy.NetworkNode;
-import com.restonic4.logistics.energy.NodeTypeRegistry;
+import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.energy.NetworkNode;
+import com.restonic4.logistics.networks.energy.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.function.Supplier;
 
 public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
     private NodeTypeRegistry.NetworkNodeType<?> nodeType;

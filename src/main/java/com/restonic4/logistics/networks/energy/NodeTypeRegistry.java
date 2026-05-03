@@ -1,9 +1,7 @@
-package com.restonic4.logistics.energy;
+package com.restonic4.logistics.networks.energy;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 
 import java.util.HashMap;
 import java.util.Map;

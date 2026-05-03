@@ -1,4 +1,4 @@
-package com.restonic4.logistics.energy;
+package com.restonic4.logistics.networks.energy;
 
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;

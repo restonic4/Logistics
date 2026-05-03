@@ -1,9 +1,9 @@
 package com.restonic4.logistics.blocks.battery;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
-import com.restonic4.logistics.energy.Network;
-import com.restonic4.logistics.energy.NetworkManager;
-import com.restonic4.logistics.energy.NetworkNode;
+import com.restonic4.logistics.networks.energy.Network;
+import com.restonic4.logistics.networks.energy.NetworkManager;
+import com.restonic4.logistics.networks.energy.NetworkNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
