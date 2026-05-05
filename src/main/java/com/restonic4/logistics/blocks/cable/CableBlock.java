@@ -1,4 +1,4 @@
-package com.restonic4.logistics.blocks.pipe;
+package com.restonic4.logistics.blocks.cable;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
@@ -18,7 +18,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.Map;
 
-public class PipeBlock extends BaseNetworkBlock {
+public class CableBlock extends BaseNetworkBlock {
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST = BlockStateProperties.EAST;
     public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
@@ -35,7 +35,7 @@ public class PipeBlock extends BaseNetworkBlock {
             Direction.DOWN, DOWN
     );
 
-    public PipeBlock(Properties properties) {
+    public CableBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(NORTH, false).setValue(EAST, false)

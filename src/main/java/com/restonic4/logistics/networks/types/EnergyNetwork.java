@@ -1,6 +1,6 @@
 package com.restonic4.logistics.networks.types;
 
-import com.restonic4.logistics.blocks.pipe.PipeNode;
+import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
@@ -134,7 +134,7 @@ public class EnergyNetwork extends Network {
             }
             return 0;
         }).sum();
-        cacheTotalCableEnergyBuffer = this.getNodeIndex().getAllNodes().stream().filter(n -> n instanceof PipeNode).count() * PIPE_EXTRA_BUFFER;
+        cacheTotalCableEnergyBuffer = this.getNodeIndex().getAllNodes().stream().filter(n -> n instanceof CableNode).count() * PIPE_EXTRA_BUFFER;
     }
 
     public static String formatEnergy(long eu) {

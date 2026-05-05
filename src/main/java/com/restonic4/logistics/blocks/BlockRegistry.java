@@ -8,6 +8,8 @@ import com.restonic4.logistics.blocks.generator.GeneratorBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorNode;
 import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
+import com.restonic4.logistics.blocks.cable.CableBlock;
+import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.networks.BuiltInNetworks;
@@ -18,12 +20,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 
 public class BlockRegistry {
-    public static final LogisticsRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE = Registrate
+    public static final LogisticsRegistryEntry<CableBlock, CableNode> CABLE_BLOCK = Registrate
             .block(
-                    Logistics.id("basic_pipe"),
-                    () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+                    Logistics.id("cable"),
+                    () -> new CableBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
             )
-            .network(BuiltInNetworks.ENERGY_NETWORK, PipeNode::new)
+            .network(BuiltInNetworks.ENERGY_NETWORK, CableNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB_KEY)
             .register();
@@ -56,9 +58,9 @@ public class BlockRegistry {
             .addToTab(Logistics.CUSTOM_TAB_KEY)
             .register();
 
-    public static final LogisticsRegistryEntry<PipeBlock, PipeNode> BASIC_PIPE_2 = Registrate
+    public static final LogisticsRegistryEntry<PipeBlock, PipeNode> PIPE_BLOCK = Registrate
             .block(
-                    Logistics.id("basic_pipe_2"),
+                    Logistics.id("pipe"),
                     () -> new PipeBlock(FabricBlockSettings.copyOf(Blocks.GLASS).nonOpaque().dynamicShape().noOcclusion().requiresCorrectToolForDrops()))
             .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
             .withItem()
