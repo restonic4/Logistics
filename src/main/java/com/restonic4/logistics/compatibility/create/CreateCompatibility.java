@@ -12,7 +12,12 @@ import com.restonic4.logistics.registry.LogisticsRegistryEntry;
 import com.restonic4.logistics.registry.Registrate;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllCreativeModeTabs;
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
+import com.simibubi.create.api.equipment.goggles.IHaveHoveringInformation;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 // TODO: Fix create nodes, they load chunks lmao
 public class CreateCompatibility {
@@ -43,5 +48,10 @@ public class CreateCompatibility {
 
     public static void register() {
 
+    }
+
+    public static boolean hasGoggleOverlay(ServerLevel serverLevel, BlockPos pos) {
+        BlockEntity blockEntity = serverLevel.getBlockEntity(pos);
+        return blockEntity instanceof IHaveHoveringInformation || blockEntity instanceof IHaveGoggleInformation;
     }
 }

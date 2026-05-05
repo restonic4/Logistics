@@ -1,8 +1,11 @@
 package com.restonic4.logistics.networks.nodes;
 
+import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 
 public abstract class EnergyNode extends NetworkNode {
@@ -39,5 +42,20 @@ public abstract class EnergyNode extends NetworkNode {
     public EnergyNetwork getNetwork() {
         if (super.getNetwork() instanceof EnergyNetwork energyNetwork) return energyNetwork;
         return null;
+    }
+
+    @Override
+    protected void buildDebugTooltipSection(TooltipBuilder builder, boolean isSneaking) {
+        super.buildDebugTooltipSection(builder, isSneaking);
+
+        Network network = getNetwork();
+        if (!(network instanceof EnergyNetwork energyNetwork)) return;
+
+        builder.spacer();
+        builder.keyValue("Node UUID", getUUID().toString(), ChatFormatting.YELLOW);
+        builder.keyValue("Node type", getResourceLocation().toString(), ChatFormatting.YELLOW);
+        builder.spacer();
+        builder.keyValue("Stored buffer", energyNetwork.getStoredEnergyBuffer() + "/" + energyNetwork.getTotalEnergyBuffer(), ChatFormatting.YELLOW);
+        builder.keyValue("Stored cable buffer", energyNetwork.getStoredCableEnergyBuffer() + "/" + energyNetwork.getTotalCableEnergyBuffer(), ChatFormatting.YELLOW);
     }
 }

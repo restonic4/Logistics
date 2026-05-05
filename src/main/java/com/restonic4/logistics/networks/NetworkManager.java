@@ -277,6 +277,12 @@ public class NetworkManager extends SavedData {
         return nodePositionIndex.get(blockPos);
     }
 
+    public NetworkNode getNodeByBlockPos(BlockPos blockPos) {
+        Network network = getNetworkByBlockPos(blockPos);
+        if (network == null) return null;
+        return network.getNodeIndex().findByBlockPos(blockPos);
+    }
+
     public ServerLevel getServerLevel() {
         return serverLevel;
     }

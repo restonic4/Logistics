@@ -6,18 +6,18 @@ import net.fabricmc.loader.api.FabricLoader;
 
 public class CompatibilityManager {
     public static void register() {
-        FabricLoader fabricLoader = FabricLoader.getInstance();
-
-        if (fabricLoader.isModLoaded("create")) {
+        if (isCreateLoaded()) {
             CreateCompatibility.register();
         }
     }
 
     public static void registerClient() {
-        FabricLoader fabricLoader = FabricLoader.getInstance();
-
-        if (fabricLoader.isModLoaded("create")) {
+        if (isCreateLoaded()) {
             CreateClientCompatibility.register();
         }
+    }
+
+    public static boolean isCreateLoaded() {
+        return FabricLoader.getInstance().isModLoaded("create");
     }
 }

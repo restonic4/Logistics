@@ -1,13 +1,16 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
+import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
 
-public abstract class NetworkNode {
+public abstract class NetworkNode implements ScannerTooltipProvider {
     private final NodeTypeRegistry.NetworkNodeType<?> type;
     private UUID uuid;
     private Network network;
@@ -61,5 +64,33 @@ public abstract class NetworkNode {
         NetworkNode node = type.create(BlockPos.ZERO);
         node.load(tag);
         return node;
+    }
+
+    //
+
+    @Override
+    public boolean buildNetworkTooltip(TooltipBuilder builder, boolean isSneaking, boolean isDebug) {
+        boolean added = false;
+
+        if (isDebug) {
+            buildDebugTooltipSection(builder, isSneaking);
+            added = true;
+        }
+
+        return added;
+    }
+
+    protected void buildDebugTooltipSection(TooltipBuilder builder, boolean isSneaking) {
+        builder.title("Debug", ChatFormatting.GOLD);
+        builder.line();
+
+        Network network = getNetwork();
+        if (network == null) {
+            builder.text("Network not found!", ChatFormatting.RED);
+        } else {
+            builder.keyValue("Network UUID", network.getUUID().toString(), ChatFormatting.YELLOW);
+            builder.keyValue("Network type", network.getResourceLocation().toString(), ChatFormatting.YELLOW);
+            builder.keyValue("Nodes", String.valueOf(network.getNodeIndex().size()), ChatFormatting.YELLOW);
+        }
     }
 }

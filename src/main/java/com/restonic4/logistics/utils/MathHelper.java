@@ -4,6 +4,7 @@ import com.restonic4.logistics.networks.NetworkNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,7 +51,7 @@ public class MathHelper {
         return closestCenter;
     }
 
-    public static Set<Vec3> toVec3(Set<NetworkNode> networkNodeSet) {
+    public static Set<Vec3> toVec3(Collection<NetworkNode> networkNodeSet) {
         Set<Vec3> vec3Set = new HashSet<>();
         networkNodeSet.forEach(networkNode -> {
             BlockPos blockPos = networkNode.getBlockPos();
