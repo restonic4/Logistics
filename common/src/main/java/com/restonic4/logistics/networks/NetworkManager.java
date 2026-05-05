@@ -1,8 +1,8 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.events.ServerTickEvents;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -41,7 +41,7 @@ public class NetworkManager extends SavedData {
     }
 
     public static void register() {
-        ServerTickEvents.END_SERVER_TICK.register((server) -> {
+        ServerTickEvents.END.register((server) -> {
             for (ServerLevel level : server.getAllLevels()) {
                 NetworkManager.get(level).tick();
             }

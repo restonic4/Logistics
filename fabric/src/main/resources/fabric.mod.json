@@ -16,10 +16,10 @@
   "environment": "*",
   "entrypoints": {
     "client": [
-      "com.restonic4.logistics.LogisticsClient"
+      "com.restonic4.logistics.LogisticsFabricClient"
     ],
     "main": [
-      "com.restonic4.logistics.Logistics"
+      "com.restonic4.logistics.LogisticsFabric"
     ]
   },
   "mixins": [
@@ -28,6 +28,7 @@
   ],
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": "*",
     "minecraft": "~${minecraft_version}",
     "java": ">=${java_version}"
   },

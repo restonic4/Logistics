@@ -12,17 +12,13 @@ import net.minecraft.world.item.ItemStack;
 import java.util.function.Supplier;
 
 public final class CreativeTabBuilder {
-
-    private final ResourceLocation id;
     private final ResourceKey<CreativeModeTab> key;
     private final Supplier<ItemStack> iconSupplier;
-
     private Component title;
     private CreativeModeTab.Row row = CreativeModeTab.Row.TOP;
     private int column = 0;
 
     CreativeTabBuilder(ResourceLocation id, Supplier<ItemStack> iconSupplier) {
-        this.id = id;
         this.key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, id);
         this.iconSupplier = iconSupplier;
         this.title = Component.translatable("itemGroup." + id.getNamespace() + "." + id.getPath());
@@ -40,13 +36,8 @@ public final class CreativeTabBuilder {
     }
 
     public CreativeTabEntry register() {
-        CreativeModeTab tab = CreativeModeTab.builder(row, column)
-                .title(title)
-                .icon(iconSupplier)
-                .displayItems((params, output) -> {})
-                .build();
-
-        CreativeTabRegistry.enqueue(key, tab);
-        return new CreativeTabEntry(key, tab);
+        CreativeTabEntry entry = new CreativeTabEntry(key, iconSupplier, title, row, column);
+        CreativeTabRegistry.enqueue(entry);
+        return entry;
     }
 }

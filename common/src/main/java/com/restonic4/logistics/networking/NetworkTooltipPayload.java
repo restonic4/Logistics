@@ -1,32 +1,19 @@
 package com.restonic4.logistics.networking;
 
 import com.restonic4.logistics.Logistics;
-import com.restonic4.logistics.networks.tooltip.NetworkScannerServerHandler;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.screens.NetworkScannerOverlay;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class NetworkTooltipPayload {
+public record NetworkTooltipPayload(List<Component> rows, List<Boolean> isLine, boolean areCreateGogglesPresent) {
     public static final ResourceLocation ID = Logistics.id("network_tooltip");
-
-    private final List<Component> rows;
-    private final List<Boolean> isLine;
-    private final boolean areCreateGogglesPresent;
-
-    public NetworkTooltipPayload(List<Component> rows, List<Boolean> isLine, boolean areCreateGogglesPresent) {
-        this.rows = rows;
-        this.isLine = isLine;
-        this.areCreateGogglesPresent = areCreateGogglesPresent;
-    }
 
     public static NetworkTooltipPayload from(TooltipBuilder builder, boolean areCreateGogglesPresent) {
         List<TooltipBuilder.TooltipElement> elements = builder.build();
@@ -69,26 +56,20 @@ public final class NetworkTooltipPayload {
         return new NetworkTooltipPayload(rows, isLine, areCreateGogglesPresent);
     }
 
-    public List<Component> getRows() { return rows; }
-    public List<Boolean> getIsLine() { return isLine; }
-    public boolean areCreateGogglesPresent() { return areCreateGogglesPresent; }
-
     public static void register() {
-        ServerPlayNetworking.registerGlobalReceiver(ID, (server, player, handler, buf, responseSender) -> {
-            // Server does not receive this packet — it only sends it.
-        });
+
     }
 
     public static void registerClient() {
-        ClientPlayNetworking.registerGlobalReceiver(ID, (client, handler, buf, responseSender) -> {
+        NetworkingRegistry.registerClientListener(ID, (client, buf) -> {
             NetworkTooltipPayload payload = NetworkTooltipPayload.read(buf);
             client.execute(() -> NetworkScannerOverlay.setActiveTooltip(payload));
         });
     }
 
-    public void sendTo(net.minecraft.server.level.ServerPlayer player) {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+    public void sendTo(ServerPlayer player) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         write(buf);
-        ServerPlayNetworking.send(player, ID, buf);
+        ServerNetworking.sendToClient(player, ID, buf);
     }
 }

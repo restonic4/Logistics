@@ -1,7 +1,7 @@
 package com.restonic4.logistics.screens;
 
+import com.restonic4.logistics.events.RenderCallbacks;
 import com.restonic4.logistics.networking.NetworkTooltipPayload;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,13 +26,13 @@ public class NetworkScannerOverlay {
     private static final int COLOR_LINE = 0xFF404040;
 
     public static void setActiveTooltip(NetworkTooltipPayload payload) {
-        activeRows = payload.getRows();
-        activeIsLine = payload.getIsLine();
+        activeRows = payload.rows();
+        activeIsLine = payload.isLine();
         areCreateGogglesPresent = payload.areCreateGogglesPresent();
     }
 
     public static void register() {
-        HudRenderCallback.EVENT.register(NetworkScannerOverlay::onHudRender);
+        RenderCallbacks.ON_HUD_RENDERED.register(NetworkScannerOverlay::onHudRender);
     }
 
     private static void onHudRender(GuiGraphics graphics, float tickDelta) {

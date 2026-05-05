@@ -13,6 +13,7 @@ parchment_version=2024.11.17
 
 # Fabric
 fabric_loader_version=0.15.11
+fabric_api_version=0.116.7+1.21.1
 
 # Forge
 forge_version=52.1.0
@@ -39,6 +40,7 @@ parchment_version=2024.06.23
 
 # Fabric
 fabric_loader_version=0.16.10
+fabric_api_version=0.100.1+1.21
 
 # Forge
 forge_version=51.0.33
@@ -65,6 +67,7 @@ parchment_version=2023.09.03
 
 # Fabric
 fabric_loader_version=0.16.10
+fabric_api_version=0.92.6+1.20.1
 
 # Forge
 forge_version=47.4.0

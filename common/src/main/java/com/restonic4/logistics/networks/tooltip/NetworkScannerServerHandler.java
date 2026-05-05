@@ -1,7 +1,6 @@
 package com.restonic4.logistics.networks.tooltip;
 
 import com.restonic4.logistics.compatibility.CompatibilityManager;
-import com.restonic4.logistics.compatibility.create.CreateCompatibility;
 import com.restonic4.logistics.networking.NetworkTooltipPayload;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkManager;
@@ -48,7 +47,8 @@ public class NetworkScannerServerHandler {
             return;
         }
 
-        boolean areCreateGogglesPresent = CompatibilityManager.isCreateLoaded() && CreateCompatibility.hasGoggleOverlay(serverLevel, pos);
+        //boolean areCreateGogglesPresent = CompatibilityManager.isCreateLoaded() && CreateCompatibility.hasGoggleOverlay(serverLevel, pos);
+        boolean areCreateGogglesPresent = false; // TODO: Add create back
         NetworkTooltipPayload.from(builder, areCreateGogglesPresent).sendTo(player);
     }
 

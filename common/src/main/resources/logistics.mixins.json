@@ -6,9 +6,14 @@
   "compatibilityLevel": "${mixin_java_version}",
   "mixins": [
     "CreativeModeTabMixin",
-    "events.ServerLevelMixin"
+    "events.ServerLevelMixin",
+    "networking.ServerGamePacketListenerImplMixin"
   ],
-  "client": [],
+  "client": [
+    "events.GuiMixin",
+    "events.LevelRendererMixin",
+    "networking.ClientPacketListenerMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

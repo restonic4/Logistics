@@ -29,7 +29,7 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
 
     private BlockEntityType.BlockEntitySupplier<? extends BlockEntity> blockEntitySupplier;
 
-    private final List<ResourceKey<CreativeModeTab>> tabs = new ArrayList<>();
+    private final List<Supplier<ResourceKey<CreativeModeTab>>> tabs = new ArrayList<>();
 
     BlockBuilder(ResourceLocation id, Supplier<B> blockFactory) {
         this.id = id;
@@ -63,18 +63,19 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
         return this;
     }
 
-    @SafeVarargs
-    public final BlockBuilder<B, N> addToTab(ResourceKey<CreativeModeTab>... tabKeys) {
-        tabs.addAll(List.of(tabKeys));
+    public final BlockBuilder<B, N> addToTab(Supplier<ResourceKey<CreativeModeTab>> tabKeySupplier) {
+        this.tabs.add(tabKeySupplier);
         return this;
     }
 
     @SuppressWarnings("unchecked")
     public BlockEntry<B, N> register() {
         // Node type
-        NodeTypeRegistry.NetworkNodeType<N> nodeType = null;
+        NodeTypeRegistry.NetworkNodeType<N> nodeType;
         if (networkType != null && nodeFactory != null) {
-            nodeType = NodeTypeRegistry.register(id, networkType, nodeFactory);
+            nodeType = new NodeTypeRegistry.NetworkNodeType<>(networkType, nodeFactory);
+        } else {
+            nodeType = null;
         }
 
         // Block
@@ -82,31 +83,34 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
         if (block instanceof BaseNetworkBlock networkBlock && nodeType != null) {
             networkBlock.setNodeType(nodeType);
         }
-        Registry.register(BuiltInRegistries.BLOCK, id, block);
 
         // Item
-        Item item = null;
-        if (itemFactory != null) {
-            item = itemFactory.apply(block);
-            Registry.register(BuiltInRegistries.ITEM, id, item);
-        }
-
-        // Creative tabs
-        if (item != null && !tabs.isEmpty()) {
-            final Item finalItem = item;
-            for (ResourceKey<CreativeModeTab> tab : tabs) {
-                CreativeTabRegistry.scheduleInjection(tab, () -> finalItem);
-            }
-        }
+        Item item = (itemFactory != null) ? itemFactory.apply(block) : null;
 
         // Block entity
-        BlockEntityType<? extends BlockEntity> blockEntityType = null;
-        if (blockEntitySupplier != null) {
-            blockEntityType = BlockEntityType.Builder
-                    .of(blockEntitySupplier, block)
-                    .build(null);
-            Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id, blockEntityType);
-        }
+        BlockEntityType<? extends BlockEntity> blockEntityType = (blockEntitySupplier != null)
+                ? BlockEntityType.Builder.of(blockEntitySupplier, block).build(null)
+                : null;
+
+        Registrate.delay(() -> {
+            if (nodeType != null) {
+                NodeTypeRegistry.register(id, nodeType);
+            }
+
+            Registry.register(BuiltInRegistries.BLOCK, id, block);
+
+            if (item != null) {
+                Registry.register(BuiltInRegistries.ITEM, id, item);
+
+                for (Supplier<ResourceKey<CreativeModeTab>> tabSupplier : tabs) {
+                    CreativeTabRegistry.scheduleInjection(tabSupplier.get(), () -> item);
+                }
+            }
+
+            if (blockEntityType != null) {
+                Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id, blockEntityType);
+            }
+        });
 
         return new BlockEntry<>(id, block, item, blockEntityType, nodeType);
     }

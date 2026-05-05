@@ -15,11 +15,20 @@ import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.BlockEntry;
 import com.restonic4.logistics.registry.Registrate;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public class BlockRegistry {
+    public static final Block test = Registry.register(
+                BuiltInRegistries.BLOCK,
+                Logistics.id("test"),
+                new CableBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+            );
+
     public static final BlockEntry<CableBlock, CableNode> CABLE_BLOCK = Registrate
             .block(
                     Logistics.id("cable"),
@@ -27,7 +36,7 @@ public class BlockRegistry {
             )
             .network(BuiltInNetworks.ENERGY_NETWORK, CableNode::new)
             .withItem()
-            .addToTab(Logistics.CUSTOM_TAB.key())
+            .addToTab(Logistics.CUSTOM_TAB::getKey)
             .register();
 
     public static final BlockEntry<GeneratorBlock, GeneratorNode> GENERATOR_BLOCK = Registrate
@@ -37,7 +46,7 @@ public class BlockRegistry {
             )
             .network(BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new)
             .withItem()
-            .addToTab(Logistics.CUSTOM_TAB.key())
+            .addToTab(Logistics.CUSTOM_TAB::getKey)
             .register();
 
     public static final BlockEntry<MachineBlock, MachineNode> MACHINE_BLOCK = Registrate
@@ -46,7 +55,7 @@ public class BlockRegistry {
                     () -> new MachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
             .network(BuiltInNetworks.ENERGY_NETWORK, MachineNode::new)
             .withItem()
-            .addToTab(Logistics.CUSTOM_TAB.key())
+            .addToTab(Logistics.CUSTOM_TAB::getKey)
             .register();
 
     public static final BlockEntry<BatteryBlock, BatteryNode> BATTERY_BLOCK = Registrate
@@ -55,7 +64,7 @@ public class BlockRegistry {
                     () -> new BatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
             .network(BuiltInNetworks.ENERGY_NETWORK, BatteryNode::new)
             .withItem(block -> new BatteryBlockItem(block, new Item.Properties()))   // custom item
-            .addToTab(Logistics.CUSTOM_TAB.key())
+            .addToTab(Logistics.CUSTOM_TAB::getKey)
             .register();
 
     public static final BlockEntry<PipeBlock, PipeNode> PIPE_BLOCK = Registrate
@@ -64,7 +73,7 @@ public class BlockRegistry {
                     () -> new PipeBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops()))
             .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
             .withItem()
-            .addToTab(Logistics.CUSTOM_TAB.key())
+            .addToTab(Logistics.CUSTOM_TAB::getKey)
             .register();
 
     public static void register() {

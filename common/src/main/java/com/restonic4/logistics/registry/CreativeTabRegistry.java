@@ -5,10 +5,12 @@ import com.restonic4.logistics.events.core.Event;
 import com.restonic4.logistics.events.core.EventFactory;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,27 +19,14 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public final class CreativeTabRegistry {
-    private static final List<TabEntry> PENDING_TABS = new ArrayList<>();
+    private static final List<CreativeTabEntry> PENDING_TABS = new ArrayList<>();
     private static final Map<ResourceKey<CreativeModeTab>, List<Supplier<Item>>> INJECTIONS = new LinkedHashMap<>();
 
-    private static boolean built = false;
-
-    private CreativeTabRegistry() {}
-
-    static TabEntry enqueue(ResourceKey<CreativeModeTab> key, CreativeModeTab tab) {
-        if (built) throw new RuntimeException("Creative tabs have been already built!");
-
-        TabEntry entry = new TabEntry(key, tab);
+    static void enqueue(CreativeTabEntry entry) {
         PENDING_TABS.add(entry);
-        return entry;
-    }
-
-    public static List<TabEntry> getPendingTabs() {
-        return PENDING_TABS;
     }
 
     public static void scheduleInjection(ResourceKey<CreativeModeTab> tabKey, Supplier<Item> itemSupplier) {
-        if (built) throw new RuntimeException("Creative tabs have been already built!");
         INJECTIONS.computeIfAbsent(tabKey, k -> new ArrayList<>()).add(itemSupplier);
     }
 
@@ -46,13 +35,19 @@ public final class CreativeTabRegistry {
     }
 
     public static void build() {
-        if (built) throw new RuntimeException("Creative tabs have been already built!");
-        built = true;
+        for (CreativeTabEntry entry : PENDING_TABS) {
+            CreativeModeTab tab = CreativeModeTab.builder(entry.getRow(), entry.getColumn())
+                    .title(entry.getTitle())
+                    .icon(entry.getIconSupplier())
+                    .displayItems((params, output) -> {
+                        getInjections(entry.getKey()).forEach(itemSupplier -> {
+                            output.accept(itemSupplier.get());
+                        });
+                    })
+                    .build();
 
-        for (CreativeTabRegistry.TabEntry entry : CreativeTabRegistry.getPendingTabs()) {
-            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, entry.key().location(), entry.tab());
+            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, entry.getKey().location(), tab);
+            entry.setTab(tab);
         }
     }
-
-    public record TabEntry(ResourceKey<CreativeModeTab> key, CreativeModeTab tab) {}
 }

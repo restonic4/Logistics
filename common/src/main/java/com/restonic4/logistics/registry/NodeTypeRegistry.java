@@ -10,9 +10,13 @@ import java.util.Map;
 public final class NodeTypeRegistry {
     private static final Map<ResourceLocation, NetworkNodeType<?>> REGISTRY = new HashMap<>();
 
+    public static void register(ResourceLocation id, NetworkNodeType<?> type) {
+        REGISTRY.put(id, type);
+    }
+
     public static <T extends NetworkNode> NetworkNodeType<T> register(ResourceLocation id, NetworkTypeRegistry.NetworkType<?> networkType, NodeFactory<T> factory) {
         NetworkNodeType<T> type = new NetworkNodeType<>(networkType, factory);
-        REGISTRY.put(id, type);
+        register(id, type);
         return type;
     }
 

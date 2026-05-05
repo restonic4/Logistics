@@ -46,22 +46,11 @@ if (cmp >= 0) {
     }
 }
 
-repositories {
-    maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
-    maven { url = "https://maven.ithundxr.dev/mirror" } // Registrate
-    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // ForgeConfigAPIPort
-}
-
 dependencies {
     compileOnly group: 'org.spongepowered', name: 'mixin', version: '0.8.5'
     // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
     compileOnly group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
     annotationProcessor group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
-
-    //compileOnly "com.simibubi.create:create-${minecraft_version}:${create_version_forge}:slim"
-    //compileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
-    //modCompileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
-    modCompileOnly "com.simibubi.create:create-${minecraft_version}:${create_version_forge}:slim"
 }
 
 configurations {

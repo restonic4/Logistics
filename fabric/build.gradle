@@ -27,6 +27,7 @@ dependencies {
         parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
     // Fabric Create compatibility
     modCompileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
