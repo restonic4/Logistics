@@ -89,6 +89,7 @@ processResources {
 
     def expandProps = [
             'version'                      : version,
+            'version_full'                 : version_full,
             'group'                        : project.group,
             'minecraft_version'            : minecraft_version,
             'minecraft_version_range'      : minecraft_version_range,

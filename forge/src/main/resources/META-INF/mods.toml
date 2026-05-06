@@ -4,7 +4,7 @@ license = "${license}"
 
 [[mods]]
 modId = "${mod_id}"
-version = "${version}"
+version = "${version_full}"
 displayName = "${mod_name}"
 logoFile = "${mod_id}.png"
 credits = "${credits}"
