@@ -14,6 +14,7 @@ import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.api.equipment.goggles.IHaveHoveringInformation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
@@ -25,7 +26,7 @@ public class CreateCommonCompatibility {
     public static final BlockEntry<CreateMotorBlock, CreateMotorNode> CREATE_MOTOR = PlatformRegistry
             .block(
                     Logistics.id("create_motor"),
-                    () -> new CreateMotorBlock(BlockBehaviour.Properties.copy(AllBlocks.CREATIVE_MOTOR.get())))
+                    () -> new CreateMotorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)))
             .network(BuiltInNetworks.ENERGY_NETWORK, CreateMotorNode::new)
             .withItem()
             .withBlockEntity(CreateMotorBlockEntity::new)
@@ -36,7 +37,7 @@ public class CreateCommonCompatibility {
     public static final BlockEntry<CreateTransformerBlock, CreateTransformerNode> CREATE_TRANSFORMER = PlatformRegistry
             .block(
                     Logistics.id("create_transformer"),
-                    () -> new CreateTransformerBlock(BlockBehaviour.Properties.copy(AllBlocks.CREATIVE_MOTOR.get())))
+                    () -> new CreateTransformerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)))
             .network(BuiltInNetworks.ENERGY_NETWORK, CreateTransformerNode::new)
             .withItem()
             .withBlockEntity(CreateTransformerBlockEntity::new)
