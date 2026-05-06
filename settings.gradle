@@ -50,6 +50,7 @@ rootProject.name = 'Logistics'
 def platforms = providers.gradleProperty("platforms").orNull
 
 include('common')
+include 'compatibility:create'
 
 if (platforms != null) {
     def selected = platforms.split(",").collect { it.trim() }

@@ -1,5 +1,10 @@
 package com.restonic4.logistics.platform.services;
 
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
+
+import java.util.Objects;
+
 public interface PlatformHelper {
     /**
      * Gets the name of the current platform
@@ -33,4 +38,12 @@ public interface PlatformHelper {
      * @return The version string.
      */
     String getModVersion();
+
+    default boolean isFabric() {
+        return Objects.equals(getPlatformName(), "Fabric");
+    }
+
+    default boolean isForge() {
+        return Objects.equals(getPlatformName(), "Forge");
+    }
 }

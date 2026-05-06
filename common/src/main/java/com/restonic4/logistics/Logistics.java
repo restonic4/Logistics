@@ -22,7 +22,7 @@ public class Logistics {
 
     public static void init() {
         BlockRegistry.register();
-        CompatibilityManager.register();
+        CompatibilityManager.registerCommon();
         NetworkManager.register();
         NetworkTooltipPayload.register();
         Registrate.build();

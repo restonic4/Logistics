@@ -29,7 +29,7 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
 
     private BlockEntityType.BlockEntitySupplier<? extends BlockEntity> blockEntitySupplier;
 
-    private final List<Supplier<ResourceKey<CreativeModeTab>>> tabs = new ArrayList<>();
+    private final List<ResourceKey<CreativeModeTab>> tabs = new ArrayList<>();
 
     BlockBuilder(ResourceLocation id, Supplier<B> blockFactory) {
         this.id = id;
@@ -63,8 +63,8 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
         return this;
     }
 
-    public final BlockBuilder<B, N> addToTab(Supplier<ResourceKey<CreativeModeTab>> tabKeySupplier) {
-        this.tabs.add(tabKeySupplier);
+    public final BlockBuilder<B, N> addToTab(ResourceKey<CreativeModeTab> tabKey) {
+        this.tabs.add(tabKey);
         return this;
     }
 
@@ -102,8 +102,8 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
             if (item != null) {
                 Registry.register(BuiltInRegistries.ITEM, id, item);
 
-                for (Supplier<ResourceKey<CreativeModeTab>> tabSupplier : tabs) {
-                    CreativeTabRegistry.scheduleInjection(tabSupplier.get(), () -> item);
+                for (ResourceKey<CreativeModeTab> tab: tabs) {
+                    CreativeTabRegistry.scheduleInjection(tab, () -> item);
                 }
             }
 

@@ -33,6 +33,17 @@ dependencies {
     modCompileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
 }
 
+sourceSets {
+    main {
+        java {
+            srcDir project(':compatibility:create').file('src/main/java')
+        }
+        resources {
+            srcDir project(':compatibility:create').file('src/main/resources')
+        }
+    }
+}
+
 loom {
     def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
     if (aw.exists()) {

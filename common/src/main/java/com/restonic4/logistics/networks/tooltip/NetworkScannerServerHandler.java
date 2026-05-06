@@ -47,8 +47,7 @@ public class NetworkScannerServerHandler {
             return;
         }
 
-        //boolean areCreateGogglesPresent = CompatibilityManager.isCreateLoaded() && CreateCompatibility.hasGoggleOverlay(serverLevel, pos);
-        boolean areCreateGogglesPresent = false; // TODO: Add create back
+        boolean areCreateGogglesPresent = CompatibilityManager.isCreateLoaded() && CompatibilityManager.getCreateCompatibilityLayer().hasGoggleOverlay(serverLevel, pos);
         NetworkTooltipPayload.from(builder, areCreateGogglesPresent).sendTo(player);
     }
 

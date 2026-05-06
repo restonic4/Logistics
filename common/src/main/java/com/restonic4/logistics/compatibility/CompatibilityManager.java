@@ -1,20 +1,37 @@
 package com.restonic4.logistics.compatibility;
 
-//import com.restonic4.logistics.compatibility.create.CreateClientCompatibility;
-//import com.restonic4.logistics.compatibility.create.CreateCompatibility;
 import com.restonic4.logistics.platform.Services;
 
+import java.util.ServiceLoader;
+
 public class CompatibilityManager {
-    public static void register() {
+    private static CreateCompatibility CREATE = null;
+
+    public static void registerCommon() {
         if (isCreateLoaded()) {
-            //CreateCompatibility.register();
+            getCreateCompatibilityLayer().registerCommon();
         }
     }
 
     public static void registerClient() {
         if (isCreateLoaded()) {
-            //CreateClientCompatibility.register();
+            getCreateCompatibilityLayer().registerClient();
         }
+    }
+
+    public static void registerServer() {
+        if (isCreateLoaded()) {
+            getCreateCompatibilityLayer().registerServer();
+        }
+    }
+
+    public static CreateCompatibility getCreateCompatibilityLayer() {
+        if (CREATE == null) {
+            CREATE = ServiceLoader.load(CreateCompatibility.class)
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No CreateCompatibility implementation found"));
+        }
+        return CREATE;
     }
 
     public static boolean isCreateLoaded() {

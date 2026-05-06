@@ -12,7 +12,7 @@ parchment_minecraft=1.21.1
 parchment_version=2024.11.17
 
 # Fabric
-fabric_loader_version=0.15.11
+fabric_loader_version=0.17.2
 fabric_api_version=0.116.7+1.21.1
 
 # Forge
@@ -39,7 +39,7 @@ parchment_minecraft=1.21
 parchment_version=2024.06.23
 
 # Fabric
-fabric_loader_version=0.16.10
+fabric_loader_version=0.17.2
 fabric_api_version=0.100.1+1.21
 
 # Forge
@@ -66,7 +66,7 @@ parchment_minecraft=1.20.1
 parchment_version=2023.09.03
 
 # Fabric
-fabric_loader_version=0.16.10
+fabric_loader_version=0.17.2
 fabric_api_version=0.92.6+1.20.1
 
 # Forge
