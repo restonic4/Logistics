@@ -4,7 +4,9 @@
   "package": "com.restonic4.logistics.mixin",
   "compatibilityLevel": "${mixin_java_version}",
   "mixins": [],
-  "client": [],
+  "client": [
+    "ForgeGuiMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1
