@@ -1,9 +1,10 @@
-package com.restonic4.logistics.registry;
+package com.restonic4.logistics.registry.builders;
 
-import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.networks.NetworkNode;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
+import com.restonic4.logistics.platform.Services;
+import com.restonic4.logistics.registry.NetworkTypeRegistry;
+import com.restonic4.logistics.registry.NodeTypeRegistry;
+import com.restonic4.logistics.registry.entries.BlockEntry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class BlockBuilder<B extends Block, N extends NetworkNode> {
+public class BlockBuilder<B extends Block, N extends NetworkNode> {
     private final ResourceLocation id;
     private final Supplier<B> blockFactory;
 
@@ -31,7 +32,7 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
 
     private final List<ResourceKey<CreativeModeTab>> tabs = new ArrayList<>();
 
-    BlockBuilder(ResourceLocation id, Supplier<B> blockFactory) {
+    public BlockBuilder(ResourceLocation id, Supplier<B> blockFactory) {
         this.id = id;
         this.blockFactory = blockFactory;
     }
@@ -70,48 +71,19 @@ public final class BlockBuilder<B extends Block, N extends NetworkNode> {
 
     @SuppressWarnings("unchecked")
     public BlockEntry<B, N> register() {
-        // Node type
-        NodeTypeRegistry.NetworkNodeType<N> nodeType;
-        if (networkType != null && nodeFactory != null) {
-            nodeType = new NodeTypeRegistry.NetworkNodeType<>(networkType, nodeFactory);
-        } else {
-            nodeType = null;
+        NodeTypeRegistry.NetworkNodeType<N> nodeType = null;
+        if (this.networkType != null && this.nodeFactory != null) {
+            nodeType = new NodeTypeRegistry.NetworkNodeType<>(this.networkType, this.nodeFactory);
         }
+        NodeTypeRegistry.register(id, nodeType);
 
-        // Block
-        B block = blockFactory.get();
-        if (block instanceof BaseNetworkBlock networkBlock && nodeType != null) {
-            networkBlock.setNodeType(nodeType);
-        }
-
-        // Item
-        Item item = (itemFactory != null) ? itemFactory.apply(block) : null;
-
-        // Block entity
-        BlockEntityType<? extends BlockEntity> blockEntityType = (blockEntitySupplier != null)
-                ? BlockEntityType.Builder.of(blockEntitySupplier, block).build(null)
-                : null;
-
-        Registrate.delay(() -> {
-            if (nodeType != null) {
-                NodeTypeRegistry.register(id, nodeType);
-            }
-
-            Registry.register(BuiltInRegistries.BLOCK, id, block);
-
-            if (item != null) {
-                Registry.register(BuiltInRegistries.ITEM, id, item);
-
-                for (ResourceKey<CreativeModeTab> tab: tabs) {
-                    CreativeTabRegistry.scheduleInjection(tab, () -> item);
-                }
-            }
-
-            if (blockEntityType != null) {
-                Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id, blockEntityType);
-            }
-        });
-
-        return new BlockEntry<>(id, block, item, blockEntityType, nodeType);
+        return (BlockEntry<B, N>) Services.PLATFORM_REGISTRY.fromBlockBuilder(
+                this.id,
+                this.blockFactory,
+                (BlockEntityType.BlockEntitySupplier<BlockEntity>) this.blockEntitySupplier,
+                (Function<Block, Item>) this.itemFactory,
+                (NodeTypeRegistry.NetworkNodeType<NetworkNode>) nodeType,
+                tabs
+        );
     }
 }

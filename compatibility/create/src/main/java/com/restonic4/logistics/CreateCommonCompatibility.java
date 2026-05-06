@@ -7,10 +7,9 @@ import com.restonic4.logistics.blocks.transformer.CreateTransformerBlock;
 import com.restonic4.logistics.blocks.transformer.CreateTransformerBlockEntity;
 import com.restonic4.logistics.blocks.transformer.CreateTransformerNode;
 import com.restonic4.logistics.networks.BuiltInNetworks;
-import com.restonic4.logistics.registry.BlockEntry;
-import com.restonic4.logistics.registry.Registrate;
+import com.restonic4.logistics.registry.PlatformRegistry;
+import com.restonic4.logistics.registry.entries.BlockEntry;
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllCreativeModeTabs;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.api.equipment.goggles.IHaveHoveringInformation;
 import net.minecraft.core.BlockPos;
@@ -23,7 +22,7 @@ public class CreateCommonCompatibility {
     public static final float CONVERSION_RATE = 0.00390625f; // 256 = 1
     public static final long CONVERSION_LOSS_TICKS = 5;
 
-    public static final BlockEntry<CreateMotorBlock, CreateMotorNode> CREATE_MOTOR = Registrate
+    public static final BlockEntry<CreateMotorBlock, CreateMotorNode> CREATE_MOTOR = PlatformRegistry
             .block(
                     Logistics.id("create_motor"),
                     () -> new CreateMotorBlock(BlockBehaviour.Properties.copy(AllBlocks.CREATIVE_MOTOR.get())))
@@ -34,7 +33,7 @@ public class CreateCommonCompatibility {
             .addToTab(CreateCompatibilityImpl.getBaseCreativeTab())
             .register();
 
-    public static final BlockEntry<CreateTransformerBlock, CreateTransformerNode> CREATE_TRANSFORMER = Registrate
+    public static final BlockEntry<CreateTransformerBlock, CreateTransformerNode> CREATE_TRANSFORMER = PlatformRegistry
             .block(
                     Logistics.id("create_transformer"),
                     () -> new CreateTransformerBlock(BlockBehaviour.Properties.copy(AllBlocks.CREATIVE_MOTOR.get())))

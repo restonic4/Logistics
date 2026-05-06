@@ -1,7 +1,7 @@
-package com.restonic4.logistics.registry;
+package com.restonic4.logistics.registry.builders;
 
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
+import com.restonic4.logistics.platform.Services;
+import com.restonic4.logistics.registry.entries.CreativeTabEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -11,14 +11,14 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.function.Supplier;
 
-public final class CreativeTabBuilder {
+public class CreativeTabBuilder {
     private final ResourceKey<CreativeModeTab> key;
     private final Supplier<ItemStack> iconSupplier;
     private Component title;
     private CreativeModeTab.Row row = CreativeModeTab.Row.TOP;
     private int column = 0;
 
-    CreativeTabBuilder(ResourceLocation id, Supplier<ItemStack> iconSupplier) {
+    public CreativeTabBuilder(ResourceLocation id, Supplier<ItemStack> iconSupplier) {
         this.key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, id);
         this.iconSupplier = iconSupplier;
         this.title = Component.translatable("itemGroup." + id.getNamespace() + "." + id.getPath());
@@ -37,7 +37,7 @@ public final class CreativeTabBuilder {
 
     public CreativeTabEntry register() {
         CreativeTabEntry entry = new CreativeTabEntry(key, iconSupplier, title, row, column);
-        CreativeTabRegistry.enqueue(entry);
+        Services.PLATFORM_REGISTRY.fromCreativeTabBuilder(entry);
         return entry;
     }
 }

@@ -6,14 +6,14 @@ import com.restonic4.logistics.events.ServerTickEvents;
 import com.restonic4.logistics.networking.NetworkTooltipPayload;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.tooltip.NetworkScannerServerHandler;
-import com.restonic4.logistics.registry.CreativeTabEntry;
-import com.restonic4.logistics.registry.Registrate;
+import com.restonic4.logistics.registry.PlatformRegistry;
+import com.restonic4.logistics.registry.entries.CreativeTabEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 public class Logistics {
-    public static final CreativeTabEntry CUSTOM_TAB = Registrate
+    public static final CreativeTabEntry CUSTOM_TAB = PlatformRegistry
             .tab(
                     id("custom_tab"),
                     () -> new ItemStack(BlockRegistry.BATTERY_BLOCK.getItem())
@@ -25,7 +25,6 @@ public class Logistics {
         CompatibilityManager.registerCommon();
         NetworkManager.register();
         NetworkTooltipPayload.register();
-        Registrate.build();
 
         ServerTickEvents.END.register(server -> {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

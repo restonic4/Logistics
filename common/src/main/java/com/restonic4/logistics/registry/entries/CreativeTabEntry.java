@@ -1,24 +1,28 @@
-package com.restonic4.logistics.registry;
+package com.restonic4.logistics.registry.entries;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.function.Supplier;
 
-public final class CreativeTabEntry {
+public class CreativeTabEntry {
+    private boolean loaded = false;
+
     private final ResourceKey<CreativeModeTab> key;
     @Nullable private CreativeModeTab tab;
 
     private final Supplier<ItemStack> iconSupplier;
     private Component title;
-    private CreativeModeTab.Row row = CreativeModeTab.Row.TOP;
-    private int column = 0;
+    private CreativeModeTab.Row row;
+    private int column;
 
-    CreativeTabEntry(ResourceKey<CreativeModeTab> key, Supplier<ItemStack> iconSupplier, Component title, CreativeModeTab.Row row, int column) {
+    public CreativeTabEntry(ResourceKey<CreativeModeTab> key, Supplier<ItemStack> iconSupplier, Component title, CreativeModeTab.Row row, int column) {
         this.key = key;
         this.iconSupplier = iconSupplier;
         this.title = title;
@@ -26,8 +30,13 @@ public final class CreativeTabEntry {
         this.column = column;
     }
 
-    void setTab(@NotNull CreativeModeTab tab) {
+    private void assertLoaded() {
+        if (!loaded) throw new IllegalStateException("CreativeTabEntry '" + key + "' accessed before platform registration completed. Are you accessing it too early?");
+    }
+
+    public void markLoaded(@NotNull CreativeModeTab tab) {
         this.tab = tab;
+        this.loaded = true;
     }
 
     public ResourceKey<CreativeModeTab> getKey() {
@@ -35,6 +44,7 @@ public final class CreativeTabEntry {
     }
 
     public CreativeModeTab getTab() {
+        assertLoaded();
         if (tab == null) throw new IllegalStateException("CreativeTab '" + key.location() + "' accessed before build!");
         return tab;
     }

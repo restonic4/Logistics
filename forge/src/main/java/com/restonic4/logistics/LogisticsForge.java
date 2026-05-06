@@ -1,26 +1,24 @@
 package com.restonic4.logistics;
 
-import net.minecraft.core.registries.Registries;
+import com.restonic4.logistics.platform.ForgeRegistry;
+import com.restonic4.logistics.platform.Services;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.registries.RegisterEvent;
 
 @Mod(Constants.MOD_ID)
 public class LogisticsForge {
     public LogisticsForge(FMLJavaModLoadingContext context) {
-        context.getModEventBus().addListener(this::onRegister);
+        IEventBus modBus = context.getModEventBus();
 
+        ((ForgeRegistry<?,?,?,?>) Services.PLATFORM_REGISTRY).init(modBus);
+
+        Logistics.init();
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            context.getModEventBus().addListener(this::onClientSetup);
-        }
-    }
-
-    private void onRegister(RegisterEvent event) {
-        if (event.getRegistryKey().equals(Registries.BLOCK)) {
-            Logistics.init();
+            modBus.addListener(this::onClientSetup);
         }
     }
 

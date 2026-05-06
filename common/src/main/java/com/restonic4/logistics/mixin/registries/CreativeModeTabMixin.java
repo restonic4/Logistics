@@ -1,13 +1,12 @@
 package com.restonic4.logistics.mixin;
 
-import com.restonic4.logistics.registry.CreativeTabRegistry;
+import com.restonic4.logistics.registry.PlatformRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,7 +33,7 @@ public abstract class CreativeModeTabMixin {
             return;
         }
 
-        List<Supplier<Item>> injections = CreativeTabRegistry.getInjections(tabKey);
+        List<Supplier<Item>> injections = PlatformRegistry.getCreativeTabInjections(tabKey);
         if (injections.isEmpty()) return;
 
         LinkedList<ItemStack> mutableDisplay = new LinkedList<>(displayItems);
