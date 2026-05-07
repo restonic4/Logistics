@@ -1,5 +1,6 @@
 package com.restonic4.logistics.registry;
 
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.platform.Services;
 import com.restonic4.logistics.registry.builders.BlockBuilder;
@@ -53,6 +54,7 @@ public class PlatformRegistry {
     }
 
     public static Map<ResourceLocation, List<ResourceLocation>> getAndFreezeBlockTagInjections() {
+        if (!FROZEN_BLOCK_TAG_INJECTIONS) Constants.LOG.warn("Freezing block tag injections!");
         FROZEN_BLOCK_TAG_INJECTIONS = true;
         return BLOCK_TAG_INJECTIONS;
     }
@@ -63,11 +65,13 @@ public class PlatformRegistry {
     }
 
     public static List<SelfDropEntry> getAndFreezeSelfDropLootInjections() {
+        if (!FROZEN_SELF_DROP_LOOT_INJECTIONS) Constants.LOG.warn("Freezing loot injections!");
         FROZEN_SELF_DROP_LOOT_INJECTIONS = true;
         return SELF_DROP_LOOT_INJECTIONS;
     }
 
     public static void freeze() {
+        Constants.LOG.warn("Freezing platform registries!");
         Services.PLATFORM_REGISTRY.freeze();
     }
 }

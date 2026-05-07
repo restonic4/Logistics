@@ -43,6 +43,6 @@ public class TagLoaderMixin {
         TagLoader.EntryWithSource entryWithSource = new TagLoader.EntryWithSource(tagEntry, Constants.MOD_ID + ":datagen");
 
         map.computeIfAbsent(tagId, k -> new ArrayList<>()).add(entryWithSource);
-        System.out.println("Injected tag: " + entryId + " -> " + tagId);
+        Constants.LOG.info("Injected tag: {} -> {}", entryId, tagId);
     }
 }

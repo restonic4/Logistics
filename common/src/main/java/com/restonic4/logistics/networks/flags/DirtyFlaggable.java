@@ -1,5 +1,9 @@
 package com.restonic4.logistics.networks.flags;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public interface DirtyFlaggable {
     long getDirtyBits();
     void setDirtyBits(long bits);
@@ -24,6 +28,23 @@ public interface DirtyFlaggable {
         long combined = 0L;
         for (DirtyFlag f : flags) combined |= f.mask();
         return (getDirtyBits() & combined) != 0;
+    }
+
+    default <F extends Enum<F> & DirtyFlag> List<F> getActiveFlags(Class<F> flagClass) {
+        return Arrays.stream(flagClass.getEnumConstants())
+                .filter(f -> (getDirtyBits() & f.mask()) != 0)
+                .collect(Collectors.toList());
+    }
+
+    default <F extends Enum<F> & DirtyFlag> String toBinaryString(Class<F> flagClass) {
+        long maxMask = Arrays.stream(flagClass.getEnumConstants())
+                .mapToLong(DirtyFlag::mask)
+                .max()
+                .orElse(1L);
+
+        int width = 64 - Long.numberOfLeadingZeros(maxMask);
+
+        return String.format("%" + width + "s", Long.toBinaryString(getDirtyBits())).replace(' ', '0');
     }
 
     interface DirtyFlag {

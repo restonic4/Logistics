@@ -1,6 +1,7 @@
 package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.networks.flags.DirtyFlaggable;
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
@@ -12,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider {
@@ -126,6 +128,12 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
         builder.keyValue("Network UUID", getUUID().toString(), ChatFormatting.YELLOW);
         builder.keyValue("Network type", getResourceLocation().toString(), ChatFormatting.YELLOW);
         builder.keyValue("Nodes", String.valueOf(getNodeIndex().size()), ChatFormatting.YELLOW);
+
+        builder.spacer();
+        builder.text("Flags (" + toBinaryString(NetworkFlag.class) + "):", ChatFormatting.YELLOW);
+
+        List<NetworkFlag> flags = getActiveFlags(NetworkFlag.class);
+        flags.forEach(f -> builder.bullet(f.name(), ChatFormatting.YELLOW));
 
         return true;
     }

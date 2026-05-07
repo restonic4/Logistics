@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.registries;
 
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +46,7 @@ public class LootDataManagerMixin {
                     .build();
 
             tables.putIfAbsent(tableId, table);
-            System.out.println("Injected loot table: " + entry.blockId() + " (survivesExplosion=" + entry.survivesExplosion() + ")");
+            Constants.LOG.info("Injected loot table: {} (survivesExplosion={})", entry.blockId(), entry.survivesExplosion());
         });
     }
 }

@@ -14,17 +14,19 @@ import java.lang.reflect.InvocationTargetException;
 public class CreateCompatibilityImpl implements CreateCompatibility {
     @Override
     public void registerCommon() {
+        Constants.LOG.info("Initializing common create compatibility!");
         CreateCommonCompatibility.register();
     }
 
     @Override
     public void registerClient() {
+        Constants.LOG.info("Initializing client create compatibility!");
         CreateClientCompatibility.register();
     }
 
     @Override
     public void registerServer() {
-
+        Constants.LOG.info("Initializing server create compatibility!");
     }
 
     @Override
