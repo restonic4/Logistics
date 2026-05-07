@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.*;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.NetworkManager;
+import com.restonic4.logistics.networks.pathfinding.PathfinderPool;
 import com.restonic4.logistics.utils.MathHelper;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -12,11 +13,13 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class NetworkDebugRenderer {
     private static final double LABEL_MAX_DIST = 64.0;
@@ -25,6 +28,51 @@ public final class NetworkDebugRenderer {
     private static final MeshCache MESH_CACHE = new MeshCache();
     private static Minecraft minecraft = Minecraft.getInstance();
 
+    public static BlockPos[] pathfindGrid;
+    public static BlockPos[] pathfindingSolution;
+
+    public static PathfinderPool pathfinderPool;
+    public static BlockPos origin = new BlockPos(0, 80, 0);
+    public static BlockPos playerPos = new BlockPos(0, 81, 0);
+
+    static {
+        Set<BlockPos> grid = new HashSet<>();
+        List<BlockPos> branchPoints = new ArrayList<>();
+
+        Random random = new Random(1337);
+        BlockPos cursor = origin;
+
+        grid.add(origin);
+        branchPoints.add(origin); // The origin is our first valid branch point
+
+        for (int pipeIdx = 0; pipeIdx < 1000; pipeIdx++) {
+            Direction dir = Direction.values()[random.nextInt(6)];
+            int length = 4 + random.nextInt(10);
+
+            for (int i = 0; i < length; i++) {
+                cursor = cursor.relative(dir);
+                grid.add(cursor);
+            }
+
+            // Only add the END of the new pipe to the branch points list
+            branchPoints.add(cursor);
+
+            int index1 = random.nextInt(branchPoints.size());
+            int index2 = random.nextInt(branchPoints.size());
+            int biasedIndex = Math.max(index1, index2);
+
+            cursor = branchPoints.get(biasedIndex);
+        }
+
+        pathfindGrid = grid.toArray(new BlockPos[0]);
+
+        Set<Long> nodes = ConcurrentHashMap.newKeySet();
+        for (BlockPos blockPos : pathfindGrid) {
+            nodes.add(blockPos.asLong());
+        }
+        pathfinderPool = new PathfinderPool(nodes::contains);
+    }
+
     public static void render(PoseStack poseStack, Camera camera) {
         try {
             if (minecraft.level == null || minecraft.player == null) return;
@@ -32,6 +80,12 @@ public final class NetworkDebugRenderer {
 
             ServerLevel serverLevel = minecraft.getSingleplayerServer().getLevel(minecraft.level.dimension());
             if (serverLevel == null) return;
+
+            if (minecraft.player.isUsingItem()) {
+                playerPos = minecraft.player.blockPosition();
+            }
+
+            pathfindingSolution = pathfinderPool.findPath(origin, playerPos);
 
             NetworkManager manager = NetworkManager.get(serverLevel);
             Collection<Network> networks = manager.getAllNetworks();
@@ -72,6 +126,14 @@ public final class NetworkDebugRenderer {
                 }
             }
 
+            if (pathfindGrid != null && pathfindGrid.length > 0) {
+                renderImmediate(poseStack, camPos, pathfindGrid, 0.7f, 0.9f, 1.0f, 0.25f);
+            }
+
+            if (pathfindingSolution != null && pathfindingSolution.length > 0) {
+                renderImmediate(poseStack, camPos, pathfindingSolution, 0.4f, 1.0f, 0.4f, 0.5f);
+            }
+
             RenderSystem.enableDepthTest();
             RenderSystem.enableCull();
             RenderSystem.disableBlend();
@@ -82,6 +144,19 @@ public final class NetworkDebugRenderer {
         } catch (Exception ignored) {
 
         }
+    }
+
+    private static void renderImmediate(PoseStack poseStack, Vec3 camPos, BlockPos[] positions, float r, float g, float b, float a) {
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buf = tesselator.getBuilder();
+
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+        List<BlockPos> posList = Arrays.asList(positions);
+
+        GeometryHelper.culledMesh(buf, poseStack.last().pose(), posList, camPos, r, g, b, a);
+
+        BufferUploader.drawWithShader(buf.end());
     }
 
     private static int calculateNodeHash(Collection<NetworkNode> nodes) {
