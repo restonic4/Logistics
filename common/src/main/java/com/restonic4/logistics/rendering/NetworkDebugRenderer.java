@@ -41,16 +41,20 @@ public final class NetworkDebugRenderer {
             Map<UUID, float[]> networkTints = buildNetworkTints(networks);
 
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableDepthTest();
             RenderSystem.disableCull();
 
             for (Network network : networks) {
-                Collection<NetworkNode> nodes = network.getNodeIndex().getAllNodes();
+                List<NetworkNode> nodes;
+                try {
+                    nodes = new ArrayList<>(network.getNodeIndex().getAllNodes());
+                } catch (Exception e) {
+                    continue;
+                }
 
-                int nodeHash = nodes.hashCode();
+                int nodeHash = calculateNodeHash(nodes);
                 VertexBuffer vbo = MESH_CACHE.get(network.getUUID(), nodeHash);
 
                 if (vbo == null && !nodes.isEmpty()) {
@@ -58,14 +62,14 @@ public final class NetworkDebugRenderer {
                     MESH_CACHE.put(network.getUUID(), vbo, nodeHash);
                 }
 
-                poseStack.pushPose();
-                poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
                 if (vbo != null) {
+                    poseStack.pushPose();
+                    poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
                     vbo.bind();
                     vbo.drawWithShader(poseStack.last().pose(), RenderSystem.getProjectionMatrix(), RenderSystem.getShader());
+                    VertexBuffer.unbind();
+                    poseStack.popPose();
                 }
-                VertexBuffer.unbind();
-                poseStack.popPose();
             }
 
             RenderSystem.enableDepthTest();
@@ -78,6 +82,14 @@ public final class NetworkDebugRenderer {
         } catch (Exception ignored) {
 
         }
+    }
+
+    private static int calculateNodeHash(Collection<NetworkNode> nodes) {
+        int hash = 0;
+        for (NetworkNode node : nodes) {
+            hash += node.getBlockPos().hashCode();
+        }
+        return hash ^ (nodes.size() * 31);
     }
 
     private static void renderLabels(PoseStack poseStack, Camera camera, Collection<Network> networks, Map<UUID, float[]> tints) {
