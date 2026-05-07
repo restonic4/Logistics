@@ -1,102 +1,46 @@
-plugins {
-    id 'fabric-loom' version '1.10-SNAPSHOT'
-    id 'maven-publish'
-}
-
-version = project.mod_version
-group = project.maven_group
-
-base {
-    archivesName = project.archives_base_name
-}
-
-repositories {
-    // Create, Registrate, Milk Lib, Dripstone Fluid Lib
-    maven { url = "https://mvn.devos.one/snapshots/" }
-
-    // Porting Lib
-    maven { url = "https://mvn.devos.one/releases/" }
-
-    // Flywheel, Ponder, Catnip
-    maven { url = "https://maven.createmod.net/" }
-
-    // Forge Config API Port
-    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" }
-
-    // Reach Entity Attributes
-    maven { url = "https://maven.jamieswhiteshirt.com/libs-release" }
-}
-
-dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    // Create compatibility
-    //modCompileOnly "maven.modrinth:create-fabric:${project.create_version}"
-    modCompileOnly "com.simibubi.create:create-fabric:6.0.8.1+build.1744-mc1.20.1"
-}
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
-    filteringCharset "UTF-8"
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
-    }
-}
-
-def targetJavaVersion = 17
-tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
-    it.options.encoding = "UTF-8"
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        it.options.release.set(targetJavaVersion)
-    }
-}
-
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    withSourcesJar()
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
+buildscript {
+    configurations.classpath {
+        resolutionStrategy {
+            force 'net.minecraftforge:srgutils:0.6.2'
         }
     }
+}
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+plugins {
+    // fabric
+    id 'fabric-loom' version '1.11-SNAPSHOT' apply false
+
+    // neoforged moddev (for >=1.20.2)
+    id 'net.neoforged.moddev' version '2.0.115' apply false
+
+    // legacy neoforge/forge + sponge (for <1.20.2)
+    id 'net.neoforged.moddev.legacyforge' version '2.0.77' apply false
+    id 'org.spongepowered.gradle.vanilla' version '0.2.1-SNAPSHOT' apply false
+}
+
+ext.compareVersions = { String a, String b ->
+    def clean = { String v -> v.replaceAll(/-.*$/, '').replaceAll('[^0-9.]', '') }
+    def pa = clean(a).tokenize('.').collect { it.toInteger() }
+    def pb = clean(b).tokenize('.').collect { it.toInteger() }
+    for (int i = 0; i < Math.max(pa.size(), pb.size()); i++) {
+        int va = (i < pa.size()) ? pa[i] : 0
+        int vb = (i < pb.size()) ? pb[i] : 0
+        if (va != vb) return va < vb ? -1 : 1
     }
+    return 0
+}
+
+def gitCommitCount = {
+    try {
+        return 'git rev-list --count HEAD'.execute([], rootDir).text.trim()
+    } catch (Exception ignored) {
+        return '0'
+    }
+}()
+
+def baseVersion = project.properties['version'] ?: '0.0.0'
+ext.version_full = "${baseVersion}+${gitCommitCount}"
+
+allprojects {
+    version = rootProject.ext.version_full
 }

@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.restonic4.logistics.mixin",
+  "refmap": "${mod_id}.refmap.json",
+  "compatibilityLevel": "${mixin_java_version}",
+  "mixins": [
+    "CreativeModeTabMixin",
+    "events.ServerLevelMixin",
+    "networking.ServerGamePacketListenerImplMixin"
+  ],
+  "client": [
+    "events.GuiMixin",
+    "events.LevelRendererMixin",
+    "networking.ClientPacketListenerMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,95 @@
+plugins {
+    id 'multiloader-loader'
+    id 'fabric-loom'
+}
+
+repositories {
+    // Create, Registrate, Milk Lib, Dripstone Fluid Lib
+    maven { url = "https://mvn.devos.one/snapshots/" }
+
+    // Porting Lib
+    maven { url = "https://mvn.devos.one/releases/" }
+
+    // Flywheel, Ponder, Catnip
+    maven { url = "https://maven.createmod.net/" }
+
+    // Forge Config API Port
+    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" }
+
+    // Reach Entity Attributes
+    maven { url = "https://maven.jamieswhiteshirt.com/libs-release" }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // Fabric Create compatibility
+    modCompileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir project(':compatibility:create').file('src/main/java')
+        }
+        resources {
+            srcDir project(':compatibility:create').file('src/main/resources')
+        }
+    }
+}
+
+loom {
+    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
+    mixin {
+        defaultRefmapName.set("${mod_id}.refmap.json")
+    }
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(true)
+            runDir('runs/client')
+        }
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(true)
+            runDir('runs/server')
+        }
+    }
+}
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements', 'includeInternal', 'modCompileClasspath'].each { variant ->
+    configurations.named("$variant") {
+        attributes {
+            attribute(loaderAttribute, 'fabric')
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
+        configurations.named("$variant") {
+            attributes {
+                attribute(loaderAttribute, 'fabric')
+            }
+        }
+    }
+}
+loom.remapConfigurations.configureEach {
+    configurations.named(it.name) {
+        attributes {
+            attribute(loaderAttribute, 'fabric')
+        }
+    }
+}
