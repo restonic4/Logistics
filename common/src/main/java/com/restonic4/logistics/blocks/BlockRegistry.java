@@ -25,6 +25,7 @@ public class BlockRegistry {
                     Logistics.id("cable"),
                     () -> new CableBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
             )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, CableNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -35,6 +36,7 @@ public class BlockRegistry {
                     Logistics.id("generator"),
                     () -> new GeneratorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
             )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -43,7 +45,9 @@ public class BlockRegistry {
     public static final BlockEntry<MachineBlock, MachineNode> MACHINE_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("machine"),
-                    () -> new MachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
+                    () -> new MachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, MachineNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -52,7 +56,9 @@ public class BlockRegistry {
     public static final BlockEntry<BatteryBlock, BatteryNode> BATTERY_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("battery"),
-                    () -> new BatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops()))
+                    () -> new BatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, BatteryNode::new)
             .withItem(block -> new BatteryBlockItem(block, new Item.Properties()))
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -61,7 +67,9 @@ public class BlockRegistry {
     public static final BlockEntry<PipeBlock, PipeNode> PIPE_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("pipe"),
-                    () -> new PipeBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops()))
+                    () -> new PipeBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())

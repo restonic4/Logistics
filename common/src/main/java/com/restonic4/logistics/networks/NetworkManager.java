@@ -1,6 +1,7 @@
 package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;

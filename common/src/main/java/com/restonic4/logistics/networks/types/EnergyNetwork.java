@@ -3,12 +3,16 @@ package com.restonic4.logistics.networks.types;
 import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 public class EnergyNetwork extends Network {
     public static final int PIPE_EXTRA_BUFFER = 1;
@@ -18,6 +22,9 @@ public class EnergyNetwork extends Network {
     private long cacheStoredNodeEnergyBuffer = 0;
     private long cacheTotalNodeEnergyBuffer = 0;
     private long cacheTotalCableEnergyBuffer = 0;
+
+    private long lastTotalUpdate = 0;
+    private long lastStoredUpdate = 0;
 
     public EnergyNetwork(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
         super(type, serverLevel);
@@ -120,21 +127,19 @@ public class EnergyNetwork extends Network {
         this.networkCableBuffer = tag.getLong("networkCableBuffer");
     }
 
-    // TODO: optimize this nonsense lol
     public void recalculateCaches() {
-        cacheStoredNodeEnergyBuffer = this.getNodeIndex().getAllNodes().stream().mapToLong(node -> {
-            if (node instanceof EnergyNode energyNode) {
-                return energyNode.getStoredEnergy();
-            }
-            return 0;
-        }).sum();
-        cacheTotalNodeEnergyBuffer = this.getNodeIndex().getAllNodes().stream().mapToLong(node -> {
-            if (node instanceof EnergyNode energyNode) {
-                return energyNode.getMaxStorage();
-            }
-            return 0;
-        }).sum();
-        cacheTotalCableEnergyBuffer = this.getNodeIndex().getAllNodes().stream().filter(n -> n instanceof CableNode).count() * PIPE_EXTRA_BUFFER;
+        if (isDirty(NetworkFlag.STORAGE_CHANGED)) {
+            cacheStoredNodeEnergyBuffer = getNodeIndex().getAllNodes().stream().mapToLong(n -> n instanceof EnergyNode e ? e.getStoredEnergy() : 0).sum();
+            clearFlag(NetworkFlag.STORAGE_CHANGED);
+            lastStoredUpdate = getServerLevel().getGameTime();
+        }
+
+        if (isDirty(NetworkFlag.MAX_STORAGE_CHANGED)) {
+            cacheTotalNodeEnergyBuffer = getNodeIndex().getAllNodes().stream().mapToLong(n -> n instanceof EnergyNode e ? e.getMaxStorage() : 0).sum();
+            cacheTotalCableEnergyBuffer = getNodeIndex().getAllNodes().stream().filter(n -> n instanceof CableNode).count() * PIPE_EXTRA_BUFFER;
+            clearFlag(NetworkFlag.MAX_STORAGE_CHANGED);
+            lastTotalUpdate = getServerLevel().getGameTime();
+        }
     }
 
     public static String formatEnergy(long eu) {
@@ -149,4 +154,16 @@ public class EnergyNetwork extends Network {
     public long getStoredCableEnergyBuffer() { return networkCableBuffer; }
     public long getTotalCableEnergyBuffer() { return cacheTotalCableEnergyBuffer; }
     public void setStoredCableEnergyBuffer(long buffer) { this.networkCableBuffer = buffer; }
+
+
+    @Override
+    public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        super.buildDebugScannerTooltip(builder, isSneaking);
+
+        builder.spacer();
+        builder.timeSinceTick("Last total buffer update:", lastTotalUpdate, getServerLevel().getGameTime(), ChatFormatting.YELLOW);
+        builder.timeSinceTick("Last stored buffer update:", lastStoredUpdate, getServerLevel().getGameTime(), ChatFormatting.YELLOW);
+
+        return true;
+    }
 }

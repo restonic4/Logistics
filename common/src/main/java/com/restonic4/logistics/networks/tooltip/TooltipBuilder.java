@@ -6,6 +6,7 @@ import net.minecraft.network.chat.MutableComponent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public final class TooltipBuilder {
     private final List<TooltipElement> elements = new ArrayList<>();
@@ -19,6 +20,13 @@ public final class TooltipBuilder {
 
     public TooltipBuilder text(Component component) {
         elements.add(new TooltipElement(ElementType.TEXT, component));
+        return this;
+    }
+
+    public TooltipBuilder mainTitle(String text, ChatFormatting color) {
+        MutableComponent c = Component.literal(text).withStyle(color, ChatFormatting.BOLD, ChatFormatting.UNDERLINE);
+        elements.add(0, new TooltipElement(ElementType.TEXT, c));
+        elements.add(1, new TooltipElement(ElementType.LINE, null));
         return this;
     }
 
@@ -62,6 +70,14 @@ public final class TooltipBuilder {
         return keyValue(key, value, keyColor, ChatFormatting.WHITE);
     }
 
+    public TooltipBuilder timeSinceTick(String key, long lastUpdateTicks, long currentTimeTicks, ChatFormatting keyColor) {
+        String value = (lastUpdateTicks == 0)
+                ? "Not updated yet!"
+                : formatTicks(currentTimeTicks - lastUpdateTicks);
+
+        return keyValue(key, value, keyColor);
+    }
+
     public TooltipBuilder spacer() {
         elements.add(new TooltipElement(ElementType.TEXT, Component.empty()));
         return this;
@@ -81,6 +97,17 @@ public final class TooltipBuilder {
             }
         }
         return out;
+    }
+
+    public String formatTicks(long ticks) {
+        long totalMs = ticks * 50;
+
+        long hours = TimeUnit.MILLISECONDS.toHours(totalMs);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(totalMs) % 60;
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(totalMs) % 60;
+        long millis = totalMs % 1000;
+
+        return String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
     }
 
     public enum ElementType {

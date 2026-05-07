@@ -4,6 +4,7 @@ import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.platform.Services;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
+import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -66,6 +67,52 @@ public class BlockBuilder<B extends Block, N extends NetworkNode> {
 
     public final BlockBuilder<B, N> addToTab(ResourceKey<CreativeModeTab> tabKey) {
         this.tabs.add(tabKey);
+        return this;
+    }
+
+    public BlockBuilder<B, N> mineWithPickaxe() {
+        return scheduleTag("mineable/pickaxe");
+    }
+
+    public BlockBuilder<B, N> mineWithAxe() {
+        return scheduleTag("mineable/axe");
+    }
+
+    public BlockBuilder<B, N> mineWithShovel() {
+        return scheduleTag("mineable/shovel");
+    }
+
+    public BlockBuilder<B, N> mineWithHoe() {
+        return scheduleTag("mineable/hoe");
+    }
+
+    public BlockBuilder<B, N> mineWithSword() {
+        return scheduleTag("sword_efficient");
+    }
+
+    public BlockBuilder<B, N> needsStoneTool() {
+        return scheduleTag("needs_stone_tool");
+    }
+
+    public BlockBuilder<B, N> needsIronTool() {
+        return scheduleTag("needs_iron_tool");
+    }
+
+    public BlockBuilder<B, N> needsDiamondTool() {
+        return scheduleTag("needs_diamond_tool");
+    }
+
+    private BlockBuilder<B, N> scheduleTag(String path) {
+        PlatformRegistry.scheduleBlockTagInjection(new ResourceLocation("minecraft", path), this.id);
+        return this;
+    }
+
+    public BlockBuilder<B, N> dropSelf() {
+        return dropSelf(true);
+    }
+
+    public BlockBuilder<B, N> dropSelf(boolean survivesExplosion) {
+        PlatformRegistry.scheduleSelfDropLootInjection(this.id, survivesExplosion);
         return this;
     }
 

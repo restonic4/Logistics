@@ -1,5 +1,6 @@
 package com.restonic4.logistics.networks.tooltip;
 
 public interface ScannerTooltipProvider {
-    boolean buildNetworkTooltip(TooltipBuilder builder, boolean isSneaking, boolean isDebug);
+    boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking);
+    boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking);
 }

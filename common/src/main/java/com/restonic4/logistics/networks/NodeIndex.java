@@ -1,5 +1,6 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.core.BlockPos;
@@ -23,12 +24,16 @@ public final class NodeIndex {
         node.setNetwork(network);
         byUUID.put(node.getUUID(), node);
         byBlockPos.put(node.getBlockPos(), node);
+        network.markDirty(NetworkFlag.NODE_ADDED);
+        network.markDirty(NetworkFlag.MAX_STORAGE_CHANGED); // Meh
     }
 
     public void unregister(NetworkNode node) {
         node.setNetwork(null);
         byUUID.remove(node.getUUID());
         byBlockPos.remove(node.getBlockPos());
+        network.markDirty(NetworkFlag.NODE_REMOVED);
+        network.markDirty(NetworkFlag.MAX_STORAGE_CHANGED); // Meh
     }
 
     public void registerFromCompoundTag(CompoundTag compoundTag) {

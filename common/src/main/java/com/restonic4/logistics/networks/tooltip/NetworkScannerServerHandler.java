@@ -5,15 +5,12 @@ import com.restonic4.logistics.networking.NetworkTooltipPayload;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-
-import java.util.UUID;
 
 public class NetworkScannerServerHandler {
     private static final double REACH = 6.0;
@@ -39,8 +36,24 @@ public class NetworkScannerServerHandler {
             return;
         }
 
+        Network network = node.getNetwork();
+        if (network == null) {
+            sendClear(player);
+            return;
+        }
+
         TooltipBuilder builder = new TooltipBuilder();
-        boolean added = node.buildNetworkTooltip(builder, player.isShiftKeyDown(), DEBUG);
+        boolean added = network.buildScannerTooltip(builder, player.isShiftKeyDown());
+        added = node.buildScannerTooltip(builder, player.isShiftKeyDown()) || added;
+        if (added) builder.mainTitle("Scanner", ChatFormatting.GOLD);
+
+        if (DEBUG) {
+            if (added) {
+                builder.spacer();
+            }
+            added = network.buildDebugScannerTooltip(builder, player.isShiftKeyDown()) || added;
+            added = node.buildDebugScannerTooltip(builder, player.isShiftKeyDown()) || added;
+        }
 
         if (!added) {
             sendClear(player);

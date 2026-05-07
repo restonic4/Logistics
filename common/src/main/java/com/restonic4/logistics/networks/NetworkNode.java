@@ -1,7 +1,9 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.flags.DirtyFlaggable;
 import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -66,31 +68,27 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         return node;
     }
 
-    //
-
     @Override
-    public boolean buildNetworkTooltip(TooltipBuilder builder, boolean isSneaking, boolean isDebug) {
-        boolean added = false;
-
-        if (isDebug) {
-            buildDebugTooltipSection(builder, isSneaking);
-            added = true;
-        }
-
-        return added;
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        return false;
     }
 
-    protected void buildDebugTooltipSection(TooltipBuilder builder, boolean isSneaking) {
-        builder.title("Debug", ChatFormatting.GOLD);
-        builder.line();
-
+    @Override
+    public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         Network network = getNetwork();
-        if (network == null) {
-            builder.text("Network not found!", ChatFormatting.RED);
-        } else {
-            builder.keyValue("Network UUID", network.getUUID().toString(), ChatFormatting.YELLOW);
-            builder.keyValue("Network type", network.getResourceLocation().toString(), ChatFormatting.YELLOW);
-            builder.keyValue("Nodes", String.valueOf(network.getNodeIndex().size()), ChatFormatting.YELLOW);
+        if (network == null) return false;
+
+        builder.spacer();
+        builder.keyValue("Node UUID", getUUID().toString(), ChatFormatting.YELLOW);
+        builder.keyValue("Node type", getResourceLocation().toString(), ChatFormatting.YELLOW);
+
+        return true;
+    }
+
+    public void markDirty(DirtyFlaggable.DirtyFlag flag) {
+        Network network = getNetwork();
+        if (network != null) {
+            network.onNodeDirty(this, flag);
         }
     }
 }

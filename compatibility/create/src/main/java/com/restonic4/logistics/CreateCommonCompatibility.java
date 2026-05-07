@@ -26,7 +26,9 @@ public class CreateCommonCompatibility {
     public static final BlockEntry<CreateMotorBlock, CreateMotorNode> CREATE_MOTOR = PlatformRegistry
             .block(
                     Logistics.id("create_motor"),
-                    () -> new CreateMotorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)))
+                    () -> new CreateMotorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK))
+            )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, CreateMotorNode::new)
             .withItem()
             .withBlockEntity(CreateMotorBlockEntity::new)
@@ -37,7 +39,9 @@ public class CreateCommonCompatibility {
     public static final BlockEntry<CreateTransformerBlock, CreateTransformerNode> CREATE_TRANSFORMER = PlatformRegistry
             .block(
                     Logistics.id("create_transformer"),
-                    () -> new CreateTransformerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)))
+                    () -> new CreateTransformerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK))
+            )
+            .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, CreateTransformerNode::new)
             .withItem()
             .withBlockEntity(CreateTransformerBlockEntity::new)

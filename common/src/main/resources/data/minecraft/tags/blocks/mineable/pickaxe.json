@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "logistics:basic_pipe",
-    "logistics:generator",
-    "logistics:machine",
-    "logistics:battery"
-  ]
-}

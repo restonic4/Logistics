@@ -2,13 +2,17 @@ package com.restonic4.logistics.networks.nodes;
 
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 
-public abstract class EnergyNode extends NetworkNode {
+public abstract class EnergyNode extends NetworkNode  {
+    private long storedEnergy = 0;
+    private long maxStorage = 0;
+
     public EnergyNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
     }
@@ -32,11 +36,18 @@ public abstract class EnergyNode extends NetworkNode {
     }
 
     // For nodes that store energy
-    public long getStoredEnergy() {
-        return 0;
+    public long getStoredEnergy() { return storedEnergy; }
+    public long getMaxStorage() { return maxStorage; }
+    public void setStoredEnergy(long energy) {
+        long newEnergy = Math.min(Math.max(energy, 0), getMaxStorage());
+        if (this.storedEnergy != newEnergy) {
+            this.storedEnergy = newEnergy;
+            markDirty(NetworkFlag.STORAGE_CHANGED);
+        }
     }
-    public long getMaxStorage() {
-        return 0;
+    public void setMaxStorage(long energy) {
+        maxStorage = energy;
+        markDirty(NetworkFlag.MAX_STORAGE_CHANGED);
     }
 
     public EnergyNetwork getNetwork() {
@@ -45,17 +56,16 @@ public abstract class EnergyNode extends NetworkNode {
     }
 
     @Override
-    protected void buildDebugTooltipSection(TooltipBuilder builder, boolean isSneaking) {
-        super.buildDebugTooltipSection(builder, isSneaking);
+    public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        boolean added = super.buildDebugScannerTooltip(builder, isSneaking);
 
         Network network = getNetwork();
-        if (!(network instanceof EnergyNetwork energyNetwork)) return;
+        if (!(network instanceof EnergyNetwork energyNetwork)) return added;
 
-        builder.spacer();
-        builder.keyValue("Node UUID", getUUID().toString(), ChatFormatting.YELLOW);
-        builder.keyValue("Node type", getResourceLocation().toString(), ChatFormatting.YELLOW);
         builder.spacer();
         builder.keyValue("Stored buffer", energyNetwork.getStoredEnergyBuffer() + "/" + energyNetwork.getTotalEnergyBuffer(), ChatFormatting.YELLOW);
         builder.keyValue("Stored cable buffer", energyNetwork.getStoredCableEnergyBuffer() + "/" + energyNetwork.getTotalCableEnergyBuffer(), ChatFormatting.YELLOW);
+
+        return true;
     }
 }

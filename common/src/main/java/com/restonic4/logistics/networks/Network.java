@@ -1,6 +1,10 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.flags.DirtyFlaggable;
+import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
+import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -10,13 +14,14 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.Collection;
 import java.util.UUID;
 
-public abstract class Network {
+public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider {
     private final NetworkTypeRegistry.NetworkType<?> type;
     private UUID uuid;
     private final NodeIndex nodeIndex;
     private final ServerLevel serverLevel;
 
     private boolean isDirty = false;
+    private long dirtyBits = 0L;
 
     protected Network(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
         this.type = type;
@@ -84,6 +89,10 @@ public abstract class Network {
 
     protected void loadExtra(CompoundTag tag) {}
 
+    public void onNodeDirty(NetworkNode node, DirtyFlaggable.DirtyFlag flag) {
+        markDirty(flag);
+    }
+
     public static Network create(NetworkTypeRegistry.NetworkType<?> networkType, ServerLevel serverLevel) {
         return networkType.create(serverLevel);
     }
@@ -99,5 +108,25 @@ public abstract class Network {
         Network network = type.create(serverLevel);
         network.load(tag);
         return network;
+    }
+
+    @Override public long getDirtyBits() { return dirtyBits; }
+    @Override public void setDirtyBits(long bits) { this.dirtyBits = bits; }
+
+    @Override
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        return false;
+    }
+
+    @Override
+    public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        builder.title("Debug", ChatFormatting.GOLD);
+        builder.line();
+
+        builder.keyValue("Network UUID", getUUID().toString(), ChatFormatting.YELLOW);
+        builder.keyValue("Network type", getResourceLocation().toString(), ChatFormatting.YELLOW);
+        builder.keyValue("Nodes", String.valueOf(getNodeIndex().size()), ChatFormatting.YELLOW);
+
+        return true;
     }
 }
