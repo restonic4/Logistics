@@ -1,7 +1,7 @@
 package com.restonic4.logistics.screens;
 
 import com.restonic4.logistics.events.RenderCallbacks;
-import com.restonic4.logistics.networking.NetworkTooltipPayload;
+import com.restonic4.logistics.networks.tooltip.NetworkTooltipPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,7 +25,7 @@ public class NetworkScannerOverlay {
     private static final int COLOR_BG_BORDER = 0xFF2A2A2A;
     private static final int COLOR_LINE = 0xFF404040;
 
-    public static void setActiveTooltip(NetworkTooltipPayload payload) {
+    public static void setActiveTooltip(NetworkTooltipPacket payload) {
         activeRows = payload.rows();
         activeIsLine = payload.isLine();
         areCreateGogglesPresent = payload.areCreateGogglesPresent();

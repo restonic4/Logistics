@@ -46,6 +46,14 @@ public final class NodeIndex {
     public Collection<NetworkNode> getAllNodes() {
         return byUUID.values();
     }
+    public Collection<BlockPos> getAllNodesPositions() {
+        return byBlockPos.keySet();
+    }
+    public Set<Long> getAllNodePositionsAsLongs() {
+        Set<Long> longs = new HashSet<>();
+        byBlockPos.keySet().forEach(blockPos -> longs.add(blockPos.asLong()));
+        return longs;
+    }
     public int size() {
         return byUUID.size();
     }

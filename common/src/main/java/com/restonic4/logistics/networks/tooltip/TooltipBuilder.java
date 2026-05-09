@@ -99,13 +99,15 @@ public final class TooltipBuilder {
         return out;
     }
 
-    public String formatTicks(long ticks) {
-        long totalMs = ticks * 50;
+    public static String formatTicks(long ticks) {
+        return formatTime(ticks * 50);
+    }
 
-        long hours = TimeUnit.MILLISECONDS.toHours(totalMs);
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(totalMs) % 60;
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(totalMs) % 60;
-        long millis = totalMs % 1000;
+    public static String formatTime(long milliseconds) {
+        long hours = TimeUnit.MILLISECONDS.toHours(milliseconds);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds) % 60;
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds) % 60;
+        long millis = milliseconds % 1000;
 
         return String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
     }

@@ -1,11 +1,15 @@
 package com.restonic4.logistics.blocks;
 
 import com.restonic4.logistics.Logistics;
+import com.restonic4.logistics.blocks.accersor.AccessorBlock;
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.battery.BatteryBlock;
 import com.restonic4.logistics.blocks.battery.BatteryBlockItem;
 import com.restonic4.logistics.blocks.battery.BatteryNode;
 import com.restonic4.logistics.blocks.cable.CableBlock;
 import com.restonic4.logistics.blocks.cable.CableNode;
+import com.restonic4.logistics.blocks.computer.ComputerBlock;
+import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.blocks.generator.GeneratorBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorNode;
 import com.restonic4.logistics.blocks.machine.MachineBlock;
@@ -71,6 +75,28 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<AccessorBlock, AccessorNode> ACCESSOR_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("accessor"),
+                    () -> new AccessorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ITEM_NETWORK, AccessorNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<ComputerBlock, ComputerNode> COMPUTER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("computer"),
+                    () -> new ComputerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ITEM_NETWORK, ComputerNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

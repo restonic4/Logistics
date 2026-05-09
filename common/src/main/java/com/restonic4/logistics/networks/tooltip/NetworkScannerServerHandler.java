@@ -1,7 +1,7 @@
 package com.restonic4.logistics.networks.tooltip;
 
 import com.restonic4.logistics.compatibility.CompatibilityManager;
-import com.restonic4.logistics.networking.NetworkTooltipPayload;
+import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -61,10 +61,10 @@ public class NetworkScannerServerHandler {
         }
 
         boolean areCreateGogglesPresent = CompatibilityManager.isCreateLoaded() && CompatibilityManager.getCreateCompatibilityLayer().hasGoggleOverlay(serverLevel, pos);
-        NetworkTooltipPayload.from(builder, areCreateGogglesPresent).sendTo(player);
+        ServerNetworking.sendToClient(player, NetworkTooltipPacket.from(builder, areCreateGogglesPresent));
     }
 
     private static void sendClear(ServerPlayer player) {
-        NetworkTooltipPayload.from(new TooltipBuilder(), false).sendTo(player);
+        ServerNetworking.sendToClient(player, NetworkTooltipPacket.from(new TooltipBuilder(), false));
     }
 }
