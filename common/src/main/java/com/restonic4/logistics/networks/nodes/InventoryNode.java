@@ -127,6 +127,10 @@ public abstract class InventoryNode extends ItemNode {
     }
 
     public boolean consumeItem(ItemStack toConsume, ServerLevel level) {
+        if (toConsume.getCount() > 64) {
+            return false;
+        }
+
         List<ItemStack> inventory = this.readInventory(level);
 
         int totalAvailable = 0;

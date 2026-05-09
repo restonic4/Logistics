@@ -20,13 +20,19 @@ public class Parcel {
     private long startTime;
     private long durationMillis;
 
-    public Parcel() {}
+    private Parcel() {}
 
     public Parcel(ItemStack itemStack, BlockPos start, BlockPos end, double timePerBlock) {
         this.itemStack = itemStack;
         this.start = start;
         this.end = end;
         this.timePerBlock = timePerBlock;
+    }
+
+    public static Parcel fromCompoundTag(CompoundTag tag) {
+        Parcel parcel = new Parcel();
+        parcel.load(tag);
+        return parcel;
     }
 
     public void recalculate(Set<Long> nodes, BlockPos start, double timePerBlock) {

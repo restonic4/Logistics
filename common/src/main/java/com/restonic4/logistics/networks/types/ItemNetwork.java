@@ -1,10 +1,13 @@
 package com.restonic4.logistics.networks.types;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.networking.ClientNetworking;
+import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.nodes.ItemNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
+import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import net.minecraft.ChatFormatting;
@@ -137,9 +140,7 @@ public class ItemNetwork extends Network {
             ListTag parcelsTag = tag.getList("parcels", Tag.TAG_COMPOUND);
             this.parcels = new ArrayList<>();
             for (int i = 0; i < parcelsTag.size(); i++) {
-                Parcel parcel = new Parcel();
-                parcel.load(parcelsTag.getCompound(i));
-                this.parcels.add(parcel);
+                this.parcels.add(Parcel.fromCompoundTag(parcelsTag.getCompound(i)));
             }
         }
     }

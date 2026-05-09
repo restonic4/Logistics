@@ -1,7 +1,11 @@
 package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
+import com.restonic4.logistics.networks.pathfinding.Parcel;
+import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
+import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;
@@ -16,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+// TODO: We need some method on Network to tell the manager when the network has been discarded???? Older networks still appear after merging multiple networks
 public class NetworkManager extends SavedData {
     private static final String DATA_NAME = "logistics_networks";
 
@@ -52,13 +57,21 @@ public class NetworkManager extends SavedData {
     public void tick() {
         applyPendingChanges();
 
+        List<Parcel> allParcels = new ArrayList<>();
+
         networks.forEach((uuid, network) -> {
             network.tick();
             if (network.isDirty()) {
                 setDirty();
                 network.cleanDirtyFlag();
             }
+
+            if (network instanceof ItemNetwork itemNetwork) {
+                allParcels.addAll(itemNetwork.getParcels());
+            }
         });
+
+        ServerNetworking.sendToAllInLevel(getServerLevel(), new ParcelRenderSyncPacket(allParcels));
 
         applyPendingChanges();
     }
