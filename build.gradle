@@ -44,3 +44,30 @@ ext.version_full = "${baseVersion}+${gitCommitCount}"
 allprojects {
     version = rootProject.ext.version_full
 }
+
+allprojects {
+    afterEvaluate {
+        tasks.matching { it.name == 'build' }.configureEach {
+            doLast {
+                def libsDir = file("${project.buildDir}/libs")
+                def dest = rootProject.file("finalBuild/${project.name}")
+
+                if (libsDir.exists()) {
+                    if (dest.exists()) {
+                        dest.deleteDir()
+                    }
+                    dest.mkdirs()
+
+                    libsDir.listFiles()?.each { file ->
+                        copy {
+                            from file
+                            into dest
+                        }
+                    }
+
+                    logger.lifecycle("Copied build artifacts to: ${dest}")
+                }
+            }
+        }
+    }
+}
