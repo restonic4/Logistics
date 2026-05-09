@@ -98,7 +98,7 @@ public class PipeBlock extends BaseNetworkBlock {
     }
 
     @Override
-    public boolean useShapeForLightOcclusion(BlockState state) { return true; }
+    public boolean useShapeForLightOcclusion(BlockState state) { return false; }
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {

@@ -2,6 +2,7 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.platform.ForgeRegistry;
 import com.restonic4.logistics.platform.Services;
+import com.restonic4.logistics.registry.ClientBlockRegistry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -24,5 +25,6 @@ public class LogisticsForge {
 
     private void onClientSetup(FMLClientSetupEvent event) {
         LogisticsClient.init();
+        ClientBlockRegistry.apply();
     }
 }

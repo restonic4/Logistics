@@ -6,7 +6,8 @@
   "compatibilityLevel": "${mixin_java_version}",
   "mixins": [],
   "client": [
-    "ForgeGuiMixin"
+    "ForgeGuiMixin",
+    "ItemBlockRenderTypesMixin"
   ],
   "server": [],
   "injectors": {

@@ -5,6 +5,10 @@ import com.restonic4.logistics.events.core.Event;
 import com.restonic4.logistics.events.core.EventFactory;
 import net.minecraft.client.Camera;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.level.block.Block;
+
+import java.util.Map;
 
 public class RenderCallbacks {
     @FunctionalInterface public interface OnHudRendered { void onEvent(GuiGraphics guiGraphics, float tickDelta); }
