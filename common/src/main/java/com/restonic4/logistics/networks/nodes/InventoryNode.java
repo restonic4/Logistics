@@ -5,12 +5,15 @@ import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -33,11 +36,11 @@ public abstract class InventoryNode extends ItemNode {
 
     @Nullable protected abstract BlockPos resolveTargetPos();
 
-    public List<ItemStack> readInventory(ServerLevel level) {
+    public List<ItemStack> getRawPhysicalInventory(ServerLevel level) {
         Container container = resolveContainer(level);
 
         if (container != null) {
-            Constants.LOG.error("Snapshot at readInventory");
+            Constants.LOG.error("Snapshot at getRawPhysicalInventory");
             flushDeltasToContainer(container);
             lastKnownSnapshot = readFromContainer(container);
             return new ArrayList<>(lastKnownSnapshot);
@@ -50,21 +53,33 @@ public abstract class InventoryNode extends ItemNode {
         return new ArrayList<>();
     }
 
-    public void writeInventory(ServerLevel level, int index, ItemStack stack) {
+    public void writeRawPhysicalInventory(ServerLevel level, int index, ItemStack stack) {
         Container container = resolveContainer(level);
 
         if (container != null) {
             flushDeltasToContainer(container);
             container.setItem(index, stack.copy());
-            if (lastKnownSnapshot != null && index < lastKnownSnapshot.size()) {
-                lastKnownSnapshot.set(index, stack.copy());
-            }
         } else {
             InventoryDelta delta = new InventoryDelta(index, stack.copy());
             pendingDeltas.addLast(delta);
-            applyDeltaToSnapshot(delta);
-            markDirty(NetworkFlag.HAS_DELTA_CHANGES);
         }
+    }
+
+    public List<ItemStack> getVirtualInventory(ServerLevel level) {
+        List<ItemStack> rawInv = getRawPhysicalInventory(level);
+
+        List<ItemStack> workingInv = new ArrayList<>(rawInv.size());
+        for (ItemStack stack : rawInv) {
+            workingInv.add(stack.copy());
+        }
+
+        for (InventoryDelta delta : pendingDeltas) {
+            if (delta.index() >= 0 && delta.index() < workingInv.size()) {
+                workingInv.set(delta.index(), delta.stack().copy());
+            }
+        }
+
+        return workingInv;
     }
 
     public void onTargetChunkLoaded(ServerLevel level, LevelChunk levelChunk) {
@@ -73,7 +88,7 @@ public abstract class InventoryNode extends ItemNode {
         if (pendingDeltas.isEmpty()) {
             Constants.LOG.info("Empty deltas at chunk load");
             return;
-        };
+        }
 
         Constants.LOG.info("Found deltas at chunk load");
 
@@ -81,11 +96,11 @@ public abstract class InventoryNode extends ItemNode {
         if (container == null) {
             Constants.LOG.info("Could not resolve container at chunk load");
             return;
-        };
+        }
 
         Constants.LOG.info("Found container at chunk load");
 
-        detectExternalModifications(container);
+        detectExternalModifications(level, container);
         flushDeltasToContainer(container);
         lastKnownSnapshot = readFromContainer(container);
     }
@@ -97,13 +112,13 @@ public abstract class InventoryNode extends ItemNode {
         if (container == null) {
             Constants.LOG.info("Could not resolve container at chunk unload");
             return;
-        };
+        }
 
-        //flushDeltasToContainer(container);
+        Constants.LOG.error("Snapshot at onTargetChunkUnloading");
         lastKnownSnapshot = readFromContainer(container);
     }
 
-    private void detectExternalModifications(Container container) {
+    private void detectExternalModifications(ServerLevel serverLevel, Container container) {
         boolean anyDivergence = false;
         if (lastKnownSnapshot == null) return;
 
@@ -118,21 +133,36 @@ public abstract class InventoryNode extends ItemNode {
 
             if (!sameItem || !sameCount) {
                 if (!anyDivergence) {
-                    Constants.LOG.warn(
-                            "Container at {} was modified externally while its chunk was unloaded (node: {})! " +
-                                    "This may indicate another mod is also writing deltas to this container. " +
-                                    "Our pending deltas will still be applied and may overwrite these external changes.",
-                            resolveTargetPos(), this.getBlockPos()
+                    String message = String.format(
+                            "Container at %s was modified externally while its chunk was unloaded (node: %s)! " +
+                            "This may indicate another mod is also writing deltas to this container. " +
+                            "Our pending deltas will still be applied and may overwrite these external changes.",
+                        resolveTargetPos(), this.getBlockPos()
                     );
+                    Constants.LOG.warn(message);
+                    Component chatMessage = Component.literal("[Logistics]: " + message).withStyle(ChatFormatting.YELLOW);
+                    for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+                        if (player.hasPermissions(2)) {
+                            player.sendSystemMessage(chatMessage);
+                        }
+                    }
+
                     anyDivergence = true;
                 }
 
-                Constants.LOG.warn(
-                        "  Slot {}: expected [{}x{}], found [{}x{}]",
+                String message = String.format(
+                        "  Slot %s: expected [%sx%s], found [%sx%s]",
                         i,
                         snapshotStack.isEmpty() ? "empty" : snapshotStack.getItem().getDescriptionId(), snapshotStack.getCount(),
                         liveStack.isEmpty() ? "empty" : liveStack.getItem().getDescriptionId(), liveStack.getCount()
                 );
+                Constants.LOG.warn(message);
+                Component chatMessage = Component.literal("[Logistics]: " + message).withStyle(ChatFormatting.YELLOW);
+                for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+                    if (player.hasPermissions(2)) {
+                        player.sendSystemMessage(chatMessage);
+                    }
+                }
             }
         }
     }
@@ -141,18 +171,20 @@ public abstract class InventoryNode extends ItemNode {
         if (parcel.isEmpty()) return;
 
         ServerLevel level = getNetwork().getServerLevel();
-        List<ItemStack> inventory = this.readInventory(level);
+        List<ItemStack> inventory = this.getVirtualInventory(level);
 
         // Try to merge with existing stacks first
         for (int i = 0; i < inventory.size(); i++) {
-            ItemStack existing = inventory.get(i);
+            ItemStack virtualStack = inventory.get(i);
 
-            if (ItemStack.isSameItemSameTags(existing, parcel.getItemStackClone())) {
-                int canAdd = Math.min(parcel.getCount(), existing.getMaxStackSize() - existing.getCount());
+            if (ItemStack.isSameItemSameTags(virtualStack, parcel.getItemStackClone())) {
+                int canAdd = Math.min(parcel.getCount(), virtualStack.getMaxStackSize() - virtualStack.getCount());
                 if (canAdd > 0) {
-                    existing.grow(canAdd);
+                    virtualStack = virtualStack.copy();
+                    virtualStack.grow(canAdd);
                     parcel.shrink(canAdd);
-                    this.writeInventory(level, i, existing);
+                    this.writeRawPhysicalInventory(level, i, virtualStack);
+                    inventory.set(i, virtualStack);
                 }
             }
             if (parcel.isEmpty()) break;
@@ -161,22 +193,22 @@ public abstract class InventoryNode extends ItemNode {
         // If still has items, find empty slots
         if (!parcel.isEmpty()) {
             for (int i = 0; i < inventory.size(); i++) {
-                if (parcel.isEmpty()) break;
-
                 if (inventory.get(i).isEmpty()) {
                     int amountToPut = Math.min(parcel.getCount(), parcel.getMaxStackSize());
 
                     ItemStack toInsert = parcel.getItemStackClone();
                     toInsert.setCount(amountToPut);
 
-                    this.writeInventory(level, i, toInsert);
+                    this.writeRawPhysicalInventory(level, i, toInsert);
+                    inventory.set(i, toInsert);
 
                     parcel.shrink(amountToPut);
                 }
+                if (parcel.isEmpty()) break;
             }
         }
 
-        // If chest is full, drop it on the floor
+        // If container is full, drop it on the floor
         if (!parcel.isEmpty()) {
             BlockPos dropPos = getBlockPos();
             ItemEntity entity = new ItemEntity(level, dropPos.getX() + 0.5, dropPos.getY() + 0.5, dropPos.getZ() + 0.5, parcel.getItemStackClone());
@@ -189,7 +221,7 @@ public abstract class InventoryNode extends ItemNode {
             return false;
         }
 
-        List<ItemStack> inventory = this.readInventory(level);
+        List<ItemStack> inventory = this.getVirtualInventory(level);
 
         int totalAvailable = 0;
         for (ItemStack stack : inventory) {
@@ -198,9 +230,7 @@ public abstract class InventoryNode extends ItemNode {
             }
         }
 
-        if (totalAvailable < toConsume.getCount()) {
-            return false;
-        }
+        if (totalAvailable < toConsume.getCount()) return false;
 
         // Consume the items since we confirmed we have enough
         int remainingToConsume = toConsume.getCount();
@@ -210,10 +240,12 @@ public abstract class InventoryNode extends ItemNode {
             if (!stackInSlot.isEmpty() && ItemStack.isSameItemSameTags(stackInSlot, toConsume)) {
                 int canTake = Math.min(remainingToConsume, stackInSlot.getCount());
 
+                stackInSlot = stackInSlot.copy();
                 stackInSlot.shrink(canTake);
                 remainingToConsume -= canTake;
 
-                this.writeInventory(level, i, stackInSlot);
+                this.writeRawPhysicalInventory(level, i, stackInSlot);
+                inventory.set(i, stackInSlot);
 
                 if (remainingToConsume <= 0) {
                     break;
@@ -257,14 +289,6 @@ public abstract class InventoryNode extends ItemNode {
             if (delta.index() < container.getContainerSize()) {
                 container.setItem(delta.index(), delta.stack());
             }
-        }
-    }
-
-    @Deprecated(forRemoval = true)
-    private void applyDeltaToSnapshot(InventoryDelta delta) {
-        if (lastKnownSnapshot == null) return;
-        if (delta.index() < lastKnownSnapshot.size()) {
-            lastKnownSnapshot.set(delta.index(), delta.stack());
         }
     }
 
