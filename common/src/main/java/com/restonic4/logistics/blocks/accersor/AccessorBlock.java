@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.accersor;
 
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.networks.NetworkManager;
@@ -51,7 +52,8 @@ public class AccessorBlock extends BaseNetworkBlock {
 
     // TODO: Improve this dirty mess
     public static void registerEvents() {
-        ChunkEvents.LOAD.register((level, chunkPos) -> {
+        ChunkEvents.LOAD.register((level, levelChunk) -> {
+            ChunkPos chunkPos = levelChunk.getPos();
             NetworkManager manager = NetworkManager.get(level);
             manager.getAllNetworks().forEach(network ->
                     network.getNodeIndex().getAllNodes().forEach(node -> {
@@ -59,15 +61,15 @@ public class AccessorBlock extends BaseNetworkBlock {
 
                         BlockPos target = accessorNode.resolveTargetPos();
                         if (target == null) return;
-
                         if ((target.getX() >> 4) != chunkPos.x || (target.getZ() >> 4) != chunkPos.z) return;
 
-                        accessorNode.onTargetChunkLoaded(level);
+                        accessorNode.onTargetChunkLoaded(level, levelChunk);
                     })
             );
         });
 
-        ChunkEvents.UNLOAD.register((level, chunkPos) -> {
+        ChunkEvents.UNLOAD.register((level, levelChunk) -> {
+            ChunkPos chunkPos = levelChunk.getPos();
             NetworkManager manager = NetworkManager.get(level);
             manager.getAllNetworks().forEach(network ->
                     network.getNodeIndex().getAllNodes().forEach(node -> {
@@ -75,10 +77,9 @@ public class AccessorBlock extends BaseNetworkBlock {
 
                         BlockPos target = accessorNode.resolveTargetPos();
                         if (target == null) return;
-
                         if ((target.getX() >> 4) != chunkPos.x || (target.getZ() >> 4) != chunkPos.z) return;
 
-                        accessorNode.onTargetChunkUnloading(level);
+                        accessorNode.onTargetChunkUnloading(level, levelChunk);
                     })
             );
         });

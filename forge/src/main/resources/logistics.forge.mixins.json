@@ -4,7 +4,9 @@
   "package": "com.restonic4.logistics.mixin",
   "refmap": "${mod_id}.refmap.json",
   "compatibilityLevel": "${mixin_java_version}",
-  "mixins": [],
+  "mixins": [
+    "ChunkMapMixin"
+  ],
   "client": [
     "ForgeGuiMixin",
     "ItemBlockRenderTypesMixin"

@@ -1,17 +1,21 @@
 package com.restonic4.logistics.networks.nodes;
 
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
+import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -33,6 +37,7 @@ public abstract class InventoryNode extends ItemNode {
         Container container = resolveContainer(level);
 
         if (container != null) {
+            Constants.LOG.error("Snapshot at readInventory");
             flushDeltasToContainer(container);
             lastKnownSnapshot = readFromContainer(container);
             return new ArrayList<>(lastKnownSnapshot);
@@ -55,28 +60,81 @@ public abstract class InventoryNode extends ItemNode {
                 lastKnownSnapshot.set(index, stack.copy());
             }
         } else {
-            InventoryDelta delta = new InventoryDelta(index, stack);
+            InventoryDelta delta = new InventoryDelta(index, stack.copy());
             pendingDeltas.addLast(delta);
             applyDeltaToSnapshot(delta);
             markDirty(NetworkFlag.HAS_DELTA_CHANGES);
         }
     }
 
-    public void onTargetChunkUnloading(ServerLevel level) {
-        Container container = resolveContainer(level);
-        if (container == null) return;
+    public void onTargetChunkLoaded(ServerLevel level, LevelChunk levelChunk) {
+        Constants.LOG.info("Loading accessor ({})!", this.getBlockPos());
 
+        if (pendingDeltas.isEmpty()) {
+            Constants.LOG.info("Empty deltas at chunk load");
+            return;
+        };
+
+        Constants.LOG.info("Found deltas at chunk load");
+
+        Container container = resolveContainer(levelChunk);
+        if (container == null) {
+            Constants.LOG.info("Could not resolve container at chunk load");
+            return;
+        };
+
+        Constants.LOG.info("Found container at chunk load");
+
+        detectExternalModifications(container);
+        flushDeltasToContainer(container);
         lastKnownSnapshot = readFromContainer(container);
     }
 
-    public void onTargetChunkLoaded(ServerLevel level) {
-        if (pendingDeltas.isEmpty()) return;
+    public void onTargetChunkUnloading(ServerLevel level, LevelChunk levelChunk) {
+        Constants.LOG.info("Unloading accessor ({})!", this.getBlockPos());
 
-        Container container = resolveContainer(level);
-        if (container == null) return;
+        Container container = resolveContainer(levelChunk);
+        if (container == null) {
+            Constants.LOG.info("Could not resolve container at chunk unload");
+            return;
+        };
 
-        flushDeltasToContainer(container);
+        //flushDeltasToContainer(container);
         lastKnownSnapshot = readFromContainer(container);
+    }
+
+    private void detectExternalModifications(Container container) {
+        boolean anyDivergence = false;
+        if (lastKnownSnapshot == null) return;
+
+        int checkSize = Math.min(lastKnownSnapshot.size(), container.getContainerSize());
+
+        for (int i = 0; i < checkSize; i++) {
+            ItemStack snapshotStack = lastKnownSnapshot.get(i);
+            ItemStack liveStack = container.getItem(i);
+
+            boolean sameItem = ItemStack.isSameItemSameTags(snapshotStack, liveStack);
+            boolean sameCount = snapshotStack.getCount() == liveStack.getCount();
+
+            if (!sameItem || !sameCount) {
+                if (!anyDivergence) {
+                    Constants.LOG.warn(
+                            "Container at {} was modified externally while its chunk was unloaded (node: {})! " +
+                                    "This may indicate another mod is also writing deltas to this container. " +
+                                    "Our pending deltas will still be applied and may overwrite these external changes.",
+                            resolveTargetPos(), this.getBlockPos()
+                    );
+                    anyDivergence = true;
+                }
+
+                Constants.LOG.warn(
+                        "  Slot {}: expected [{}x{}], found [{}x{}]",
+                        i,
+                        snapshotStack.isEmpty() ? "empty" : snapshotStack.getItem().getDescriptionId(), snapshotStack.getCount(),
+                        liveStack.isEmpty() ? "empty" : liveStack.getItem().getDescriptionId(), liveStack.getCount()
+                );
+            }
+        }
     }
 
     public void dumpParcelOnContainer(Parcel parcel) {
@@ -184,6 +242,15 @@ public abstract class InventoryNode extends ItemNode {
         return null;
     }
 
+    @Nullable
+    private Container resolveContainer(LevelChunk levelChunk) {
+        BlockPos target = resolveTargetPos();
+        if (target == null) return null;
+        BlockEntity be = levelChunk.getBlockEntity(target);
+        if (be instanceof Container container) return container;
+        return null;
+    }
+
     private void flushDeltasToContainer(Container container) {
         while (!pendingDeltas.isEmpty()) {
             InventoryDelta delta = pendingDeltas.pollFirst();
@@ -193,6 +260,7 @@ public abstract class InventoryNode extends ItemNode {
         }
     }
 
+    @Deprecated(forRemoval = true)
     private void applyDeltaToSnapshot(InventoryDelta delta) {
         if (lastKnownSnapshot == null) return;
         if (delta.index() < lastKnownSnapshot.size()) {

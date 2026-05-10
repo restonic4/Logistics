@@ -1,6 +1,8 @@
 package com.restonic4.logistics.utils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.List;
 import java.util.function.Consumer;

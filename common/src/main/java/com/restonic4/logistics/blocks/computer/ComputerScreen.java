@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ComputerScreen extends Screen {
+    private static final String DEFAULT_QUANTITY = "1";
+    private static final String DEFAULT_TEXT = "minecraft:chest";
+
     private static List<BlockPos> accessors = new ArrayList<>();
 
     private BlockPos fromPos = null;
@@ -31,10 +34,12 @@ public class ComputerScreen extends Screen {
     }
 
     private void executeTransfer() {
-        String qty = quantityBox.getValue();
+        String qtyStr = quantityBox.getValue();
         String extraText = textBox.getValue();
 
-        ClientNetworking.sendToServer(new ComputerTransferPacket(fromPos, targetPos, Integer.parseInt(qty), extraText));
+        int qty = qtyStr.isEmpty() ? 0 : Integer.parseInt(qtyStr);
+
+        ClientNetworking.sendToServer(new ComputerTransferPacket(fromPos, targetPos, qty, extraText));
     }
 
     @Override
@@ -43,9 +48,11 @@ public class ComputerScreen extends Screen {
 
         this.quantityBox = new EditBox(this.font, xMid - 105, this.height - 40, 100, 20, Component.literal("Quantity"));
         this.quantityBox.setFilter(s -> s.isEmpty() || s.matches("\\d+"));
+        this.quantityBox.setValue(DEFAULT_QUANTITY);
         this.addRenderableWidget(this.quantityBox);
 
         this.textBox = new EditBox(this.font, xMid + 5, this.height - 40, 100, 20, Component.literal("Data"));
+        this.textBox.setValue(DEFAULT_TEXT);
         this.addRenderableWidget(this.textBox);
 
         this.transferButton = Button.builder(Component.literal("Transfer"), (btn) -> {

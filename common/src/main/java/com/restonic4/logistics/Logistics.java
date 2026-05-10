@@ -4,6 +4,7 @@ import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
+import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.NetworkManager;
