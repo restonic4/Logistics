@@ -40,7 +40,6 @@ public abstract class InventoryNode extends ItemNode {
         Container container = resolveContainer(level);
 
         if (container != null) {
-            Constants.LOG.error("Snapshot at getRawPhysicalInventory");
             flushDeltasToContainer(container);
             lastKnownSnapshot = readFromContainer(container);
             return new ArrayList<>(lastKnownSnapshot);
@@ -114,7 +113,6 @@ public abstract class InventoryNode extends ItemNode {
             return;
         }
 
-        Constants.LOG.error("Snapshot at onTargetChunkUnloading");
         lastKnownSnapshot = readFromContainer(container);
     }
 

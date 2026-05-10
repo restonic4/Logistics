@@ -50,6 +50,7 @@ public abstract class EnergyNode extends NetworkNode  {
         markDirty(NetworkFlag.MAX_STORAGE_CHANGED);
     }
 
+    @Override
     public EnergyNetwork getNetwork() {
         if (super.getNetwork() instanceof EnergyNetwork energyNetwork) return energyNetwork;
         return null;

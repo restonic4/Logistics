@@ -2,6 +2,8 @@ package com.restonic4.logistics.networks.nodes;
 
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
+import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 
@@ -11,4 +13,10 @@ public abstract class ItemNode extends NetworkNode {
     }
 
     public void onParcelArrived(Parcel parcel) {}
+
+    @Override
+    public ItemNetwork getNetwork() {
+        if (super.getNetwork() instanceof ItemNetwork itemNetwork) return itemNetwork;
+        return null;
+    }
 }

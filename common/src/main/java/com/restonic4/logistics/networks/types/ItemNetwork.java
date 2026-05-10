@@ -3,6 +3,7 @@ package com.restonic4.logistics.networks.types;
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.networking.ServerNetworking;
+import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.nodes.ItemNode;

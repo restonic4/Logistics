@@ -54,10 +54,14 @@ public class NetworkManager extends SavedData {
         });
     }
 
+    /**
+     * TODO: This has hardcoded ItemNetwork logic, this should be abstracted in some way so any network can benefit while maintaining this clean.
+     *  - Some listener on each network for global tick tart en end?
+     */
     public void tick() {
         applyPendingChanges();
 
-        List<Parcel> allParcels = new ArrayList<>();
+        List<Parcel> allParcels = new ArrayList<>(); // TODO: Remove
 
         networks.forEach((uuid, network) -> {
             network.tick();
@@ -66,12 +70,13 @@ public class NetworkManager extends SavedData {
                 network.cleanDirtyFlag();
             }
 
+            // TODO: Remove
             if (network instanceof ItemNetwork itemNetwork) {
                 allParcels.addAll(itemNetwork.getParcels());
             }
         });
 
-        ServerNetworking.sendToAllInLevel(getServerLevel(), new ParcelRenderSyncPacket(allParcels));
+        ServerNetworking.sendToAllInLevel(getServerLevel(), new ParcelRenderSyncPacket(allParcels)); // TODO: Remove
 
         applyPendingChanges();
     }
@@ -255,6 +260,21 @@ public class NetworkManager extends SavedData {
         network.onSplit(newChildren);
 
         setDirty();
+    }
+
+    public <T extends Network> Optional<T> getAdjacentNetwork(BlockPos pos, Class<T> networkClass) {
+        Network self = nodePositionIndex.get(pos);
+        if (networkClass.isInstance(self)) {
+            return Optional.of(networkClass.cast(self));
+        }
+
+        return MinecraftUtils.findNeighbor(pos, neighborPos -> {
+            Network candidate = nodePositionIndex.get(neighborPos);
+            if (networkClass.isInstance(candidate)) {
+                return networkClass.cast(candidate);
+            }
+            return null;
+        });
     }
 
     private Set<BlockPos> floodFill(Set<BlockPos> allowedPositions, BlockPos start) {

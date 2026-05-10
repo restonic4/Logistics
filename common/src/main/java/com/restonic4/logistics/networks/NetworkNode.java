@@ -9,7 +9,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public abstract class NetworkNode implements ScannerTooltipProvider {
@@ -35,6 +37,14 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
     public BlockPos getBlockPos() { return blockPos; }
 
     public void tick() { }
+
+    public <T extends Network> Optional<T> getAdjacentNetwork(Class<T> networkClass) {
+        Network ownNetwork = getNetwork();
+        if (ownNetwork == null) return Optional.empty();
+
+        ServerLevel level = ownNetwork.getServerLevel();
+        return NetworkManager.get(level).getAdjacentNetwork(blockPos, networkClass);
+    }
 
     public final CompoundTag save() {
         CompoundTag tag = new CompoundTag();
