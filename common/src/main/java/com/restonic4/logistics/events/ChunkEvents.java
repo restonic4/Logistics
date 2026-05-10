@@ -21,11 +21,4 @@ public class ChunkEvents {
             callback.onEvent(level, levelChunk);
         }
     });
-
-    @FunctionalInterface public interface LoadedWithBlockEntities { void onEvent(ServerLevel level, ChunkPos chunkPos); }
-    public static final Event<LoadedWithBlockEntities> LOADED_WITH_BLOCK_ENTITIES = EventFactory.createVoid(LoadedWithBlockEntities.class, callbacks -> (level, chunkPos) -> {
-        for (LoadedWithBlockEntities callback : callbacks) {
-            callback.onEvent(level, chunkPos);
-        }
-    });
 }

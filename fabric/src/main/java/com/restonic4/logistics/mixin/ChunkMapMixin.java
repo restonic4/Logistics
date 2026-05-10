@@ -20,13 +20,13 @@ import java.util.concurrent.CompletableFuture;
 public class ChunkMapMixin {
     @Final @Shadow ServerLevel level;
 
-    @Inject(
+    /*@Inject(
             method = "method_17227",
             at = @At("TAIL")
     )
     private void logistics$onChunkAdd(ChunkHolder chunkHolder, ChunkAccess chunkAccess, CallbackInfoReturnable<ChunkAccess> cir) {
-        //ChunkEvents.LOAD.invoker().onEvent(this.level, chunkHolder.getPos());
-    }
+        ChunkEvents.LOAD.invoker().onEvent(this.level, chunkHolder.getPos());
+    }*/
 
     @Inject(
             method = "method_18843",

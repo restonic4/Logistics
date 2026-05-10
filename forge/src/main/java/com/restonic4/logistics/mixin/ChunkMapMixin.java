@@ -20,14 +20,14 @@ import java.util.concurrent.CompletableFuture;
 public class ChunkMapMixin {
     @Final @Shadow ServerLevel level;
 
-    @Inject(
+    /*@Inject(
             method = "lambda$protoChunkToFullChunk$34(Lnet/minecraft/server/level/ChunkHolder;Lnet/minecraft/world/level/chunk/ChunkAccess;)Lnet/minecraft/world/level/chunk/ChunkAccess;",
             at = @At("TAIL"),
             remap = false
     )
     private void logistics$onChunkAdd(ChunkHolder chunkHolder, ChunkAccess chunkAccess, CallbackInfoReturnable<ChunkAccess> cir) {
-        //ChunkEvents.LOAD.invoker().onEvent(this.level, chunkHolder.getPos());
-    }
+        ChunkEvents.LOAD.invoker().onEvent(this.level, chunkHolder.getPos());
+    }*/
 
     @Inject(
             method = "lambda$scheduleUnload$14(Lnet/minecraft/server/level/ChunkHolder;Ljava/util/concurrent/CompletableFuture;JLnet/minecraft/world/level/chunk/ChunkAccess;)V",
