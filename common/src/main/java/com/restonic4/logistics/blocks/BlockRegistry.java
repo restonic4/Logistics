@@ -14,20 +14,25 @@ import com.restonic4.logistics.blocks.generator.GeneratorBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorNode;
 import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
+import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public class BlockRegistry {
     public static final BlockEntry<CableBlock, CableNode> CABLE_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("cable"),
-                    () -> new CableBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+                    () -> new CableBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).sound(SoundType.WOOL).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, CableNode::new)
@@ -42,7 +47,7 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, GeneratorNode::new)
-            .withItem()
+            .withItem(new Item.Properties().rarity(Rarity.EPIC))
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
@@ -53,7 +58,7 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, MachineNode::new)
-            .withItem()
+            .withItem(new Item.Properties().rarity(Rarity.EPIC))
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
@@ -68,10 +73,32 @@ public class BlockRegistry {
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
+    public static final BlockEntry<NetworkConnectorBlock, NetworkConnectorNode> NETWORK_CONNECTOR_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("network_connector"),
+                    () -> new NetworkConnectorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, NetworkConnectorNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<ComputerBlock, ComputerNode> COMPUTER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("computer"),
+                    () -> new ComputerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, ComputerNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
     public static final BlockEntry<PipeBlock, PipeNode> PIPE_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("pipe"),
-                    () -> new PipeBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
+                    () -> new PipeBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).sound(SoundType.COPPER).noOcclusion().dynamicShape().noOcclusion().requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ITEM_NETWORK, PipeNode::new)
@@ -86,17 +113,6 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ITEM_NETWORK, AccessorNode::new)
-            .withItem()
-            .addToTab(Logistics.CUSTOM_TAB.getKey())
-            .register();
-
-    public static final BlockEntry<ComputerBlock, ComputerNode> COMPUTER_BLOCK = PlatformRegistry
-            .block(
-                    Logistics.id("computer"),
-                    () -> new ComputerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
-            )
-            .mineWithPickaxe().dropSelf()
-            .network(BuiltInNetworks.ITEM_NETWORK, ComputerNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

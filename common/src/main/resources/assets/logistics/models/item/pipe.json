@@ -1,0 +1,100 @@
+{
+  "textures": {
+    "core_tex": "logistics:block/pipe/core",
+    "conn_tex": "logistics:block/pipe/connection"
+  },
+  "elements": [
+    {
+      "comment": "Core Center Piece (6,6,6 to 10,10,10)",
+      "from": [6, 6, 6],
+      "to": [10, 10, 10],
+      "faces": {
+        "north": {"uv": [6, 6, 10, 10], "texture": "#core_tex"},
+        "east": {"uv": [6, 6, 10, 10], "texture": "#core_tex"},
+        "south": {"uv": [6, 6, 10, 10], "texture": "#core_tex"},
+        "west": {"uv": [6, 6, 10, 10], "texture": "#core_tex"},
+        "up": {"uv": [6, 6, 10, 10], "texture": "#core_tex"},
+        "down": {"uv": [6, 6, 10, 10], "texture": "#core_tex"}
+      }
+    },
+    {
+      "comment": "West Connection (Left Side extending from x=6 to x=0)",
+      "from": [1, 6, 6],
+      "to": [6, 10, 10],
+      "faces": {
+        "north": {"uv": [12, 0, 16, 5], "rotation": 90, "texture": "#conn_tex"},
+        "east": {"uv": [8, 0, 12, 4], "texture": "#conn_tex"},
+        "south": {"uv": [12, 0, 16, 5], "rotation": 270, "texture": "#conn_tex"},
+        "west": {"uv": [8, 0, 12, 4], "texture": "#conn_tex"},
+        "up": {"uv": [16, 0, 12, 5], "texture": "#conn_tex"},
+        "down": {"uv": [16, 5, 12, 0], "texture": "#conn_tex"}
+      }
+    },
+    {
+      "comment": "West Connection End Cap",
+      "from": [0, 5, 5],
+      "to": [1, 11, 11],
+      "faces": {
+        "north": {"uv": [6, 0, 7, 6], "texture": "#conn_tex"},
+        "east": {"uv": [0, 0, 6, 6], "texture": "#conn_tex"},
+        "south": {"uv": [6, 0, 7, 6], "texture": "#conn_tex"},
+        "west": {"uv": [0, 0, 6, 6], "texture": "#conn_tex"},
+        "up": {"uv": [6, 6, 0, 7], "rotation": 180, "texture": "#conn_tex"},
+        "down": {"uv": [6, 7, 0, 6], "texture": "#conn_tex"}
+      }
+    },
+    {
+      "comment": "East Connection (Right Side extending from x=10 to x=15)",
+      "from": [10, 6, 6],
+      "to": [15, 10, 10],
+      "faces": {
+        "north": {"uv": [12, 0, 16, 5], "rotation": 270, "texture": "#conn_tex"},
+        "east": {"uv": [8, 0, 12, 4], "texture": "#conn_tex"},
+        "south": {"uv": [12, 0, 16, 5], "rotation": 90, "texture": "#conn_tex"},
+        "west": {"uv": [8, 0, 12, 4], "texture": "#conn_tex"},
+        "up": {"uv": [16, 5, 12, 0], "texture": "#conn_tex"},
+        "down": {"uv": [16, 0, 12, 5], "texture": "#conn_tex"}
+      }
+    },
+    {
+      "comment": "East Connection End Cap",
+      "from": [15, 5, 5],
+      "to": [16, 11, 11],
+      "faces": {
+        "north": {"uv": [6, 0, 7, 6], "texture": "#conn_tex"},
+        "east": {"uv": [0, 0, 6, 6], "texture": "#conn_tex"},
+        "south": {"uv": [6, 0, 7, 6], "texture": "#conn_tex"},
+        "west": {"uv": [0, 0, 6, 6], "texture": "#conn_tex"},
+        "up": {"uv": [6, 7, 0, 6], "texture": "#conn_tex"},
+        "down": {"uv": [6, 6, 0, 7], "rotation": 180, "texture": "#conn_tex"}
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.625, 0.625, 0.625 ]
+    },
+    "ground": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 3, 0 ],
+      "scale": [ 0.25, 0.25, 0.25 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.5, 0.5, 0.5 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0, 2.5, 0 ],
+      "scale": [ 0.375, 0.375, 0.375 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 0, 135, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.4, 0.4, 0.4 ]
+    }
+  }
+}

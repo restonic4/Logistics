@@ -311,6 +311,15 @@ public class NetworkManager extends SavedData {
         return nodePositionIndex.get(blockPos);
     }
 
+    public <T extends Network> Optional<T> getNetworkByBlockPos(Class<T> networkClass, BlockPos blockPos) {
+        Network network = nodePositionIndex.get(blockPos);
+        if (networkClass.isInstance(network)) {
+            return Optional.of(networkClass.cast(network));
+        }
+
+        return Optional.empty();
+    }
+
     public NetworkNode getNodeByBlockPos(BlockPos blockPos) {
         Network network = getNetworkByBlockPos(blockPos);
         if (network == null) return null;

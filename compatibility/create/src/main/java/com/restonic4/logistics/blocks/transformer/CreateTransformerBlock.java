@@ -10,10 +10,14 @@ import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class CreateTransformerBlock extends DirectionalKineticBlock implements NetworkBlock, IBE<CreateTransformerBlockEntity> {
     public CreateTransformerBlock(Properties properties) {
@@ -75,5 +79,27 @@ public class CreateTransformerBlock extends DirectionalKineticBlock implements N
         }
 
         super.onRemove(blockState, level, blockPos, newBlockState, isMoving);
+    }
+
+    private static final VoxelShape SHAPE_NS = Block.box(1.0, 0.0, 0.0, 15.0, 15.0, 16.0);
+    private static final VoxelShape SHAPE_EW = Block.box(0.0, 0.0, 1.0, 16.0, 15.0, 15.0);
+    private static final VoxelShape SHAPE_UD = Block.box(1.0, 0.0, 0.0, 15.0, 16.0, 15.0);
+
+    private static VoxelShape shapeFor(Direction facing) {
+        return switch (facing) {
+            case NORTH, SOUTH -> SHAPE_NS;
+            case EAST, WEST   -> SHAPE_EW;
+            case UP, DOWN     -> SHAPE_UD;
+        };
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return shapeFor(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return shapeFor(state.getValue(FACING));
     }
 }

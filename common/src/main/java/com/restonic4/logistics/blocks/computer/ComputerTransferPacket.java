@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.networking.C2SPacket;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.types.ItemNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -19,11 +20,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public record ComputerTransferPacket(BlockPos from, BlockPos target, int quantity, String query) implements C2SPacket {
+public record ComputerTransferPacket(BlockPos computerNode, BlockPos from, BlockPos target, int quantity, String query) implements C2SPacket {
     public static final ResourceLocation ID = Logistics.id("computer_transfer");
 
     public ComputerTransferPacket(FriendlyByteBuf buf) {
-        this(buf.readBlockPos(), buf.readBlockPos(), buf.readInt(), buf.readUtf());
+        this(buf.readBlockPos(), buf.readBlockPos(), buf.readBlockPos(), buf.readInt(), buf.readUtf());
     }
 
     @Override
@@ -38,21 +39,36 @@ public record ComputerTransferPacket(BlockPos from, BlockPos target, int quantit
 
         AccessorNode node = (AccessorNode) network.getNodeIndex().findByBlockPos(from);
 
-        ItemStack itemStack = new ItemStack(item, quantity);
-        if (node.consumeItem(itemStack, network.getServerLevel())) {
-            Parcel parcel = network.requestParcel(itemStack, from, target);
-            if (parcel == null) {
-                network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            } else {
-                network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        EnergyNetwork energyNetwork = (EnergyNetwork) NetworkManager.get((ServerLevel) player.level()).getNetworkByBlockPos(computerNode);
+        energyNetwork.execute(() -> {
+            ComputerNode computerNodeComp = (ComputerNode) energyNetwork.getNodeIndex().findByBlockPos(computerNode);
+            if (!computerNodeComp.isPowered()) {
+                network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+                return;
             }
-        } else {
-            network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-        }
+
+            long requirement = quantity * Parcel.ENERGY_PRICE_PER_ITEM;
+            long energy = energyNetwork.requestEnergyConsumption(requirement);
+
+            ItemStack itemStack = new ItemStack(item, quantity);
+            if (energy >= requirement && node.consumeItem(itemStack, network.getServerLevel())) {
+                Parcel parcel = network.requestParcel(itemStack, from, target);
+                if (parcel == null) {
+                    energyNetwork.reportEnergyProduction(energy);
+                    network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                } else {
+                    network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            } else {
+                energyNetwork.reportEnergyProduction(energy);
+                network.getServerLevel().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+            }
+        });
     }
 
     @Override
     public void write(FriendlyByteBuf buf) {
+        buf.writeBlockPos(computerNode);
         buf.writeBlockPos(from);
         buf.writeBlockPos(target);
         buf.writeInt(quantity);

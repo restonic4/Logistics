@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.accersor;
 
+import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.nodes.InventoryNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
@@ -11,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class AccessorNode extends InventoryNode {
+public class AccessorNode extends InventoryNode implements FacingNode {
     @Nullable private Direction facing = null;
 
     public AccessorNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
@@ -23,35 +24,32 @@ public class AccessorNode extends InventoryNode {
         this.dumpParcelOnContainer(parcel);
     }
 
+    @Override
     public void setFacing(@NotNull Direction facing) {
         this.facing = facing;
     }
 
-    @Nullable
-    public Direction getFacing() {
+    @Override
+    @Nullable public Direction getFacing() {
         return facing;
     }
 
     @Override
     @Nullable protected BlockPos resolveTargetPos() {
         if (facing == null) return null;
-        return getBlockPos().relative(facing.getOpposite());
+        return getBlockPos().relative(facing);
     }
 
     @Override
     protected void saveExtra(CompoundTag tag) {
         super.saveExtra(tag);
-        if (facing != null) {
-            tag.putString("facing", facing.getSerializedName());
-        }
+        this.saveFacing(tag);
     }
 
     @Override
     protected void loadExtra(CompoundTag tag) {
         super.loadExtra(tag);
-        if (tag.contains("facing")) {
-            facing = Direction.byName(tag.getString("facing"));
-        }
+        this.loadFacing(tag);
     }
 
     @Override

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    "LHS",
+    "BBB"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "L": {
+      "item": "logistics:cable"
+    },
+    "H": {
+      "item": "logistics:chip"
+    },
+    "S": {
+      "item": "create:shaft"
+    }
+  },
+  "result": {
+    "item": "logistics:create_motor",
+    "count": 1
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "powered=false,facing=north": { "model": "logistics:block/computer/off" },
+    "powered=false,facing=east":  { "model": "logistics:block/computer/off", "y": 90 },
+    "powered=false,facing=south": { "model": "logistics:block/computer/off", "y": 180 },
+    "powered=false,facing=west":  { "model": "logistics:block/computer/off", "y": 270 },
+
+    "powered=true,facing=north":  { "model": "logistics:block/computer/on" },
+    "powered=true,facing=east":   { "model": "logistics:block/computer/on", "y": 90 },
+    "powered=true,facing=south":  { "model": "logistics:block/computer/on", "y": 180 },
+    "powered=true,facing=west":   { "model": "logistics:block/computer/on", "y": 270 }
+  }
+}

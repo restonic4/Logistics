@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "XHX",
+    "ICI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "X": {
+      "item": "minecraft:chain"
+    },
+    "H": {
+      "item": "logistics:chip"
+    }
+  },
+  "result": {
+    "item": "logistics:network_connector",
+    "count": 1
+  }
+}

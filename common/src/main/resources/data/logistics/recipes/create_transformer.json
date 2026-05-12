@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BRB",
+    "LCS",
+    "BBB"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "L": {
+      "item": "logistics:cable"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "S": {
+      "item": "create:shaft"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "item": "logistics:create_transformer",
+    "count": 1
+  }
+}

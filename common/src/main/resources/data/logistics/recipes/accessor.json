@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ITI",
+    "CHD",
+    "ITI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "T": {
+      "item": "minecraft:tuff"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "H": {
+      "item": "logistics:chip"
+    },
+    "D": {
+      "item": "minecraft:dried_kelp"
+    }
+  },
+  "result": {
+    "item": "logistics:accessor",
+    "count": 1
+  }
+}

@@ -4,8 +4,11 @@ import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import com.restonic4.logistics.registry.entries.CreativeTabEntry;
+import com.restonic4.logistics.registry.entries.ItemEntry;
+import com.restonic4.logistics.registry.entries.SoundEventEntry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -17,6 +20,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface TargetedPlatformRegistry<B extends Block, BE extends BlockEntity, I extends Item, N extends NetworkNode> {
+    ItemEntry fromItemBuilder(ResourceLocation id, Supplier<Item> itemFactory, List<ResourceKey<CreativeModeTab>> tabs);
+
     BlockEntry<B, N> fromBlockBuilder(
             ResourceLocation id,
             Supplier<? extends B> blockFactory,
@@ -27,6 +32,8 @@ public interface TargetedPlatformRegistry<B extends Block, BE extends BlockEntit
     );
 
     void fromCreativeTabBuilder(CreativeTabEntry entry);
+
+    SoundEventEntry fromSoundBuilder(ResourceLocation id, Supplier<SoundEvent> soundEventFactory);
 
     void freeze();
 }

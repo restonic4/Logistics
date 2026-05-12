@@ -7,6 +7,7 @@ import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -44,6 +45,22 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
 
         ServerLevel level = ownNetwork.getServerLevel();
         return NetworkManager.get(level).getAdjacentNetwork(blockPos, networkClass);
+    }
+
+    public Network getFacingNetwork(Direction direction) {
+        Network ownNetwork = getNetwork();
+        if (ownNetwork == null) return null;
+
+        ServerLevel level = ownNetwork.getServerLevel();
+        return NetworkManager.get(level).getNetworkByBlockPos(blockPos.relative(direction));
+    }
+
+    public <T extends Network> Optional<T> getFacingNetwork(Class<T> networkClass, Direction direction) {
+        Network ownNetwork = getNetwork();
+        if (ownNetwork == null) return Optional.empty();
+
+        ServerLevel level = ownNetwork.getServerLevel();
+        return NetworkManager.get(level).getNetworkByBlockPos(networkClass, blockPos.relative(direction));
     }
 
     public final CompoundTag save() {

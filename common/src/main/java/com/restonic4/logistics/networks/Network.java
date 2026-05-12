@@ -14,7 +14,9 @@ import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider {
     private final NetworkTypeRegistry.NetworkType<?> type;
@@ -25,6 +27,8 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
     private boolean isDirty = false;
     private long dirtyBits = 0L;
 
+    private final Queue<Runnable> scheduledTasks = new ConcurrentLinkedQueue<>();
+
     protected Network(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
         this.type = type;
         this.uuid = UUID.randomUUID();
@@ -32,7 +36,17 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
         this.nodeIndex = new NodeIndex(this);
     }
 
+    public void execute(Runnable task) {
+        this.scheduledTasks.add(task);
+    }
+
     public void tick() {
+        while (!scheduledTasks.isEmpty()) {
+            Runnable task = scheduledTasks.poll();
+            if (task != null) {
+                task.run();
+            }
+        }
         nodeIndex.getAllNodes().forEach(NetworkNode::tick);
     }
 

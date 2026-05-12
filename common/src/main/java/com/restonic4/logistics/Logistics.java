@@ -2,10 +2,13 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
+import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.experiment.Items;
+import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.tooltip.NetworkScannerServerHandler;
@@ -19,12 +22,14 @@ public class Logistics {
     public static final CreativeTabEntry CUSTOM_TAB = PlatformRegistry
             .tab(
                     id("custom_tab"),
-                    () -> new ItemStack(BlockRegistry.BATTERY_BLOCK.getItem())
+                    () -> new ItemStack(BlockRegistry.COMPUTER_BLOCK.getItem())
             )
             .register();
 
     public static void init() {
+        Items.register();
         BlockRegistry.register();
+        Sounds.register();
         CompatibilityManager.registerCommon();
         NetworkManager.register();
 
@@ -37,6 +42,7 @@ public class Logistics {
         AccessorBlock.registerEvents();
 
         NetworkingRegistry.registerServerTargetedPacket(ComputerTransferPacket.ID, ComputerTransferPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(ComputerScreenOffPacket.ID, ComputerScreenOffPacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

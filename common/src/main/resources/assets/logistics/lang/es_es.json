@@ -1,0 +1,20 @@
+{
+  "itemGroup.logistics.custom_tab": "Logistics",
+
+  "item.logistics.silicon": "Silicona",
+  "item.logistics.chip": "Chip",
+
+  "block.logistics.cable": "Cable",
+  "block.logistics.generator": "[CREATIVO] Generador",
+  "block.logistics.machine": "[CREATIVO] Máquina",
+  "block.logistics.battery": "Batería",
+  "block.logistics.network_connector": "Conector de redes",
+  "block.logistics.computer": "Ordenador",
+
+  "block.logistics.pipe": "Tubería",
+  "block.logistics.accessor": "Interfaz de acceso",
+  "block.logistics.create_motor": "Motor de Create",
+  "block.logistics.create_transformer": "Transformador de Create",
+
+  "screen.logistics.computer.info_body": "Este mod está en desarrollo, pueden haber cambios en el futuro. Programación por restonic4, texturas por Aguilex_2.0"
+}

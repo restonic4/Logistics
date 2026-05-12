@@ -2,9 +2,11 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.ClientBlockRegistry;
+import com.restonic4.logistics.blocks.computer.ComputerOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.RenderCallbacks;
+import com.restonic4.logistics.experiment.ShockwavePacket;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
 import com.restonic4.logistics.networks.tooltip.NetworkTooltipPacket;
@@ -24,11 +26,13 @@ public class LogisticsClient {
         CompatibilityManager.registerClient();
         NetworkScannerOverlay.register();
 
-        RenderCallbacks.ON_LEVEL_RENDERED.register(NetworkDebugRenderer::render);
+        //RenderCallbacks.ON_LEVEL_RENDERED.register(NetworkDebugRenderer::render);
         ParcelRenderer.register();
 
         NetworkingRegistry.registerClientTargetedPacket(NetworkTooltipPacket.ID, NetworkTooltipPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ComputerSyncPacket.ID, ComputerSyncPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(ComputerOffPacket.ID, ComputerOffPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ParcelRenderSyncPacket.ID, ParcelRenderSyncPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(ShockwavePacket.ID, ShockwavePacket::new);
     }
 }

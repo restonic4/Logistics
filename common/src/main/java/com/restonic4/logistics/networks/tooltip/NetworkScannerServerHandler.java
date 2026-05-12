@@ -14,7 +14,7 @@ import net.minecraft.world.phys.HitResult;
 
 public class NetworkScannerServerHandler {
     private static final double REACH = 6.0;
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static void tick(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel serverLevel)) {

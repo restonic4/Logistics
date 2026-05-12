@@ -15,7 +15,11 @@
     "events.GuiMixin",
     "events.ItemBlockRenderTypesMixin",
     "events.LevelRendererMixin",
-    "networking.ClientPacketListenerMixin"
+    "experiment.GameRendererMixin",
+    "experiment.LevelRendererMixin",
+    "experiment.MinecraftMixin",
+    "networking.ClientPacketListenerMixin",
+    "registries.SoundManagerMixin"
   ],
   "server": [],
   "injectors": {

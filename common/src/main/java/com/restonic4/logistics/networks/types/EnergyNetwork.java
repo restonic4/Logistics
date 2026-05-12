@@ -1,6 +1,7 @@
 package com.restonic4.logistics.networks.types;
 
 import com.restonic4.logistics.blocks.cable.CableNode;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
@@ -12,7 +13,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class EnergyNetwork extends Network {
     public static final int PIPE_EXTRA_BUFFER = 1;
@@ -155,6 +158,12 @@ public class EnergyNetwork extends Network {
     public long getTotalCableEnergyBuffer() { return cacheTotalCableEnergyBuffer; }
     public void setStoredCableEnergyBuffer(long buffer) { this.networkCableBuffer = buffer; }
 
+    public Set<NetworkConnectorNode> getNetworkConnectors() {
+        return getNodeIndex().getAllNodes().stream()
+                .filter(node -> node instanceof NetworkConnectorNode)
+                .map(node -> (NetworkConnectorNode) node)
+                .collect(Collectors.toSet());
+    }
 
     @Override
     public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {

@@ -5,6 +5,8 @@ import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.platform.Services;
 import com.restonic4.logistics.registry.builders.BlockBuilder;
 import com.restonic4.logistics.registry.builders.CreativeTabBuilder;
+import com.restonic4.logistics.registry.builders.ItemBuilder;
+import com.restonic4.logistics.registry.builders.SoundBuilder;
 import com.restonic4.logistics.registry.entries.SelfDropEntry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -28,6 +30,12 @@ public class PlatformRegistry {
     private static final List<SelfDropEntry> SELF_DROP_LOOT_INJECTIONS = new ArrayList<>();
     private static boolean FROZEN_SELF_DROP_LOOT_INJECTIONS = false;
 
+    public static ItemBuilder item(
+            ResourceLocation resourceLocation, Supplier<Item> itemFactory
+    ) {
+        return new ItemBuilder(resourceLocation, itemFactory);
+    }
+
     public static <B extends Block, N extends NetworkNode> BlockBuilder<B, N> block(
             ResourceLocation resourceLocation, Supplier<B> blockFactory
     ) {
@@ -38,6 +46,10 @@ public class PlatformRegistry {
             ResourceLocation resourceLocation, Supplier<ItemStack> iconSupplier
     ) {
         return new CreativeTabBuilder(resourceLocation, iconSupplier);
+    }
+
+    public static SoundBuilder sound(ResourceLocation resourceLocation) {
+        return new SoundBuilder(resourceLocation);
     }
 
     public static void scheduleCreativeTabInjection(ResourceKey<CreativeModeTab> tabKey, Supplier<Item> itemSupplier) {

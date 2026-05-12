@@ -1,6 +1,7 @@
 {
   "textures": {
-    "texture": "block/iron_block"
+    "texture": "logistics:block/cable/connection",
+    "particle": "logistics:block/cable/core"
   },
   "elements": [
     {

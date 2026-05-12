@@ -11,6 +11,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Set;
 
 public class Parcel {
+    public static final long ENERGY_PRICE_PER_ITEM = 2L;
+
     private ItemStack itemStack;
     private BlockPos start;
     private BlockPos end;

@@ -8,6 +8,7 @@ import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import com.restonic4.logistics.registry.entries.CreativeTabEntry;
+import com.restonic4.logistics.registry.entries.SoundEventEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -30,12 +31,14 @@ public class ForgeRegistry<B extends Block, BE extends BlockEntity, I extends It
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Constants.MOD_ID);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, Constants.MOD_ID);
     private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Constants.MOD_ID);
+    private static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Constants.MOD_ID);
 
     public static void init(IEventBus modBus) {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
         CREATIVE_TABS.register(modBus);
+        SOUND_EVENTS.register(modBus);
     }
 
     public BlockEntry<B, N> fromBlockBuilder(
@@ -96,6 +99,14 @@ public class ForgeRegistry<B extends Block, BE extends BlockEntity, I extends It
             entry.markLoaded(tab);
             return tab;
         });
+    }
+
+    @Override
+    public SoundEventEntry fromSoundBuilder(ResourceLocation id, Supplier<SoundEvent> soundEventFactory) {
+        SoundEventEntry entry = new SoundEventEntry(id);
+        RegistryObject<SoundEvent> holder = SOUND_EVENTS.register(id.getPath(), soundEventFactory);
+        entry.markLoaded(holder::get);
+        return entry;
     }
 
     @Override

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": { "model": "logistics:block/network_connector" },
+    "facing=east": { "model": "logistics:block/network_connector", "y": 90 },
+    "facing=south": { "model": "logistics:block/network_connector", "y": 180 },
+    "facing=west": { "model": "logistics:block/network_connector", "y": 270 },
+    "facing=up": { "model": "logistics:block/network_connector", "x": 270 },
+    "facing=down": { "model": "logistics:block/network_connector", "x": 90 }
+  }
+}

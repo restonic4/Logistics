@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": { "model": "logistics:block/accessor" },
+    "facing=east": { "model": "logistics:block/accessor", "y": 90 },
+    "facing=south": { "model": "logistics:block/accessor", "y": 180 },
+    "facing=west": { "model": "logistics:block/accessor", "y": 270 },
+    "facing=up": { "model": "logistics:block/accessor", "x": 270 },
+    "facing=down": { "model": "logistics:block/accessor", "x": 90 }
+  }
+}

@@ -53,6 +53,11 @@ public class BlockBuilder<B extends Block, N extends NetworkNode> {
         return this;
     }
 
+    public BlockBuilder<B, N> withItem(Item.Properties properties) {
+        this.itemFactory = block -> new BlockItem(block, properties);
+        return this;
+    }
+
     public BlockBuilder<B, N> withItem(Function<B, Item> factory) {
         this.itemFactory = factory;
         return this;

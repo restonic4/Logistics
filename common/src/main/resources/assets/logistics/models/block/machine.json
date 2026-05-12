@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "minecraft:missingno",
+    "north": "minecraft:missingno",
+    "south": "minecraft:block/bedrock",
+    "east": "minecraft:block/spawner",
+    "west": "minecraft:block/spawner",
+    "up": "minecraft:block/end_portal_frame_top",
+    "down": "minecraft:block/command_block_side"
+  }
+}

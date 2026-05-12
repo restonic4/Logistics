@@ -1,0 +1,20 @@
+{
+  "itemGroup.logistics.custom_tab": "Logistics",
+
+  "item.logistics.silicon": "Silicon",
+  "item.logistics.chip": "Chip",
+
+  "block.logistics.cable": "Cable",
+  "block.logistics.generator": "[CREATIVE] Generator",
+  "block.logistics.machine": "[CREATIVE] Machine",
+  "block.logistics.battery": "Battery",
+  "block.logistics.network_connector": "Network Connector",
+  "block.logistics.computer": "Computer",
+
+  "block.logistics.pipe": "Pipe",
+  "block.logistics.accessor": "Accessor",
+  "block.logistics.create_motor": "Create Motor",
+  "block.logistics.create_transformer": "Create Transformer",
+
+  "screen.logistics.computer.info_body": "This mod is under alpha development, things might change on the future. Coding by restonic4, textures by Aguilex_2.0"
+}

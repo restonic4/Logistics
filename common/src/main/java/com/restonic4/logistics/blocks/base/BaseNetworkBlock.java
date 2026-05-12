@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.base;
 
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.registry.NodeTypeRegistry;

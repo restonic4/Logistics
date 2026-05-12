@@ -7,10 +7,13 @@ import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import com.restonic4.logistics.registry.entries.CreativeTabEntry;
+import com.restonic4.logistics.registry.entries.ItemEntry;
+import com.restonic4.logistics.registry.entries.SoundEventEntry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -24,6 +27,20 @@ import java.util.function.Supplier;
 
 public class FabricRegistry<B extends Block, BE extends BlockEntity, I extends Item, N extends NetworkNode> implements TargetedPlatformRegistry<B, BE, I, N> {
     private final List<Runnable> pendingMarks = new ArrayList<>();
+
+    @Override
+    public ItemEntry fromItemBuilder(ResourceLocation id, Supplier<Item> itemFactory, List<ResourceKey<CreativeModeTab>> tabs) {
+        Item item = itemFactory.get();
+        Registry.register(BuiltInRegistries.ITEM, id, item);
+        ItemEntry itemEntry = new ItemEntry(id);
+        itemEntry.markLoaded(item);
+
+        for (ResourceKey<CreativeModeTab> tab: tabs) {
+            PlatformRegistry.scheduleCreativeTabInjection(tab, () -> item);
+        }
+
+        return itemEntry;
+    }
 
     public BlockEntry<B, N> fromBlockBuilder(
             ResourceLocation id,
@@ -88,6 +105,16 @@ public class FabricRegistry<B extends Block, BE extends BlockEntity, I extends I
 
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, entry.getKey().location(), tab);
         entry.markLoaded(tab);
+    }
+
+    @Override
+    public SoundEventEntry fromSoundBuilder(ResourceLocation id, Supplier<SoundEvent> soundEventFactory) {
+        SoundEvent soundEvent = soundEventFactory.get();
+        Registry.register(BuiltInRegistries.SOUND_EVENT, id, soundEvent);
+
+        SoundEventEntry entry = new SoundEventEntry(id);
+        entry.markLoaded(() -> soundEvent);
+        return entry;
     }
 
     @Override

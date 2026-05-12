@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "QQQ",
+    "ECG",
+    "QEQ"
+  ],
+  "key": {
+    "Q": {
+      "item": "minecraft:quartz"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "C": {
+      "item": "logistics:chip"
+    },
+    "E": {
+      "item": "logistics:cable"
+    }
+  },
+  "result": {
+    "item": "logistics:computer",
+    "count": 1
+  }
+}

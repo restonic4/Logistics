@@ -1,6 +1,7 @@
 {
   "textures": {
-    "texture": "block/glass"
+    "texture": "logistics:block/pipe/core",
+    "particle": "logistics:block/pipe/core"
   },
   "elements": [
     {

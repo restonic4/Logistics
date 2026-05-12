@@ -1,16 +1,18 @@
 package com.restonic4.logistics.blocks.computer;
 
 import com.restonic4.logistics.Logistics;
+import com.restonic4.logistics.blocks.computer.screen.ComputerScreen;
 import com.restonic4.logistics.networking.S2CPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record ComputerSyncPacket(List<BlockPos> accessors) implements S2CPacket {
+public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors) implements S2CPacket {
     public static final ResourceLocation ID = Logistics.id("computer_sync");
 
     public ComputerSyncPacket(FriendlyByteBuf buf) {
@@ -18,7 +20,7 @@ public record ComputerSyncPacket(List<BlockPos> accessors) implements S2CPacket 
     }
 
     private ComputerSyncPacket(DecodedData data) {
-        this(data.accessors);
+        this(data.computerNode, data.accessors);
     }
 
     @Override
@@ -29,9 +31,17 @@ public record ComputerSyncPacket(List<BlockPos> accessors) implements S2CPacket 
 
     @Override
     public void write(FriendlyByteBuf buf) {
+        buf.writeBlockPos(computerNode);
         buf.writeVarInt(accessors.size());
-        for (int i = 0; i < accessors.size(); i++) {
-            buf.writeBlockPos(accessors.get(i));
+
+        for (AccessorData accessor : accessors) {
+            buf.writeBlockPos(accessor.pos());
+
+            List<ItemStack> inventory = accessor.inventory();
+            buf.writeVarInt(inventory.size());
+            for (ItemStack stack : inventory) {
+                buf.writeItem(stack);
+            }
         }
     }
 
@@ -41,15 +51,26 @@ public record ComputerSyncPacket(List<BlockPos> accessors) implements S2CPacket 
     }
 
     private static DecodedData readData(FriendlyByteBuf buf) {
-        int size = buf.readVarInt();
-        List<BlockPos> accessors = new ArrayList<>(size);
+        BlockPos computerNode = buf.readBlockPos();
 
-        for (int i = 0; i < size; i++) {
-            accessors.add(buf.readBlockPos());
+        int accessorCount = buf.readVarInt();
+        List<AccessorData> accessors = new ArrayList<>(accessorCount);
+
+        for (int i = 0; i < accessorCount; i++) {
+            BlockPos pos = buf.readBlockPos();
+
+            int inventorySize = buf.readVarInt();
+            List<ItemStack> inventory = new ArrayList<>(inventorySize);
+            for (int j = 0; j < inventorySize; j++) {
+                inventory.add(buf.readItem());
+            }
+
+            accessors.add(new AccessorData(pos, inventory));
         }
 
-        return new DecodedData(accessors);
+        return new DecodedData(computerNode, accessors);
     }
 
-    private record DecodedData(List<BlockPos> accessors) {}
+    public record AccessorData(BlockPos pos, List<ItemStack> inventory) {}
+    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors) {}
 }
