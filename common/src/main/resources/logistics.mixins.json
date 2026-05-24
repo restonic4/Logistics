@@ -6,6 +6,7 @@
   "compatibilityLevel": "${mixin_java_version}",
   "mixins": [
     "CreativeModeTabMixin",
+    "events.LevelChunkMixin",
     "events.ServerLevelMixin",
     "networking.ServerGamePacketListenerImplMixin",
     "registries.LootDataManagerMixin",

@@ -38,4 +38,18 @@ public class MinecraftUtils {
         }
         return Optional.empty();
     }
+
+    public static Direction getRelativeDown(Direction facing) {
+        if (facing.getAxis().isHorizontal()) {
+            return Direction.DOWN;
+        }
+        return Direction.NORTH;
+    }
+
+    public static Direction getRelativeRight(Direction facing) {
+        if (facing.getAxis().isHorizontal()) {
+            return facing.getClockWise();
+        }
+        return facing == Direction.UP ? Direction.EAST : Direction.WEST;
+    }
 }

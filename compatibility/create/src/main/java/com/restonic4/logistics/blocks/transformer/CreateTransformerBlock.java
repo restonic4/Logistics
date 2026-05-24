@@ -19,6 +19,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public class CreateTransformerBlock extends DirectionalKineticBlock implements NetworkBlock, IBE<CreateTransformerBlockEntity> {
     public CreateTransformerBlock(Properties properties) {
         super(properties);
@@ -101,5 +104,11 @@ public class CreateTransformerBlock extends DirectionalKineticBlock implements N
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return shapeFor(state.getValue(FACING));
+    }
+
+    @Override
+    public Set<Direction> getAllowedConnections(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        return EnumSet.of(facing);
     }
 }

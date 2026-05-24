@@ -1,18 +1,26 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.blocks.base.NetworkBlock;
+import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
+import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
 import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +28,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
-// TODO: We need some method on Network to tell the manager when the network has been discarded???? Older networks still appear after merging multiple networks
 public class NetworkManager extends SavedData {
     private static final String DATA_NAME = "logistics_networks";
 
@@ -50,6 +57,34 @@ public class NetworkManager extends SavedData {
         ServerTickEvents.END.register((server) -> {
             for (ServerLevel level : server.getAllLevels()) {
                 NetworkManager.get(level).tick();
+            }
+        });
+
+        ChunkEvents.BLOCKSTATE_CHANGED.register((levelChunk, pos, oldState, newState, isMoving) -> {
+            Level level = levelChunk.getLevel();
+            if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
+
+            if (!(newState.getBlock() instanceof NetworkBlock networkBlock)) return;
+            if (networkBlock.getAllowedConnections(oldState).equals(networkBlock.getAllowedConnections(newState))) return;
+
+            NetworkManager manager = NetworkManager.get(serverLevel);
+            NetworkNode node = manager.getNodeByBlockPos(pos);
+            if (node == null) return;
+            if (!(node instanceof FacingNode facingNode)) return;
+
+            Direction live = null;
+
+            if (newState.hasProperty(BlockStateProperties.FACING)) {
+                live = newState.getValue(BlockStateProperties.FACING);
+            } else if (newState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+                live = newState.getValue(BlockStateProperties.HORIZONTAL_FACING);
+            } else if (newState.hasProperty(BlockStateProperties.VERTICAL_DIRECTION)) {
+                live = newState.getValue(BlockStateProperties.VERTICAL_DIRECTION);
+            }
+
+            if (live != null && live != facingNode.getFacing()) {
+                Constants.LOG.info("BlockState for node {} has changed! Updating facing property from {} to {}!", pos, facingNode.getFacing(), live);
+                facingNode.setFacing(live);
             }
         });
     }
@@ -190,16 +225,23 @@ public class NetworkManager extends SavedData {
 
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
-        MinecraftUtils.forEachNeighbor(blockPos, (neighborPos) -> {
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = blockPos.relative(direction);
             NetworkNode neighborNode = network.getNodeIndex().findByBlockPos(neighborPos);
-            if (neighborNode == null) return;
+            if (neighborNode == null) continue;
 
             Network neighborNetwork = neighborNode.getNetwork();
-            if (neighborNetwork == null) return;
-            if (neighborNetwork.getType() != network.getType()) return;
+            if (neighborNetwork == null) continue;
+            if (neighborNetwork.getType() != network.getType()) continue;
+
+            // Verify the neighbor still allows connection toward the removed position
+            BlockState neighborState = serverLevel.getBlockState(neighborPos);
+            if (neighborState.getBlock() instanceof NetworkBlock neighborBlock) {
+                if (!neighborBlock.canConnectOnSide(neighborState, direction.getOpposite())) continue;
+            }
 
             neighborsInNetwork.add(neighborPos);
-        });
+        }
 
         // Case 1: was the only member, network is now empty
         if (neighborsInNetwork.isEmpty()) {
@@ -286,24 +328,50 @@ public class NetworkManager extends SavedData {
             BlockPos current = queue.poll();
             if (!result.add(current)) continue; // already visited
 
-            MinecraftUtils.forEachNeighbor(current, (neighborPos) -> {
-                if (!result.contains(neighborPos) && allowedPositions.contains(neighborPos)) {
+            for (Direction direction : Direction.values()) {
+                BlockPos neighborPos = current.relative(direction);
+                if (result.contains(neighborPos) || !allowedPositions.contains(neighborPos)) continue;
+
+                if (canBlocksConnect(current, neighborPos, direction)) {
                     queue.add(neighborPos);
                 }
-            });
+            }
         }
-
         return result;
     }
 
+    // TODO: This loads chunks, this should be used carefully
+    private boolean canBlocksConnect(BlockPos posA, BlockPos posB, Direction dirAToB) {
+        BlockState stateA = serverLevel.getBlockState(posA);
+        BlockState stateB = serverLevel.getBlockState(posB);
+
+        if (!(stateA.getBlock() instanceof NetworkBlock blockA)) return false;
+        if (!(stateB.getBlock() instanceof NetworkBlock blockB)) return false;
+
+        return blockA.canConnectOnSide(stateA, dirAToB) && blockB.canConnectOnSide(stateB, dirAToB.getOpposite());
+    }
+
+    // TODO: This loads chunks, this should be used carefully
     private Set<Network> getNeighborNetworks(BlockPos pos, NetworkTypeRegistry.NetworkType<?> networkType) {
         Set<Network> networkSet = new HashSet<>();
-        MinecraftUtils.forEachNeighbor(pos, (neighborPos) -> {
+        BlockState blockState = serverLevel.getBlockState(pos);
+        NetworkBlock block = (blockState.getBlock() instanceof NetworkBlock networkBlock) ? networkBlock : null;
+
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = pos.relative(direction);
+            BlockState neighborState = serverLevel.getBlockState(neighborPos);
+
+            if (!(neighborState.getBlock() instanceof NetworkBlock neighborBlock)) continue;
+
+            if (block != null && !block.canConnectOnSide(blockState, direction)) continue;
+            if (!neighborBlock.canConnectOnSide(neighborState, direction.getOpposite())) continue;
+
             Network network = getNetworkByBlockPos(neighborPos);
             if (network != null && network.getType() == networkType) {
                 networkSet.add(network);
             }
-        });
+        }
+
         return networkSet;
     }
 

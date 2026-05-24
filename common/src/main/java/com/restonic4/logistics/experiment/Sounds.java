@@ -31,6 +31,18 @@ public class Sounds {
             .sound("computer/off")
             .register();
 
+    public static final SoundEventEntry COMPUTER_OPEN = PlatformRegistry
+            .sound(new ResourceLocation(Constants.MOD_ID, "computer/open"))
+            .subtitle("subtitles.logistics.computer.open")
+            .sound("computer/open")
+            .register();
+
+    public static final SoundEventEntry COMPUTER_CLOSE = PlatformRegistry
+            .sound(new ResourceLocation(Constants.MOD_ID, "computer/close"))
+            .subtitle("subtitles.logistics.computer.close")
+            .sound("computer/close")
+            .register();
+
     public static final SoundEventEntry COMPUTER_AMBIENT = PlatformRegistry
             .sound(new ResourceLocation(Constants.MOD_ID, "computer/ambient"))
             .subtitle("subtitles.logistics.computer.ambient")

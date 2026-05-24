@@ -2,8 +2,10 @@ package com.restonic4.logistics.blocks.cable;
 
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
@@ -55,7 +57,7 @@ public class CableBlock extends BaseNetworkBlock {
 
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
-        boolean connects = this.canConnectTo(neighborState);
+        boolean connects = this.canConnectTo(state, neighborState, direction);
         return state.setValue(PROPERTY_BY_DIRECTION.get(direction), connects);
     }
 
@@ -64,13 +66,27 @@ public class CableBlock extends BaseNetworkBlock {
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = pos.relative(direction);
             BlockState neighborState = level.getBlockState(neighborPos);
-            state = state.setValue(PROPERTY_BY_DIRECTION.get(direction), this.canConnectTo(neighborState));
+            state = state.setValue(PROPERTY_BY_DIRECTION.get(direction), this.canConnectTo(state, neighborState, direction));
         }
         return state;
     }
 
-    private boolean canConnectTo(BlockState state) {
-        return state.getBlock() instanceof NetworkBlock;
+    private static boolean areNetworkTypesCompatible(NetworkBlock self, NetworkBlock other) {
+        if (self instanceof NetworkConnectorBlock || other instanceof NetworkConnectorBlock) {
+            return true;
+        }
+
+        ResourceLocation selfType = self.getNetworkTypeID();
+        ResourceLocation otherType = other.getNetworkTypeID();
+        return selfType != null && selfType.equals(otherType);
+    }
+
+    private boolean canConnectTo(BlockState myState, BlockState neighborState, Direction direction) {
+        if (!(neighborState.getBlock() instanceof NetworkBlock neighborBlock)) return false;
+        if (!neighborBlock.canConnectOnSide(neighborState, direction.getOpposite())) return false;
+        if (!this.canConnectOnSide(myState, direction)) return false;
+        if (!areNetworkTypesCompatible(this, neighborBlock)) return false;
+        return true;
     }
 
     private static final VoxelShape CORE = Block.box(6, 6, 6, 10, 10, 10);

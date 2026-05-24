@@ -26,7 +26,7 @@ public class LogisticsClient {
         CompatibilityManager.registerClient();
         NetworkScannerOverlay.register();
 
-        //RenderCallbacks.ON_LEVEL_RENDERED.register(NetworkDebugRenderer::render);
+        RenderCallbacks.ON_LEVEL_RENDERED.register(NetworkDebugRenderer::render);
         ParcelRenderer.register();
 
         NetworkingRegistry.registerClientTargetedPacket(NetworkTooltipPacket.ID, NetworkTooltipPacket::new);

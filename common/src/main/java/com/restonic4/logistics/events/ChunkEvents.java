@@ -2,9 +2,11 @@ package com.restonic4.logistics.events;
 
 import com.restonic4.logistics.events.core.Event;
 import com.restonic4.logistics.events.core.EventFactory;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 public class ChunkEvents {
@@ -19,6 +21,13 @@ public class ChunkEvents {
     public static final Event<Unload> UNLOAD = EventFactory.createVoid(Unload.class, callbacks -> (level, levelChunk) -> {
         for (Unload callback : callbacks) {
             callback.onEvent(level, levelChunk);
+        }
+    });
+
+    @FunctionalInterface public interface BlockStateChanged { void onEvent(LevelChunk levelChunk, BlockPos blockPos, BlockState oldState, BlockState newState, boolean isMoving); }
+    public static final Event<BlockStateChanged> BLOCKSTATE_CHANGED = EventFactory.createVoid(BlockStateChanged.class, callbacks -> (levelChunk, blockPos, oldState, newState, isMoving) -> {
+        for (BlockStateChanged callback : callbacks) {
+            callback.onEvent(levelChunk, blockPos, oldState, newState, isMoving);
         }
     });
 }

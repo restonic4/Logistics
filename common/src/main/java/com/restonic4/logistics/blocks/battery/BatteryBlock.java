@@ -7,6 +7,7 @@ import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -15,8 +16,10 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class BatteryBlock extends BaseNetworkBlock {
     private final Map<Long, Long> pendingEnergy = new HashMap<>();
@@ -60,5 +63,10 @@ public class BatteryBlock extends BaseNetworkBlock {
         }
 
         super.playerDestroy(level, player, pos, state, blockEntity, tool);
+    }
+
+    @Override
+    public Set<Direction> getAllowedConnections(BlockState state) {
+        return EnumSet.of(Direction.UP, Direction.DOWN);
     }
 }

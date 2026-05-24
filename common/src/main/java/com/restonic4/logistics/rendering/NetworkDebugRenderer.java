@@ -2,6 +2,7 @@ package com.restonic4.logistics.rendering;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.NetworkManager;
@@ -74,6 +75,8 @@ public final class NetworkDebugRenderer {
     }
 
     public static void render(PoseStack poseStack, Camera camera) {
+        if (!Constants.DEBUG) return;
+
         try {
             if (minecraft.level == null || minecraft.player == null) return;
             if (minecraft.getSingleplayerServer() == null) return;

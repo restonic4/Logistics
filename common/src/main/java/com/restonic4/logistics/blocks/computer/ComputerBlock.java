@@ -34,10 +34,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeDown;
+import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeRight;
 
 public class ComputerBlock extends BaseNetworkBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -83,7 +83,7 @@ public class ComputerBlock extends BaseNetworkBlock {
             if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork energyNetwork) {
                 Set<ItemNetwork> itemNetworks = new HashSet<>();
                 for (NetworkConnectorNode connectorNode : energyNetwork.getNetworkConnectors()) {
-                    if (connectorNode.getFacingNetwork() instanceof ItemNetwork itemNetwork) {
+                    if (connectorNode.getBridgedNetwork() instanceof ItemNetwork itemNetwork) {
                         itemNetworks.add(itemNetwork);
                     }
                 }
@@ -99,8 +99,7 @@ public class ComputerBlock extends BaseNetworkBlock {
                 }
 
                 ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors));
-                level.playSound(null, pos, Sounds.COMPUTER_BOOT.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
-                level.playSound(null, pos, Sounds.COMPUTER_BOOT_BEEP.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }
 
@@ -130,5 +129,18 @@ public class ComputerBlock extends BaseNetworkBlock {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return shapeFor(state.getValue(FACING));
+    }
+
+    @Override
+    public Set<Direction> getAllowedConnections(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        Direction right = getRelativeRight(facing);
+
+        return EnumSet.of(
+                facing.getOpposite(),
+                getRelativeDown(facing),
+                right,
+                right.getOpposite()
+        );
     }
 }

@@ -21,6 +21,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public class AccessorBlock extends BaseNetworkBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -100,5 +103,11 @@ public class AccessorBlock extends BaseNetworkBlock {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return shapeFor(state.getValue(FACING));
+    }
+
+    @Override
+    public Set<Direction> getAllowedConnections(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        return EnumSet.of(facing.getOpposite());
     }
 }

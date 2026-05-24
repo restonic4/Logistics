@@ -1,13 +1,19 @@
 package com.restonic4.logistics.blocks.motor;
 
 import com.restonic4.logistics.CreateCommonCompatibility;
+import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class CreateMotorNode extends EnergyNode {
+public class CreateMotorNode extends EnergyNode implements FacingNode {
+    @Nullable private Direction facing = null;
+
     public CreateMotorNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
     }
@@ -36,5 +42,16 @@ public class CreateMotorNode extends EnergyNode {
         } else if(level.getGameTime() % CreateCommonCompatibility.CONVERSION_LOSS_TICKS == 0) {
             energyNetwork.requestEnergyConsumption(1);
         }
+    }
+
+    @Override
+    public void setFacing(@NotNull Direction facing) {
+        this.onFacingChange(this.facing, facing, this);
+        this.facing = facing;
+    }
+
+    @Override
+    @Nullable public Direction getFacing() {
+        return facing;
     }
 }

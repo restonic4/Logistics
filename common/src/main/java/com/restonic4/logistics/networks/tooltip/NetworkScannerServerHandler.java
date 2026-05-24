@@ -1,5 +1,6 @@
 package com.restonic4.logistics.networks.tooltip;
 
+import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.Network;
@@ -14,7 +15,6 @@ import net.minecraft.world.phys.HitResult;
 
 public class NetworkScannerServerHandler {
     private static final double REACH = 6.0;
-    private static final boolean DEBUG = false;
 
     public static void tick(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel serverLevel)) {
@@ -47,7 +47,7 @@ public class NetworkScannerServerHandler {
         added = node.buildScannerTooltip(builder, player.isShiftKeyDown()) || added;
         if (added) builder.mainTitle("Scanner", ChatFormatting.GOLD);
 
-        if (DEBUG) {
+        if (Constants.DEBUG) {
             if (added) {
                 builder.spacer();
             }

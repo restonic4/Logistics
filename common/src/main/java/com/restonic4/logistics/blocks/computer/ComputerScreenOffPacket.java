@@ -21,7 +21,7 @@ public record ComputerScreenOffPacket(BlockPos computerNode) implements C2SPacke
 
     @Override
     public void handle(MinecraftServer server, ServerPlayer player) {
-        player.level().playSound(null, computerNode, Sounds.COMPUTER_OFF.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        player.level().playSound(null, computerNode, Sounds.COMPUTER_CLOSE.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     @Override

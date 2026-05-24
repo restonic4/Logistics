@@ -3,6 +3,8 @@ package com.restonic4.logistics.experiment;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.restonic4.logistics.networking.ServerNetworking;
+import com.restonic4.logistics.platform.FabricPlatformHelper;
+import com.restonic4.logistics.platform.Services;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -58,7 +60,12 @@ public class ShockwaveCommand {
     }
 
     public static boolean isAuthorized(CommandSourceStack source) {
+        if (Services.PLATFORM.isDevelopmentEnvironment()) return true;
+
         ServerPlayer player = source.getPlayer();
-        return player != null && "restonic4".equals(player.getName().getString());
+        if (player == null) return false;
+
+        String playerName = player.getName().getString();
+        return "restonic4".equals(playerName) || "Rayelus".equals(playerName);
     }
 }

@@ -26,6 +26,7 @@ public class AccessorNode extends InventoryNode implements FacingNode {
 
     @Override
     public void setFacing(@NotNull Direction facing) {
+        this.onFacingChange(this.facing, facing, this);
         this.facing = facing;
     }
 

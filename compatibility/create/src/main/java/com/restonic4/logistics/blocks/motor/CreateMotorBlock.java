@@ -23,6 +23,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public class CreateMotorBlock extends DirectionalKineticBlock implements NetworkBlock, IBE<CreateMotorBlockEntity> {
     public CreateMotorBlock(BlockBehaviour.Properties properties) {
         super(properties);
@@ -92,5 +95,11 @@ public class CreateMotorBlock extends DirectionalKineticBlock implements Network
         }
 
         super.onRemove(blockState, level, blockPos, newBlockState, isMoving);
+    }
+
+    @Override
+    public Set<Direction> getAllowedConnections(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        return EnumSet.of(facing.getOpposite());
     }
 }

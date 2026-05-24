@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.computer;
 
+import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.nodes.ItemNode;
@@ -64,11 +65,17 @@ public class ComputerNode extends EnergyNode {
         if (this.powered == value) return;
         this.powered = value;
 
+        ServerLevel level = getNetwork().getServerLevel();
+
         if (!value) {
-            ServerLevel level = getNetwork().getServerLevel();
             if (level != null) {
                 ServerNetworking.sendToAllInLevel(level, new ComputerOffPacket(getBlockPos()));
-                level.playSound(null, getBlockPos(), SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, getBlockPos(), Sounds.COMPUTER_OFF.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+            }
+        } else {
+            if (level != null) {
+                level.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT_BEEP.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }
 
