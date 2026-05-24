@@ -2,6 +2,8 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.ClientBlockRegistry;
+import com.restonic4.logistics.blocks.computer.ComputerLogPushPacket;
+import com.restonic4.logistics.blocks.computer.ComputerLogSyncPacket;
 import com.restonic4.logistics.blocks.computer.ComputerOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
@@ -31,6 +33,8 @@ public class LogisticsClient {
 
         NetworkingRegistry.registerClientTargetedPacket(NetworkTooltipPacket.ID, NetworkTooltipPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ComputerSyncPacket.ID, ComputerSyncPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(ComputerLogSyncPacket.ID, ComputerLogSyncPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(ComputerLogPushPacket.ID, ComputerLogPushPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ComputerOffPacket.ID, ComputerOffPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ParcelRenderSyncPacket.ID, ParcelRenderSyncPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ShockwavePacket.ID, ShockwavePacket::new);

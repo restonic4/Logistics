@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
+import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
@@ -77,17 +78,27 @@ public class TransferTab extends Tab {
 
     public void refreshAccessorDropdowns() {
         List<ComputerSyncPacket.AccessorData> accessors = ComputerScreen.getAccessors();
-        List<SearchableDropdownWidget.DropdownEntry<BlockPos>> posEntries = new ArrayList<>();
+
+        List<SearchableDropdownWidget.DropdownEntry<BlockPos>> leftEntries = new ArrayList<>();
+        List<SearchableDropdownWidget.DropdownEntry<BlockPos>> rightEntries = new ArrayList<>();
         List<SearchableDropdownWidget.DropdownEntry<String>> itemEntries = new ArrayList<>();
+
+        leftEntries.add(new SearchableDropdownWidget.DropdownEntry<>(null,
+                Component.literal("Auto"),
+                SearchableDropdownWidget.DropdownIcon.of(com.restonic4.logistics.experiment.Items.CHIP.getItem())));
 
         Set<String> addedItemIds = new HashSet<>();
 
         for (ComputerSyncPacket.AccessorData accessorData : accessors) {
             BlockPos pos = accessorData.pos();
 
-            posEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
+            leftEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
                     Component.literal(pos.toShortString()),
-                    SearchableDropdownWidget.DropdownIcon.of(Blocks.REDSTONE_BLOCK)));
+                    SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.ACCESSOR_BLOCK.getBlock())));
+
+            rightEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
+                    Component.literal(pos.toShortString()),
+                    SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.ACCESSOR_BLOCK.getBlock())));
 
             for (ItemStack itemStack : accessorData.inventory()) {
                 if (itemStack.getItem() == Items.AIR) continue;
@@ -96,7 +107,6 @@ public class TransferTab extends Tab {
 
                 if (!addedItemIds.contains(itemId)) {
                     addedItemIds.add(itemId);
-
                     itemEntries.add(new SearchableDropdownWidget.DropdownEntry<>(itemId,
                             Component.translatable(itemStack.getItem().getDescriptionId()),
                             SearchableDropdownWidget.DropdownIcon.of(itemStack)));
@@ -105,13 +115,15 @@ public class TransferTab extends Tab {
         }
 
         if (leftAccessor != null) {
-            leftAccessor.setOptions(posEntries);
-            if (savedLeft != null) leftAccessor.setSelectedValue(savedLeft);
+            leftAccessor.setOptions(leftEntries);
+            leftAccessor.setSelectedValue(savedLeft);
         }
+
         if (rightAccessor != null) {
-            rightAccessor.setOptions(posEntries);
+            rightAccessor.setOptions(rightEntries);
             if (savedRight != null) rightAccessor.setSelectedValue(savedRight);
         }
+
         if (textBox != null) {
             textBox.setOptions(itemEntries);
         }
@@ -120,7 +132,7 @@ public class TransferTab extends Tab {
     private void executeTransfer() {
         BlockPos from = leftAccessor != null ? leftAccessor.getSelectedValue() : null;
         BlockPos target = rightAccessor != null ? rightAccessor.getSelectedValue() : null;
-        if (from == null || target == null) return;
+        if (target == null) return;
 
         int qty = quantityBox != null ? (int) quantityBox.getValue() : 1;
         String extra = textBox != null ? textBox.getSelectedValue() : null;
@@ -130,8 +142,7 @@ public class TransferTab extends Tab {
         savedLeft = from;
         savedRight = target;
 
-        ClientNetworking.sendToServer(new ComputerTransferPacket(
-                ComputerScreen.getComputerNode(), from, target, qty, extra != null ? extra : ""));
+        ClientNetworking.sendToServer(new ComputerTransferPacket(ComputerScreen.getComputerNode(), from, target, qty, extra != null ? extra : ""));
     }
 
     @Override

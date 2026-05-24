@@ -22,6 +22,7 @@ public class ComputerScreen extends TabbedScreen {
     private static List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
 
     private final TransferTab transferTab;
+    private final LogTab logTab;
     private final InfoTab testTab;
 
     // === Fullscreen state ===
@@ -39,6 +40,8 @@ public class ComputerScreen extends TabbedScreen {
 
         this.transferTab = new TransferTab();
         addTab(transferTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png")));
+        this.logTab = new LogTab();
+        addTab(logTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png")));
         this.testTab = new InfoTab();
         addTab(testTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png")));
     }
@@ -144,6 +147,10 @@ public class ComputerScreen extends TabbedScreen {
         rebuildTabBar();
     }
 
+    public LogTab getLogTab() {
+        return logTab;
+    }
+
     public static void setAccessors(ComputerSyncPacket payload) {
         computerNode = payload.computerNode();
         accessors = new ArrayList<>(payload.accessors());
@@ -156,9 +163,25 @@ public class ComputerScreen extends TabbedScreen {
     public static BlockPos getComputerNode() {
         return computerNode;
     }
-
     public static List<ComputerSyncPacket.AccessorData> getAccessors() {
         return accessors;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        // Let widgets (dropdowns, number pickers) handle scroll first
+        if (super.mouseScrolled(mouseX, mouseY, amount)) return true;
+
+        // Then offer it to the log tab if it's currently selected
+        if (selectedTab >= 0 && tabs.get(selectedTab) == logTab) {
+            return logTab.handleMouseScrolled(
+                    mouseX, mouseY, amount,
+                    contentLeft, contentTop,
+                    contentRight - contentLeft,
+                    contentBottom - contentTop
+            );
+        }
+        return false;
     }
 
     @Override

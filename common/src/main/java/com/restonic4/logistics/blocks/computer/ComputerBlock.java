@@ -79,7 +79,8 @@ public class ComputerBlock extends BaseNetworkBlock {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         if (player instanceof ServerPlayer serverPlayer) {
-            NetworkNode node = NetworkManager.get((ServerLevel) level).getNodeByBlockPos(pos);
+            ServerLevel serverLevel = (ServerLevel) level;
+            NetworkNode node = NetworkManager.get(serverLevel).getNodeByBlockPos(pos);
             if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork energyNetwork) {
                 Set<ItemNetwork> itemNetworks = new HashSet<>();
                 for (NetworkConnectorNode connectorNode : energyNetwork.getNetworkConnectors()) {
@@ -99,6 +100,8 @@ public class ComputerBlock extends BaseNetworkBlock {
                 }
 
                 ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors));
+                List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
+                ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }
