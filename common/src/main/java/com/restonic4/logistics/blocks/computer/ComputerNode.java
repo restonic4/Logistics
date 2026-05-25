@@ -108,6 +108,14 @@ public class ComputerNode extends EnergyNode {
         return this.installed;
     }
 
+    public String getSystemName() {
+        return systemName;
+    }
+
+    public String getRootPassword() {
+        return rootPassword;
+    }
+
     @Override
     public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         super.buildDebugScannerTooltip(builder, isSneaking);

@@ -123,6 +123,10 @@ public class ComputerLogger extends SavedData {
         ComputerLogPushPacket.sendIfWatching(level, computerPos, entry);
     }
 
+    public static void log(ServerLevel serverLevel, BlockPos computerNode, ComputerLogEntry entry) {
+        log(serverLevel, computerNode, entry.severity(), entry.message());
+    }
+
     /**
      * Returns a snapshot list of all entries for {@code pos}, oldest first.
      * Safe to call from any thread — the returned list is a new copy.

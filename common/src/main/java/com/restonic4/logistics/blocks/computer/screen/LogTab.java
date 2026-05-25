@@ -14,24 +14,6 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Displays the computer's log history in a scrollable, filterable panel.
- *
- * <h3>Layout (inside content area)</h3>
- * <pre>
- *  ┌──────────────────────────────────┐
- *  │  [ALL]  [INFO]  [WARN]  [ERROR]  │  ← filter row (top, 16px)
- *  ├──────────────────────────────────┤
- *  │ ▐ MM/DD HH:mm:ss [WARN] message  │
- *  │ ▐ MM/DD HH:mm:ss [INFO] message  │
- *  │   …                              │
- *  └──────────────────────────────────┘
- * </pre>
- *
- * Severity badge is a 3-pixel left stripe in the severity colour.
- * Newer entries appear at the bottom; the view auto-scrolls down when a new
- * entry arrives (unless the user has manually scrolled up).
- */
 public class LogTab extends Tab {
 
     // ── State ─────────────────────────────────────────────────────────────────

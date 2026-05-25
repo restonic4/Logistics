@@ -23,11 +23,15 @@ public class ComputerScreen extends TabbedScreen {
     private static BlockPos computerNode;
     private static List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
     private static boolean isInstalled = false;
+    private static String systemName;
+    private static String expectedPassword;
+    private boolean isLoggedIn = false;
 
     private final TransferTab transferTab;
     private final LogTab logTab;
     private final InfoTab infoTab;
     private final InstallTab intallTab;
+    private final LoginTab loginTab;
 
     // === Fullscreen state ===
     private boolean maximized = false;
@@ -50,6 +54,8 @@ public class ComputerScreen extends TabbedScreen {
         infoTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
         this.intallTab = new InstallTab();
         intallTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
+        this.loginTab = new LoginTab();
+        loginTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
     }
 
     public static void setAccessors(ComputerSyncPacket payload) {
@@ -63,6 +69,17 @@ public class ComputerScreen extends TabbedScreen {
 
     public static void setComputerState(ComputerSyncPacket computerSyncPacket) {
         isInstalled = computerSyncPacket.isInstalled();
+        systemName = computerSyncPacket.systemName();
+        expectedPassword = computerSyncPacket.rootPassword();
+    }
+
+    public void performLogin() {
+        this.isLoggedIn = true;
+        this.selectedTab = 0;
+        this.updateTabs();
+
+        this.clearWidgets();
+        this.init(this.minecraft, this.width, this.height);
     }
 
     public void updateTabs() {
@@ -70,11 +87,16 @@ public class ComputerScreen extends TabbedScreen {
         removeTab(logTab);
         removeTab(infoTab);
         removeTab(intallTab);
+        removeTab(loginTab);
 
         if (isInstalled) {
-            addTab(transferTab);
-            addTab(logTab);
-            addTab(infoTab);
+            if (isLoggedIn) {
+                addTab(transferTab);
+                addTab(logTab);
+                addTab(infoTab);
+            } else {
+                addTab(loginTab);
+            }
         } else {
             addTab(intallTab);
         }
@@ -192,6 +214,14 @@ public class ComputerScreen extends TabbedScreen {
     }
     public static List<ComputerSyncPacket.AccessorData> getAccessors() {
         return accessors;
+    }
+
+    public static String getSystemName() {
+        return systemName;
+    }
+
+    public static String getExpectedPassword() {
+        return expectedPassword;
     }
 
     @Override

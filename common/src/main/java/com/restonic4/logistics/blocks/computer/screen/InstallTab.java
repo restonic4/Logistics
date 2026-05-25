@@ -35,7 +35,7 @@ public class InstallTab extends Tab {
     // Persistent form state data cache across steps
     private String rootPassword = "";
     private String confirmPassword = "";
-    private String systemName = "dragon-node-1";
+    private String systemName = "DragonOS";
 
     // Tracking widget references for blinking loops
     private EditBox passwordField;
@@ -192,7 +192,7 @@ public class InstallTab extends Tab {
             // 120 client ticks = 6 seconds absolute execution duration ceiling
             if (this.animationTicks >= 120) {
                 this.animationProgress = 1.0f;
-                ComputerScreen.setComputerState(new ComputerSyncPacket(ComputerScreen.getComputerNode(), null, true));
+                ComputerScreen.setComputerState(new ComputerSyncPacket(ComputerScreen.getComputerNode(), null, true, this.systemName, this.rootPassword));
                 Minecraft.getInstance().setScreen(new ComputerScreen());
                 return;
             }
@@ -246,7 +246,7 @@ public class InstallTab extends Tab {
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
-                renderParagraph(gfx, font, Component.literal("Welcome to the graphical configuration system utility. Click the continue option below to set up secure local authorization loops and target parameters."), currentX, currentY, contentWidth, 0xFFFFFFFF);
+                renderParagraph(gfx, font, Component.literal("Welcome to the graphical configuration system utility. Click the continue option below to set up the system."), currentX, currentY, contentWidth, 0xFFFFFFFF);
             }
             case ROOT_PASSWORD -> {
                 currentY = renderH1(gfx, font, Component.literal("Configure Credentials"), null, currentX, currentY);
@@ -255,7 +255,7 @@ public class InstallTab extends Tab {
                 currentY += 6;
 
                 gfx.drawString(font, "Root Account Password", x + 15, y + 42, 0xFFAAAAAA, false);
-                gfx.drawString(font, "Confirm Security String", x + 180, y + 42, 0xFFAAAAAA, false);
+                gfx.drawString(font, "Confirm Password", x + 180, y + 42, 0xFFAAAAAA, false);
 
                 if (this.passwordField != null && this.confirmField != null) {
                     String p1 = this.passwordField.getValue();
@@ -266,7 +266,7 @@ public class InstallTab extends Tab {
                 }
             }
             case SYSTEM_NAME -> {
-                currentY = renderH1(gfx, font, Component.literal("Network Identifier"), null, currentX, currentY);
+                currentY = renderH1(gfx, font, Component.literal("Hostname"), null, currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
@@ -279,11 +279,11 @@ public class InstallTab extends Tab {
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
 
-                currentY = renderParagraph(gfx, font, Component.literal("Parameters parsed successfully. Ready to deploy initialization routines:"), currentX, currentY, contentWidth, 0xFFFFFFFF);
+                currentY = renderParagraph(gfx, font, Component.literal("Parameters parsed successfully. Ready to install DragonOS:"), currentX, currentY, contentWidth, 0xFFFFFFFF);
                 currentY += 6;
-                gfx.drawString(font, "Hostname     : " + this.systemName, currentX, currentY, 0xFF55FF55, false);
+                gfx.drawString(font, "Hostname: " + this.systemName, currentX, currentY, 0xFF55FF55, false);
                 currentY += 12;
-                gfx.drawString(font, "Root Security: [CONFIGURED]", currentX, currentY, 0xFF55FF55, false);
+                gfx.drawString(font, "Root Password: [CONFIGURED]", currentX, currentY, 0xFF55FF55, false);
             }
             case ANIMATION -> {
                 currentY = renderH1(gfx, font, Component.literal("Installing DragonOS..."), null, currentX, currentY);
@@ -329,7 +329,7 @@ public class InstallTab extends Tab {
             this.currentSplashText = splashInstance.splash;
             return;
         }
-        this.currentSplashText = "Unpacking target partition blocks...";
+        this.currentSplashText = "Unpacking...";
     }
 
     private int renderH1(GuiGraphics gfx, Font font, Component text, ItemStack icon, int x, int y) {
