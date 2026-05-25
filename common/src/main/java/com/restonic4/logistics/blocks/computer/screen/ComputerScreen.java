@@ -7,6 +7,8 @@ import com.restonic4.logistics.screens.tabs.TabDistribution;
 import com.restonic4.logistics.screens.tabs.TabbedScreen;
 import com.restonic4.logistics.screens.widgets.StyledButton;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
@@ -20,10 +22,12 @@ import java.util.List;
 public class ComputerScreen extends TabbedScreen {
     private static BlockPos computerNode;
     private static List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
+    private static boolean isInstalled = false;
 
     private final TransferTab transferTab;
     private final LogTab logTab;
-    private final InfoTab testTab;
+    private final InfoTab infoTab;
+    private final InstallTab intallTab;
 
     // === Fullscreen state ===
     private boolean maximized = false;
@@ -39,15 +43,46 @@ public class ComputerScreen extends TabbedScreen {
         this.tabGap = 2;
 
         this.transferTab = new TransferTab();
-        addTab(transferTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png")));
+        transferTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
         this.logTab = new LogTab();
-        addTab(logTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png")));
-        this.testTab = new InfoTab();
-        addTab(testTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png")));
+        logTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/paper.png"));
+        this.infoTab = new InfoTab();
+        infoTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
+        this.intallTab = new InstallTab();
+        intallTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
+    }
+
+    public static void setAccessors(ComputerSyncPacket payload) {
+        computerNode = payload.computerNode();
+        accessors = new ArrayList<>(payload.accessors());
+
+        if (Minecraft.getInstance().screen instanceof ComputerScreen screen) {
+            screen.transferTab.refreshAccessorDropdowns();
+        }
+    }
+
+    public static void setComputerState(ComputerSyncPacket computerSyncPacket) {
+        isInstalled = computerSyncPacket.isInstalled();
+    }
+
+    public void updateTabs() {
+        removeTab(transferTab);
+        removeTab(logTab);
+        removeTab(infoTab);
+        removeTab(intallTab);
+
+        if (isInstalled) {
+            addTab(transferTab);
+            addTab(logTab);
+            addTab(infoTab);
+        } else {
+            addTab(intallTab);
+        }
     }
 
     @Override
     protected void init() {
+        updateTabs();
         super.init();
 
         if (this.ambientSoundInstance == null && this.minecraft != null && this.minecraft.player != null) {
@@ -70,7 +105,6 @@ public class ComputerScreen extends TabbedScreen {
 
     @Override
     protected void calculateBounds() {
-        // If maximized, fill the entire Minecraft window
         if (maximized) {
             this.panelWidth = this.width;
             this.panelHeight = this.height;
@@ -123,17 +157,20 @@ public class ComputerScreen extends TabbedScreen {
         this.addRenderableWidget(small);
     }
 
+    @Override
+    public void render(GuiGraphics gfx, int mouseX, int mouseY, float delta) {
+        super.render(gfx, mouseX, mouseY, delta);
+    }
+
     private int calculateCloseButtonSize() {
         return contentTop - (panelTop + 2) - 4;
     }
 
-    /** Toggle between fullscreen and default window size. */
     private void toggleMaximized() {
         maximized = !maximized;
         refreshLayout();
     }
 
-    /** Force back to the small default panel. */
     private void restoreSize() {
         if (maximized) {
             maximized = false;
@@ -141,7 +178,6 @@ public class ComputerScreen extends TabbedScreen {
         }
     }
 
-    /** Recalculate geometry and rebuild all tabs/widgets without losing state. */
     private void refreshLayout() {
         calculateBounds();
         rebuildTabBar();
@@ -149,15 +185,6 @@ public class ComputerScreen extends TabbedScreen {
 
     public LogTab getLogTab() {
         return logTab;
-    }
-
-    public static void setAccessors(ComputerSyncPacket payload) {
-        computerNode = payload.computerNode();
-        accessors = new ArrayList<>(payload.accessors());
-
-        if (Minecraft.getInstance().screen instanceof ComputerScreen screen) {
-            screen.transferTab.refreshAccessorDropdowns();
-        }
     }
 
     public static BlockPos getComputerNode() {

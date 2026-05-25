@@ -99,7 +99,7 @@ public class ComputerBlock extends BaseNetworkBlock {
                     }
                 }
 
-                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors));
+                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled()));
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);

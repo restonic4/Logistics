@@ -14,11 +14,26 @@ import java.util.Deque;
 import java.util.List;
 
 public class ComputerLogger extends SavedData {
-    public static final String DATA_NAME = "logistics_computer_logs";
-    public static final int MAX_ENTRIES = 200;
 
-    private final List<String> keys = new ArrayList<>();
-    private final List<Deque<ComputerLogEntry>> queues = new ArrayList<>();
+    // ── Constants ─────────────────────────────────────────────────────────────
+
+    public static final String DATA_NAME     = "logistics_computer_logs";
+    /** Maximum entries kept per computer before the oldest are evicted. */
+    public static final int    MAX_ENTRIES   = 64;
+
+    // ── Data ──────────────────────────────────────────────────────────────────
+
+    /**
+     * Map-like structure: each computer's BlockPos serialised to a string key
+     * pointing to a bounded deque of log entries.
+     *
+     * We use a simple parallel list of (key, deque) pairs to avoid a full
+     * HashMap dependency — the number of computers per level is small.
+     */
+    private final List<String>                     keys    = new ArrayList<>();
+    private final List<Deque<ComputerLogEntry>>    queues  = new ArrayList<>();
+
+    // ── SavedData boilerplate ─────────────────────────────────────────────────
 
     private ComputerLogger() {}
 
@@ -59,6 +74,9 @@ public class ComputerLogger extends SavedData {
         return root;
     }
 
+    // ── Static access helpers ─────────────────────────────────────────────────
+
+    /** Retrieve (or create) the {@link ComputerLogger} for the given level. */
     public static ComputerLogger get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(
                 ComputerLogger::load,
@@ -67,7 +85,23 @@ public class ComputerLogger extends SavedData {
         );
     }
 
-    public static void log(ServerLevel level, BlockPos computerPos, ComputerLogEntry.Severity severity, String message) {
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    /**
+     * Append a log entry for {@code computerPos} in {@code level}.
+     * <p>
+     * Mirrors the message to {@link Constants#LOG} at the matching level so
+     * server-console output is unchanged.  Afterwards it fans the new entry
+     * out to any player currently watching this computer via
+     * {@link ComputerLogPushPacket}.
+     *
+     * <p>No chunks are loaded — only {@link ServerLevel#getGameTime()} is read.
+     */
+    public static void log(ServerLevel level,
+                           BlockPos computerPos,
+                           ComputerLogEntry.Severity severity,
+                           String message) {
+        // Mirror to server console at matching level
         switch (severity) {
             case WARN  -> Constants.LOG.warn("[Computer {}] {}", computerPos.toShortString(), message);
             case ERROR -> Constants.LOG.error("[Computer {}] {}", computerPos.toShortString(), message);
@@ -89,12 +123,17 @@ public class ComputerLogger extends SavedData {
         ComputerLogPushPacket.sendIfWatching(level, computerPos, entry);
     }
 
+    /**
+     * Returns a snapshot list of all entries for {@code pos}, oldest first.
+     * Safe to call from any thread — the returned list is a new copy.
+     */
     public List<ComputerLogEntry> getEntries(BlockPos pos) {
         int idx = indexOf(pos);
         if (idx < 0) return List.of();
         return new ArrayList<>(queues.get(idx));
     }
 
+    /** Remove all stored entries for this computer (e.g. on block break). */
     public void clearEntries(BlockPos pos) {
         int idx = indexOf(pos);
         if (idx >= 0) {
@@ -102,6 +141,8 @@ public class ComputerLogger extends SavedData {
             setDirty();
         }
     }
+
+    // ── Internal ──────────────────────────────────────────────────────────────
 
     private void append(BlockPos pos, ComputerLogEntry entry) {
         int idx = indexOf(pos);

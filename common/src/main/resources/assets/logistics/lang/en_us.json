@@ -16,5 +16,6 @@
   "block.logistics.create_motor": "Create Motor",
   "block.logistics.create_transformer": "Create Transformer",
 
+  "screen.logistics.computer.install_body.1": "Welcome to the DragonOS installation menu (TUI). Next, you will be asked a series of questions to complete the installation.",
   "screen.logistics.computer.info_body": "This mod is under alpha development, things might change on the future. Coding by restonic4, textures by Aguilex_2.0"
 }

@@ -1,23 +1,37 @@
 package com.restonic4.logistics.blocks.computer;
 
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.ServerNetworking;
+import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.nodes.ItemNode;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
+import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class ComputerNode extends EnergyNode {
     public static final long ENERGY_PER_TICK = 1L;
 
+    private String systemName = "DragonOS";
+    private String rootPassword = "root";
+
     private boolean powered = false;
+    private boolean installed = false;
 
     public ComputerNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
@@ -65,25 +79,33 @@ public class ComputerNode extends EnergyNode {
         if (this.powered == value) return;
         this.powered = value;
 
-        ServerLevel level = getNetwork().getServerLevel();
+        ServerLevel serverLevel = getNetwork().getServerLevel();
 
         if (!value) {
-            if (level != null) {
-                ServerNetworking.sendToAllInLevel(level, new ComputerOffPacket(getBlockPos()));
-                level.playSound(null, getBlockPos(), Sounds.COMPUTER_OFF.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+            if (serverLevel != null) {
+                powerOff(serverLevel);
             }
         } else {
-            if (level != null) {
-                level.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
-                level.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT_BEEP.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+            if (serverLevel != null) {
+                powerOn(serverLevel);
             }
         }
 
         syncBlockState();
     }
 
+    public void install(String systemName, String rootPassword) {
+        this.systemName = systemName;
+        this.rootPassword = rootPassword;
+        this.installed = true;
+    }
+
     public boolean isPowered() {
         return this.powered;
+    }
+
+    public boolean isInstalled() {
+        return this.installed;
     }
 
     @Override
@@ -99,5 +121,33 @@ public class ComputerNode extends EnergyNode {
         );
 
         return true;
+    }
+
+    @Override
+    protected void saveExtra(CompoundTag tag) {
+        tag.putString("systemName", systemName);
+        tag.putString("rootPassword", rootPassword);
+        tag.putBoolean("powered", powered);
+        tag.putBoolean("installed", installed);
+    }
+
+    @Override
+    protected void loadExtra(CompoundTag tag) {
+        this.systemName = tag.getString("systemName");
+        this.rootPassword = tag.getString("rootPassword");
+        this.powered = tag.getBoolean("powered");
+        this.installed = tag.getBoolean("installed");
+    }
+
+    private void powerOff(ServerLevel serverLevel) {
+        ServerNetworking.sendToAllInLevel(serverLevel, new ComputerOffPacket(getBlockPos()));
+        serverLevel.playSound(null, getBlockPos(), Sounds.COMPUTER_OFF.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        ComputerLogger.log(serverLevel, getBlockPos(), ComputerLogEntry.Severity.ERROR, "Unexpected system shutdown. Check for power failure.");
+    }
+
+    private void powerOn(ServerLevel serverLevel) {
+        serverLevel.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        serverLevel.playSound(null, getBlockPos(), Sounds.COMPUTER_BOOT_BEEP.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        ComputerLogger.log(serverLevel, getBlockPos(), ComputerLogEntry.Severity.WARN, "Booting DragonOS...");
     }
 }

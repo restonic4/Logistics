@@ -61,4 +61,11 @@ public abstract class Tab {
     public void onShow() {}
 
     public void onHide() {}
+
+    public boolean mouseClicked(double mouseX, double mouseY, int button) { return false; }
+    public boolean mouseReleased(double mouseX, double mouseY, int button) { return false; }
+    public boolean mouseDragged(double mouseX, double mouseY, double dragX, double dragY, int button) { return false; }
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) { return false; }
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) { return false; }
+    public boolean charTyped(char codePoint, int modifiers) { return false; }
 }

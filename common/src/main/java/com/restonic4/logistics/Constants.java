@@ -9,5 +9,5 @@ public class Constants {
     public static final String MOD_NAME = "Logistics";
     public static final Logger LOG = LoggerFactory.getLogger(MOD_NAME);
 
-    public static final boolean DEBUG = true;
+    public static boolean DEBUG = false;
 }

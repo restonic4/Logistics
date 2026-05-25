@@ -16,5 +16,6 @@
   "block.logistics.create_motor": "Motor de Create",
   "block.logistics.create_transformer": "Transformador de Create",
 
+  "screen.logistics.computer.install_body.1": "Bienvenido al menu (TUI) de instalación de DragonOS. A continuacion se le hara una serie de preguntas para completar la instlación.",
   "screen.logistics.computer.info_body": "Este mod está en desarrollo, pueden haber cambios en el futuro. Programación por restonic4, texturas por Aguilex_2.0"
 }

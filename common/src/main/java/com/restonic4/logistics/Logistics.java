@@ -2,6 +2,7 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
+import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
@@ -43,6 +44,7 @@ public class Logistics {
 
         NetworkingRegistry.registerServerTargetedPacket(ComputerTransferPacket.ID, ComputerTransferPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerScreenOffPacket.ID, ComputerScreenOffPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(ComputerInstallPacket.ID, ComputerInstallPacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

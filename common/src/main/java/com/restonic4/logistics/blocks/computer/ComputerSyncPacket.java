@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors) implements S2CPacket {
+public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled) implements S2CPacket {
     public static final ResourceLocation ID = Logistics.id("computer_sync");
 
     public ComputerSyncPacket(FriendlyByteBuf buf) {
@@ -20,12 +20,13 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
     }
 
     private ComputerSyncPacket(DecodedData data) {
-        this(data.computerNode, data.accessors);
+        this(data.computerNode, data.accessors, data.isInstalled);
     }
 
     @Override
     public void handle(Minecraft client) {
         ComputerScreen.setAccessors(this);
+        ComputerScreen.setComputerState(this);
         client.setScreen(new ComputerScreen());
     }
 
@@ -43,6 +44,8 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
                 buf.writeItem(stack);
             }
         }
+
+        buf.writeBoolean(isInstalled);
     }
 
     @Override
@@ -68,9 +71,11 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
             accessors.add(new AccessorData(pos, inventory));
         }
 
-        return new DecodedData(computerNode, accessors);
+        boolean isInstalled = buf.readBoolean();
+
+        return new DecodedData(computerNode, accessors, isInstalled);
     }
 
     public record AccessorData(BlockPos pos, List<ItemStack> inventory) {}
-    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors) {}
+    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled) {}
 }

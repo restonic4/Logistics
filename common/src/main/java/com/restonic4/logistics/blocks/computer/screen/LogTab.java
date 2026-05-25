@@ -1,6 +1,7 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.computer.ComputerLogEntry;
+import com.restonic4.logistics.blocks.computer.ComputerLogger;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.StyledButton;
 import net.minecraft.client.Minecraft;
@@ -13,11 +14,44 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Displays the computer's log history in a scrollable, filterable panel.
+ *
+ * <h3>Layout (inside content area)</h3>
+ * <pre>
+ *  ┌──────────────────────────────────┐
+ *  │  [ALL]  [INFO]  [WARN]  [ERROR]  │  ← filter row (top, 16px)
+ *  ├──────────────────────────────────┤
+ *  │ ▐ MM/DD HH:mm:ss [WARN] message  │
+ *  │ ▐ MM/DD HH:mm:ss [INFO] message  │
+ *  │   …                              │
+ *  └──────────────────────────────────┘
+ * </pre>
+ *
+ * Severity badge is a 3-pixel left stripe in the severity colour.
+ * Newer entries appear at the bottom; the view auto-scrolls down when a new
+ * entry arrives (unless the user has manually scrolled up).
+ */
 public class LogTab extends Tab {
+
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    /** All entries received this session (full sync + pushes). */
     private final List<ComputerLogEntry> entries = new ArrayList<>();
+
+    /** Currently active severity filter; null = show all. */
     private ComputerLogEntry.Severity filter = null;
+
+    /** Pixel offset from the top of the log content. */
     private double scrollY = 0;
+
+    /**
+     * Whether the view is "pinned" to the bottom so new entries scroll into
+     * view automatically.  Becomes false when the user scrolls up manually.
+     */
     private boolean autoScroll = true;
+
+    // ── Layout geometry (set in init) ─────────────────────────────────────────
 
     private int tabX, tabY, tabW, tabH;
 
@@ -39,9 +73,13 @@ public class LogTab extends Tab {
 
     private static final float TEXT_SCALE = 0.75f;
 
+    // ── Constructor ───────────────────────────────────────────────────────────
+
     public LogTab() {
         super(Component.literal("Logs"));
     }
+
+    // ── Tab lifecycle ─────────────────────────────────────────────────────────
 
     @Override
     public void init(Screen parent, int x, int y, int width, int height) {
@@ -57,13 +95,14 @@ public class LogTab extends Tab {
         int gap   = 2;
         int startX = x + LEFT_PAD;
 
-        addFilterButton(parent, startX, btnY, btnW, btnH, "All",   null);
+        addFilterButton(parent, startX,                   btnY, btnW, btnH, "All",   null);
         addFilterButton(parent, startX + (btnW + gap),    btnY, btnW, btnH, "Info",  ComputerLogEntry.Severity.INFO);
         addFilterButton(parent, startX + (btnW + gap) * 2,btnY, btnW, btnH, "Warn",  ComputerLogEntry.Severity.WARN);
         addFilterButton(parent, startX + (btnW + gap) * 3,btnY, btnW, btnH, "Error", ComputerLogEntry.Severity.ERROR);
     }
 
-    private void addFilterButton(Screen parent, int x, int y, int w, int h, String label, ComputerLogEntry.Severity severity) {
+    private void addFilterButton(Screen parent, int x, int y, int w, int h,
+                                 String label, ComputerLogEntry.Severity severity) {
         StyledButton btn = new StyledButton(x, y, w, h,
                 Component.literal(label),
                 () -> {
@@ -101,6 +140,9 @@ public class LogTab extends Tab {
     @Override
     public void tick() {}
 
+    // ── Incoming data ─────────────────────────────────────────────────────────
+
+    /** Called once when the screen opens to populate the full history. */
     public void receiveFullSync(List<ComputerLogEntry> incoming) {
         entries.clear();
         entries.addAll(incoming);
@@ -108,9 +150,10 @@ public class LogTab extends Tab {
         clampScroll();
     }
 
+    /** Called for each new entry while the screen is open. */
     public void receivePush(ComputerLogEntry entry) {
         entries.add(entry);
-        if (entries.size() > ComputerLogger_MAX_ENTRIES) {
+        if (entries.size() > ComputerLogger.MAX_ENTRIES) {
             entries.remove(0);
         }
         if (autoScroll) {
@@ -118,8 +161,9 @@ public class LogTab extends Tab {
         }
     }
 
-    private static final int ComputerLogger_MAX_ENTRIES = 200;
 
+
+    // ── Rendering ─────────────────────────────────────────────────────────────
 
     @Override
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float delta,
@@ -223,6 +267,17 @@ public class LogTab extends Tab {
         }
     }
 
+    // ── Mouse / scroll input ──────────────────────────────────────────────────
+
+    /**
+     * The tab itself has no widgets that consume scroll events — the tab bar
+     * calls through to the active tab's render, but not its input.  We hook
+     * into the owning Screen via {@link #onShow()} / {@link #onHide()} by
+     * relying on the screen forwarding {@code mouseScrolled}.
+     *
+     * Instead, we expose a method that {@link ComputerScreen} can call from
+     * its own {@code mouseScrolled} override when this tab is active.
+     */
     public boolean handleMouseScrolled(double mouseX, double mouseY, double amount,
                                        int x, int y, int width, int height) {
         int listTop    = y + FILTER_BAR_HEIGHT;
