@@ -8,6 +8,8 @@ import com.restonic4.logistics.blocks.battery.BatteryBlockItem;
 import com.restonic4.logistics.blocks.battery.BatteryNode;
 import com.restonic4.logistics.blocks.cable.CableBlock;
 import com.restonic4.logistics.blocks.cable.CableNode;
+import com.restonic4.logistics.blocks.charging_station.ChargingStationBlock;
+import com.restonic4.logistics.blocks.charging_station.ChargingStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerBlock;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.blocks.generator.GeneratorBlock;
@@ -91,6 +93,17 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, ComputerNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<ChargingStationBlock, ChargingStationNode> CHARGING_STATION_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("charging_station"),
+                    () -> new ChargingStationBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, ChargingStationNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

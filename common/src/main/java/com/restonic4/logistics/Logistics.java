@@ -2,6 +2,7 @@ package com.restonic4.logistics;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
+import com.restonic4.logistics.blocks.charging_station.ChargingStationInteractPacket;
 import com.restonic4.logistics.blocks.computer.ComputerClientLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
@@ -47,6 +48,7 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(ComputerScreenOffPacket.ID, ComputerScreenOffPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerInstallPacket.ID, ComputerInstallPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerClientLogPushPacket.ID, ComputerClientLogPushPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(ChargingStationInteractPacket.ID, ChargingStationInteractPacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

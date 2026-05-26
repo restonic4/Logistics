@@ -22,6 +22,14 @@ public class Items {
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
+    public static final ItemEntry CRYSTAL_SHARD = PlatformRegistry
+            .item(
+                    Logistics.id("crystal_shard"),
+                    () -> new CrystalShardItem(new Item.Properties())
+            )
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
     public static void register() {
 
     }

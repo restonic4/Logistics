@@ -17,6 +17,7 @@
     "events.ItemBlockRenderTypesMixin",
     "events.LevelRendererMixin",
     "experiment.GameRendererMixin",
+    "experiment.ItemColorsMixin",
     "experiment.LevelRendererMixin",
     "experiment.MinecraftMixin",
     "networking.ClientPacketListenerMixin",
