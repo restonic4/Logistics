@@ -8,6 +8,9 @@
     "CreativeModeTabMixin",
     "events.LevelChunkMixin",
     "events.ServerLevelMixin",
+    "migration.ChunkSerializerMixin",
+    "migration.EntityMixin",
+    "migration.PlayerMixin",
     "networking.ServerGamePacketListenerImplMixin",
     "registries.LootDataManagerMixin",
     "registries.TagLoaderMixin"

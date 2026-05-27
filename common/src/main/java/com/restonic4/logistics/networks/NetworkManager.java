@@ -4,6 +4,8 @@ import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.migration.MigrationManager;
+import com.restonic4.logistics.migration.NbtWalker;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.nodes.FacingNode;
@@ -127,10 +129,15 @@ public class NetworkManager extends SavedData {
             networkList.add(network.save());
         }
         tag.put("networks", networkList);
+
+        tag.putInt(MigrationManager.VERSION_KEY, MigrationManager.CURRENT_DATA_VERSION);
+
         return tag;
     }
 
     private static NetworkManager load(CompoundTag tag, ServerLevel serverLevel) {
+        NbtWalker.processContainer(tag);
+
         NetworkManager manager = new NetworkManager(serverLevel);
 
         ListTag networkList = tag.getList("networks", Tag.TAG_COMPOUND);

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "logistics:item/crystal_shard"
+    "layer0": "logistics:item/kinetic_crystal_shard"
   }
 }

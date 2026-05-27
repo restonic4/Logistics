@@ -1,6 +1,5 @@
 package com.restonic4.logistics.experiment;
 
-import com.restonic4.logistics.blocks.battery.BatteryNode;
 import com.restonic4.logistics.networking.ServerNetworking;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -14,11 +13,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class CrystalShardItem extends Item implements DyeableLeatherItem {
+public class KineticCrystalShardItem extends Item implements DyeableLeatherItem {
     public static final String COLOR_KEY = "color";
     public static final int TOTAL = 10000;
 
-    public CrystalShardItem(Properties properties) {
+    public KineticCrystalShardItem(Properties properties) {
         super(properties.stacksTo(1));
     }
 

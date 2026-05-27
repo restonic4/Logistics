@@ -22,10 +22,10 @@ public class Items {
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
-    public static final ItemEntry CRYSTAL_SHARD = PlatformRegistry
+    public static final ItemEntry KINETIC_CRYSTAL_SHARD = PlatformRegistry
             .item(
-                    Logistics.id("crystal_shard"),
-                    () -> new CrystalShardItem(new Item.Properties())
+                    Logistics.id("kinetic_crystal_shard"),
+                    () -> new KineticCrystalShardItem(new Item.Properties())
             )
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
