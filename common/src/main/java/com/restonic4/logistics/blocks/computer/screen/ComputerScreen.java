@@ -28,8 +28,8 @@ public class ComputerScreen extends TabbedScreen {
     private boolean isLoggedIn = false;
 
     private final TransferTab transferTab;
+    private final ProtectionTab protectionTab;
     private final LogTab logTab;
-    private final InfoTab infoTab;
     private final InstallTab intallTab;
     private final LoginTab loginTab;
 
@@ -48,10 +48,10 @@ public class ComputerScreen extends TabbedScreen {
 
         this.transferTab = new TransferTab();
         transferTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
+        this.protectionTab = new ProtectionTab();
+        protectionTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/shield.png"));
         this.logTab = new LogTab();
         logTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/paper.png"));
-        this.infoTab = new InfoTab();
-        infoTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
         this.intallTab = new InstallTab();
         intallTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
         this.loginTab = new LoginTab();
@@ -84,16 +84,16 @@ public class ComputerScreen extends TabbedScreen {
 
     public void updateTabs() {
         removeTab(transferTab);
+        removeTab(protectionTab);
         removeTab(logTab);
-        removeTab(infoTab);
         removeTab(intallTab);
         removeTab(loginTab);
 
         if (isInstalled) {
             if (isLoggedIn) {
                 addTab(transferTab);
+                addTab(protectionTab);
                 addTab(logTab);
-                addTab(infoTab);
             } else {
                 addTab(loginTab);
             }
@@ -243,11 +243,23 @@ public class ComputerScreen extends TabbedScreen {
 
     @Override
     public void onClose() {
+        if (selectedTab >= 0 && selectedTab < tabs.size()) {
+            if (tabs.get(selectedTab).onAttemptClose()) {
+                return;
+            }
+        }
+
         if (computerNode != null) {
             ClientNetworking.sendToServer(new ComputerScreenOffPacket(computerNode));
         }
         stopAmbientSound();
         super.onClose();
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        stopAmbientSound();
     }
 
     private void stopAmbientSound() {

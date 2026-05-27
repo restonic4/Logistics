@@ -1,0 +1,597 @@
+package com.restonic4.logistics.blocks.computer.screen;
+
+import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.*;
+import com.restonic4.logistics.screens.tabs.Tab;
+import com.restonic4.logistics.screens.widgets.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Blocks;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.*;
+
+public class ProtectionTab extends Tab {
+
+    // UI State (preserved across init() calls)
+    private int selectedNodeIndex = 0;
+    private int selectedRoleIndex = -1;
+    private boolean hasUnsavedChanges = false;
+
+    // Popups
+    private AddRolePopup addRolePopup;
+    private UnsavedChangesPopup unsavedPopup;
+
+    // Panels
+    private ScrollablePanel leftPanel;
+    private ScrollablePanel rightPanel;
+
+    // Left panel widgets
+    private SearchableDropdownWidget<ProtectionNode> nodeSelector;
+    private final List<RoleEntryWidget> roleEntries = new ArrayList<>();
+    private StyledButton addRoleButton;
+
+    // Right panel widgets
+    private EditBox roleNameField;
+    private SearchableDropdownWidget<UUID> playerSearchDropdown;
+    private StyledButton addPlayerButton;
+    private final List<PlayerChipWidget> playerChips = new ArrayList<>();
+    private final List<FlagWidget> flagWidgets = new ArrayList<>();
+    private StyledButton saveButton;
+
+    // Parent reference
+    private Screen parent;
+    private int contentX, contentY, contentWidth, contentHeight;
+
+    public ProtectionTab() {
+        super(Component.literal("Protection"));
+    }
+
+    @Override
+    public void init(Screen parent, int x, int y, int width, int height) {
+        this.parent = parent;
+        this.contentX = x;
+        this.contentY = y;
+        this.contentWidth = width;
+        this.contentHeight = height;
+
+        int leftPanelWidth = Math.max(120, Math.min(160, (int) (width * 0.35)));
+        int rightPanelWidth = width - leftPanelWidth - 6;
+        int gap = 6;
+
+        // Left panel
+        leftPanel = new ScrollablePanel(x, y, leftPanelWidth, height);
+        leftPanel.setPadding(6);
+
+        // Right panel
+        rightPanel = new ScrollablePanel(x + leftPanelWidth + gap, y, rightPanelWidth, height);
+        rightPanel.setPadding(6);
+
+        buildLeftPanel(leftPanelWidth - 12);
+        buildRightPanel(rightPanelWidth - 12);
+
+        // Popups
+        if (addRolePopup == null) {
+            addRolePopup = new AddRolePopup(parent, this::onRoleCreated, () -> {});
+        }
+        if (unsavedPopup == null) {
+            unsavedPopup = new UnsavedChangesPopup(parent, this::onSaveAndClose, this::onDiscardAndClose, () -> {});
+        }
+    }
+
+    private void buildLeftPanel(int innerWidth) {
+        int currentY = 0;
+
+        // Node selector
+        List<SearchableDropdownWidget.DropdownEntry<ProtectionNode>> nodeOptions = new ArrayList<>();
+        for (ProtectionNode node : ProtectionTabDummyData.NODES) {
+            SearchableDropdownWidget.DropdownIcon icon = SearchableDropdownWidget.DropdownIcon.of(Blocks.BEACON);
+            nodeOptions.add(new SearchableDropdownWidget.DropdownEntry<>(node, Component.literal(node.name), icon));
+        }
+
+        nodeSelector = new SearchableDropdownWidget<>(
+                0, 0, innerWidth, 20,
+                Component.empty(), nodeOptions, this::onNodeSelected
+        );
+        if (selectedNodeIndex >= 0 && selectedNodeIndex < ProtectionTabDummyData.NODES.size()) {
+            nodeSelector.setSelectedIndex(selectedNodeIndex);
+        }
+        leftPanel.addChild(nodeSelector, 0, currentY);
+        currentY += 24 + 4;
+
+        // Role list
+        roleEntries.clear();
+        List<Role> roles = getCurrentRoles();
+        for (int i = 0; i < roles.size(); i++) {
+            Role role = roles.get(i);
+            int finalI = i;
+            RoleEntryWidget entry = new RoleEntryWidget(
+                    0, 0, innerWidth, 24, role.icon, role.name,
+                    newName -> onRoleNameChanged(finalI, newName),
+                    i > 0 ? () -> onRoleMoveUp(finalI) : null,
+                    i < roles.size() - 1 ? () -> onRoleMoveDown(finalI) : null,
+                    selected -> onRoleSelected(finalI)
+            );
+            entry.setSelected(i == selectedRoleIndex);
+            leftPanel.addChild(entry, 0, currentY);
+            roleEntries.add(entry);
+            currentY += 24 + 4;
+        }
+
+        // Add role button
+        addRoleButton = new StyledButton(0, 0, innerWidth, 20, Component.literal("+"), this::onAddRoleClicked);
+        addRoleButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
+        leftPanel.addChild(addRoleButton, 0, currentY);
+    }
+
+    private void buildRightPanel(int innerWidth) {
+        int currentY = 0;
+
+        // Role name field
+        roleNameField = new EditBox(Minecraft.getInstance().font, 0, 0, innerWidth, 18, Component.literal("Role Name..."));
+        roleNameField.setTextColor(0xFFFFFFFF);
+        roleNameField.setBordered(false);
+        roleNameField.setResponder(this::onRoleNameFieldChanged);
+        rightPanel.addChild(roleNameField, 0, currentY);
+        currentY += 22 + 8;
+
+        // Players section label
+        // We don't add labels as widgets; we'll draw them in render if needed
+        // But for scrolling, we need to account for the space. Let's add a dummy spacer or just offset.
+        currentY += 2;
+
+        // Player search row
+        int searchWidth = innerWidth - 24;
+        List<SearchableDropdownWidget.DropdownEntry<UUID>> playerEntries = new ArrayList<>();
+        for (Map.Entry<UUID, String> entry : ProtectionTabDummyData.ALL_PLAYERS.entrySet()) {
+            UUID uuid = entry.getKey();
+            String name = entry.getValue();
+            SearchableDropdownWidget.DropdownIcon icon = (gfx, x, y, size) -> PlayerHeadRenderer.renderHead(gfx, name, uuid, x, y, size);
+            playerEntries.add(new SearchableDropdownWidget.DropdownEntry<>(uuid, Component.literal(name), icon));
+        }
+
+        playerSearchDropdown = new SearchableDropdownWidget<>(
+                0, 0, searchWidth, 18,
+                Component.empty(), playerEntries, uuid -> {}
+        );
+        playerSearchDropdown.setSelectionRenderer(new SearchableDropdownWidget.SelectionRenderer<UUID>() {
+            @Override
+            public void render(GuiGraphics graphics, Font font, int x, int y, int width, int height,
+            SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
+                if (selected == null) {
+                    graphics.drawString(font, "Select player...", x + 5, y + (height - 8) / 2, 0xFF777777);
+                    return;
+                }
+                if (selected.icon() != null) {
+                    selected.icon().render(graphics, x + 4, y + (height - 10) / 2, 10);
+                }
+                graphics.drawString(font, selected.label(), x + 18, y + (height - 8) / 2, 0xFFFFFFFF);
+            }
+        });
+        rightPanel.addChild(playerSearchDropdown, 0, currentY);
+
+        addPlayerButton = new StyledButton(0, 0, 20, 18, Component.literal("+"), this::onAddPlayerClicked);
+        addPlayerButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
+        rightPanel.addChild(addPlayerButton, searchWidth + 4, currentY);
+        currentY += 22 + 4;
+
+        // Player chips grid
+        playerChips.clear();
+        Role currentRole = getSelectedRole();
+        if (currentRole != null && !currentRole.players.isEmpty()) {
+            int chipWidth = Math.min(140, (innerWidth - 4) / 2);
+            int chipHeight = 22;
+            int col = 0;
+            int rowY = currentY;
+            int rowX = 0;
+
+            for (int i = 0; i < currentRole.players.size(); i++) {
+                AssignedPlayer player = currentRole.players.get(i);
+                if (col >= 2) {
+                    col = 0;
+                    rowX = 0;
+                    rowY += chipHeight + 4;
+                }
+
+                PlayerChipWidget chip = new PlayerChipWidget(
+                        0, 0, chipWidth, chipHeight,
+                        player.id, player.username,
+                        () -> onRemovePlayer(player.id)
+                );
+                rightPanel.addChild(chip, rowX, rowY);
+                playerChips.add(chip);
+
+                rowX += chipWidth + 4;
+                col++;
+            }
+            currentY = rowY + chipHeight + 12;
+        } else {
+            currentY += 16 + 12; // space for "No players assigned" text
+        }
+
+        // Flags section
+        currentY += 4;
+        flagWidgets.clear();
+        if (currentRole != null) {
+            int flagWidth = (innerWidth - 6) / 2;
+            int col = 0;
+            int rowX = 0;
+            int rowY = currentY;
+
+            for (ProtectionFlag flagDef : ProtectionTabDummyData.FLAGS) {
+                if (col >= 2) {
+                    col = 0;
+                    rowX = 0;
+                    rowY += 54 + 6; // flag height + gap
+                }
+
+                FlagState state = currentRole.flags.getOrDefault(flagDef.id, new FlagState(false, ActionType.DENY, 0, ""));
+                boolean needsConfig = state.action == ActionType.DAMAGE || state.action == ActionType.MESSAGE;
+                int flagHeight = needsConfig ? 54 : 34;
+
+                FlagWidget flagWidget = new FlagWidget(
+                        0, 0, flagWidth, flagHeight,
+                        flagDef, state,
+                        newState -> onFlagChanged(flagDef.id, newState)
+                );
+                rightPanel.addChild(flagWidget, rowX, rowY);
+                flagWidgets.add(flagWidget);
+
+                rowX += flagWidth + 6;
+                col++;
+            }
+            currentY = rowY + 54 + 12;
+        }
+
+        // Save button
+        saveButton = new StyledButton(0, 0, 100, 20, Component.literal("Save Changes"), this::onSaveClicked);
+        saveButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
+        rightPanel.addChild(saveButton, innerWidth - 100, currentY);
+    }
+
+    private void refreshRightPanel() {
+        if (rightPanel != null) {
+            int innerWidth = rightPanel.getWidth() - 12;
+            rightPanel.clearChildren();
+            buildRightPanel(innerWidth);
+        }
+    }
+
+    private void refreshLeftPanel() {
+        if (leftPanel != null) {
+            int innerWidth = leftPanel.getWidth() - 12;
+            leftPanel.clearChildren();
+            buildLeftPanel(innerWidth);
+        }
+    }
+
+    private List<Role> getCurrentRoles() {
+        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) {
+            return new ArrayList<>();
+        }
+        ProtectionNode node = ProtectionTabDummyData.NODES.get(selectedNodeIndex);
+        return ProtectionTabDummyData.getRolesForNode(node.id);
+    }
+
+    private Role getSelectedRole() {
+        List<Role> roles = getCurrentRoles();
+        if (selectedRoleIndex >= 0 && selectedRoleIndex < roles.size()) {
+            return roles.get(selectedRoleIndex);
+        }
+        return null;
+    }
+
+    // === Event Handlers ===
+
+    private void onNodeSelected(ProtectionNode node) {
+        int index = ProtectionTabDummyData.NODES.indexOf(node);
+        if (index != selectedNodeIndex) {
+            selectedNodeIndex = index;
+            selectedRoleIndex = -1;
+            refreshLeftPanel();
+            refreshRightPanel();
+        }
+    }
+
+    private void onRoleSelected(int index) {
+        if (selectedRoleIndex != index) {
+            selectedRoleIndex = index;
+            // Update selection visuals
+            for (int i = 0; i < roleEntries.size(); i++) {
+                roleEntries.get(i).setSelected(i == index);
+            }
+            refreshRightPanel();
+        }
+    }
+
+    private void onRoleNameChanged(int index, String newName) {
+        List<Role> roles = getCurrentRoles();
+        if (index >= 0 && index < roles.size()) {
+            roles.get(index).name = newName;
+            markDirty();
+            // Update left panel entry
+            if (index < roleEntries.size()) {
+                roleEntries.get(index).setName(newName);
+            }
+            // Update right panel field if this is the selected role
+            if (index == selectedRoleIndex && roleNameField != null) {
+                roleNameField.setValue(newName);
+            }
+        }
+    }
+
+    private void onRoleNameFieldChanged(String text) {
+        Role role = getSelectedRole();
+        if (role != null && !text.isBlank()) {
+            role.name = text;
+            markDirty();
+            // Sync to left panel
+            if (selectedRoleIndex >= 0 && selectedRoleIndex < roleEntries.size()) {
+                roleEntries.get(selectedRoleIndex).setName(text);
+            }
+        }
+    }
+
+    private void onRoleMoveUp(int index) {
+        List<Role> roles = getCurrentRoles();
+        if (index > 0 && index < roles.size()) {
+            Collections.swap(roles, index, index - 1);
+            markDirty();
+            selectedRoleIndex = index - 1;
+            refreshLeftPanel();
+            refreshRightPanel();
+        }
+    }
+
+    private void onRoleMoveDown(int index) {
+        List<Role> roles = getCurrentRoles();
+        if (index >= 0 && index < roles.size() - 1) {
+            Collections.swap(roles, index, index + 1);
+            markDirty();
+            selectedRoleIndex = index + 1;
+            refreshLeftPanel();
+            refreshRightPanel();
+        }
+    }
+
+    private void onAddRoleClicked() {
+        addRolePopup.show();
+    }
+
+    private void onRoleCreated(String name) {
+        List<Role> roles = getCurrentRoles();
+        if (roles != null) {
+            // Create new role with default flags (all off/deny)
+            Map<String, FlagState> defaultFlags = new HashMap<>();
+            for (ProtectionFlag f : ProtectionTabDummyData.FLAGS) {
+                defaultFlags.put(f.id, new FlagState(false, ActionType.DENY, 0, ""));
+            }
+            Role newRole = new Role(
+                    UUID.randomUUID(),
+                    name,
+                    roles.size(),
+                    new ResourceLocation("logistics", "textures/item/parcel.png"),
+                    defaultFlags
+            );
+            roles.add(newRole);
+            markDirty();
+            selectedRoleIndex = roles.size() - 1;
+            refreshLeftPanel();
+            refreshRightPanel();
+        }
+    }
+
+    private void onAddPlayerClicked() {
+        UUID selectedPlayer = playerSearchDropdown.getSelectedValue();
+        if (selectedPlayer == null) return;
+
+        Role role = getSelectedRole();
+        if (role == null) return;
+
+        // Check for duplicates
+        for (AssignedPlayer p : role.players) {
+            if (p.id.equals(selectedPlayer)) return;
+        }
+
+        String username = ProtectionTabDummyData.ALL_PLAYERS.get(selectedPlayer);
+        if (username != null) {
+            role.players.add(new AssignedPlayer(selectedPlayer, username));
+            markDirty();
+            refreshRightPanel();
+        }
+    }
+
+    private void onRemovePlayer(UUID playerId) {
+        Role role = getSelectedRole();
+        if (role == null) return;
+
+        role.players.removeIf(p -> p.id.equals(playerId));
+        markDirty();
+        refreshRightPanel();
+    }
+
+    private void onFlagChanged(String flagId, FlagState newState) {
+        Role role = getSelectedRole();
+        if (role != null) {
+            role.flags.put(flagId, newState);
+            markDirty();
+        }
+    }
+
+    private void onSaveClicked() {
+        // Currently a no-op for dummy data
+        hasUnsavedChanges = false;
+    }
+
+    private void markDirty() {
+        hasUnsavedChanges = true;
+    }
+
+    // === Popup Handlers ===
+
+    private void onSaveAndClose() {
+        onSaveClicked();
+        if (parent != null) {
+            parent.onClose();
+        }
+    }
+
+    private void onDiscardAndClose() {
+        // Reset to original dummy data by reinitializing
+        // In a real implementation, this would revert to server-synced state
+        hasUnsavedChanges = false;
+        if (parent != null) {
+            parent.onClose();
+        }
+    }
+
+    // === Tab Lifecycle ===
+
+    @Override
+    public void tick() {
+        if (leftPanel != null) leftPanel.tick();
+        if (rightPanel != null) rightPanel.tick();
+        for (FlagWidget flag : flagWidgets) {
+            flag.tick();
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics gfx, int mouseX, int mouseY, float delta, int x, int y, int width, int height) {
+        // Render panels
+        if (leftPanel != null) {
+            leftPanel.render(gfx, mouseX, mouseY, delta);
+        }
+        if (rightPanel != null) {
+            rightPanel.render(gfx, mouseX, mouseY, delta);
+        }
+
+        // Render section labels directly (not as widgets, so they don't need scrolling logic)
+        Font font = Minecraft.getInstance().font;
+        int leftW = Math.max(120, Math.min(160, (int) (width * 0.35)));
+        int rightX = x + leftW + 6;
+        int rightW = width - leftW - 6;
+        int innerRightW = rightW - 12;
+
+        // Right panel labels
+        int labelY = rightPanel.getY() + 6 + 22 + 8;
+        gfx.drawString(font, "Players:", rightX + 6, labelY, 0xFFFFFFFF, false);
+
+        Role role = getSelectedRole();
+        int chipsStartY = labelY + 12 + 22 + 4;
+        if (role == null || role.players.isEmpty()) {
+            gfx.drawString(font, "No players assigned", rightX + 6, chipsStartY, 0xFF777777, false);
+        }
+
+        int flagsLabelY = chipsStartY;
+        if (role != null && !role.players.isEmpty()) {
+            int chipRows = (role.players.size() + 1) / 2;
+            flagsLabelY += chipRows * 26 + 8;
+        } else {
+            flagsLabelY += 16 + 8;
+        }
+        gfx.drawString(font, "Protection Flags:", rightX + 6, flagsLabelY, 0xFFFFFFFF, false);
+
+        // Render popups on top
+        if (addRolePopup != null && addRolePopup.isActive()) {
+            addRolePopup.render(gfx, mouseX, mouseY, delta);
+        }
+        if (unsavedPopup != null && unsavedPopup.isActive()) {
+            unsavedPopup.render(gfx, mouseX, mouseY, delta);
+        }
+    }
+
+    // === Input Forwarding ===
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (unsavedPopup != null && unsavedPopup.isActive()) {
+            return unsavedPopup.mouseClicked(mouseX, mouseY, button);
+        }
+        if (addRolePopup != null && addRolePopup.isActive()) {
+            return addRolePopup.mouseClicked(mouseX, mouseY, button);
+        }
+
+        boolean handled = false;
+        if (rightPanel != null && rightPanel.isMouseOver(mouseX, mouseY)) {
+            handled = rightPanel.mouseClicked(mouseX, mouseY, button) || handled;
+        }
+        if (leftPanel != null && leftPanel.isMouseOver(mouseX, mouseY)) {
+            handled = leftPanel.mouseClicked(mouseX, mouseY, button) || handled;
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (unsavedPopup != null && unsavedPopup.isActive()) return true;
+        if (addRolePopup != null && addRolePopup.isActive()) return true;
+
+        boolean handled = false;
+        if (rightPanel != null) handled = rightPanel.mouseReleased(mouseX, mouseY, button) || handled;
+        if (leftPanel != null) handled = leftPanel.mouseReleased(mouseX, mouseY, button) || handled;
+        return handled;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (unsavedPopup != null && unsavedPopup.isActive()) return true;
+        if (addRolePopup != null && addRolePopup.isActive()) return true;
+
+        boolean handled = false;
+        if (rightPanel != null && rightPanel.isMouseOver(mouseX, mouseY)) {
+            handled = rightPanel.mouseScrolled(mouseX, mouseY, delta) || handled;
+        }
+        if (leftPanel != null && leftPanel.isMouseOver(mouseX, mouseY)) {
+            handled = leftPanel.mouseScrolled(mouseX, mouseY, delta) || handled;
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (unsavedPopup != null && unsavedPopup.isActive()) {
+            return unsavedPopup.keyPressed(keyCode, scanCode, modifiers);
+        }
+        if (addRolePopup != null && addRolePopup.isActive()) {
+            return addRolePopup.keyPressed(keyCode, scanCode, modifiers);
+        }
+
+        // ESC guard for unsaved changes
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && hasUnsavedChanges) {
+            unsavedPopup.show();
+            return true;
+        }
+
+        boolean handled = false;
+        if (rightPanel != null) handled = rightPanel.keyPressed(keyCode, scanCode, modifiers) || handled;
+        if (leftPanel != null) handled = leftPanel.keyPressed(keyCode, scanCode, modifiers) || handled;
+        return handled;
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (unsavedPopup != null && unsavedPopup.isActive()) return false;
+        if (addRolePopup != null && addRolePopup.isActive()) {
+            return addRolePopup.charTyped(codePoint, modifiers);
+        }
+
+        boolean handled = false;
+        if (rightPanel != null) handled = rightPanel.charTyped(codePoint, modifiers) || handled;
+        if (leftPanel != null) handled = leftPanel.charTyped(codePoint, modifiers) || handled;
+        return handled;
+    }
+
+    @Override
+    public boolean onAttemptClose() {
+        if (hasUnsavedChanges) {
+            unsavedPopup.show();
+            return true;
+        }
+        return false;
+    }
+}
