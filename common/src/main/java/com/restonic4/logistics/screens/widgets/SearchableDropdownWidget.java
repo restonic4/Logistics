@@ -284,7 +284,7 @@ public class SearchableDropdownWidget<T> extends AbstractWidget {
         this.searchBar.setValue("");
     }
 
-    private void closeMenu() {
+    public void closeMenu() {
         this.expanded = false;
         this.searchBar.setVisible(false);
         this.searchBar.setFocused(false);
@@ -428,6 +428,20 @@ public class SearchableDropdownWidget<T> extends AbstractWidget {
     public void renderMenuOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (expanded) {
             renderMenu(graphics, mouseX, mouseY);
+        }
+    }
+
+    public void setDropdownWidth(int width) {
+        this.setWidth(width);
+        this.searchBar.setWidth(Math.max(20, width - 8));
+    }
+
+    public void setSelectedValueSilently(T value) {
+        for (DropdownEntry<T> entry : allOptions) {
+            if (Objects.equals(entry.value(), value)) {
+                this.selected = entry;
+                return;
+            }
         }
     }
 }

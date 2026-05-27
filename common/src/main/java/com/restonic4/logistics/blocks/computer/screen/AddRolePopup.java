@@ -70,6 +70,9 @@ public class AddRolePopup {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (!active) return;
 
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 1000);
+
         int screenW = parent.width;
         int screenH = parent.height;
 
@@ -105,6 +108,8 @@ public class AddRolePopup {
         cancelButton.setX(x + 105);
         cancelButton.setY(y + 65);
         cancelButton.render(graphics, mouseX, mouseY, partialTick);
+
+        graphics.pose().popPose();
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {

@@ -1,6 +1,5 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData;
 import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.ActionType;
 import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.FlagState;
 import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.ProtectionFlag;
@@ -45,13 +44,16 @@ public class FlagWidget extends AbstractWidget {
         int y = getY();
         int w = getWidth();
 
-        // Toggle (top right)
         toggle = new ToggleWidget(x + w - 36, y + 4, 28, 14, state.enabled, enabled -> {
             state.enabled = enabled;
             notifyChanged();
         });
 
-        // Action dropdown
+        createActionDropdown(x, y, w);
+        rebuildConfigWidget();
+    }
+
+    private void createActionDropdown(int x, int y, int w) {
         List<SearchableDropdownWidget.DropdownEntry<ActionType>> actions = new ArrayList<>();
         for (ActionType action : flag.supportedActions) {
             actions.add(new SearchableDropdownWidget.DropdownEntry<>(action, Component.literal(action.name()), null));
@@ -64,12 +66,20 @@ public class FlagWidget extends AbstractWidget {
                 x + 4, y + 26, dropdownWidth, 16,
                 Component.empty(), actions, action -> {
             state.action = action;
+            updateActionDropdownSize();
             rebuildConfigWidget();
             notifyChanged();
         });
-        actionDropdown.setSelectedValue(state.action);
+        actionDropdown.setSelectedValueSilently(state.action);
+    }
 
-        rebuildConfigWidget();
+    private void updateActionDropdownSize() {
+        int w = getWidth();
+        boolean needsConfig = state.action == ActionType.DAMAGE || state.action == ActionType.MESSAGE;
+        int dropdownWidth = needsConfig ? (w - 16) / 2 : w - 8;
+        actionDropdown.setX(getX() + 4);
+        actionDropdown.setY(getY() + 26);
+        actionDropdown.setDropdownWidth(dropdownWidth);
     }
 
     private void rebuildConfigWidget() {
@@ -110,8 +120,29 @@ public class FlagWidget extends AbstractWidget {
     }
 
     private void notifyChanged() {
-        if (onChanged != null) {
-            onChanged.accept(state);
+        if (onChanged != null) onChanged.accept(state);
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (super.isMouseOver(mouseX, mouseY)) return true;
+        if (actionDropdown != null && actionDropdown.isExpanded() && actionDropdown.isMouseOver(mouseX, mouseY)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isDropdownExpanded() {
+        return actionDropdown != null && actionDropdown.isExpanded();
+    }
+
+    public void closeDropdown() {
+        if (actionDropdown != null) actionDropdown.closeMenu();
+    }
+
+    public void renderDropdownOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (actionDropdown != null && actionDropdown.isExpanded()) {
+            actionDropdown.renderMenuOverlay(graphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -122,11 +153,9 @@ public class FlagWidget extends AbstractWidget {
         int w = getWidth();
         int h = getHeight();
 
-        // Background
         graphics.fill(x, y, x + w, y + h, BG);
         graphics.renderOutline(x, y, w, h, BORDER);
 
-        // Flag name (top left)
         Font font = Minecraft.getInstance().font;
         String name = flag.name;
         int nameMaxWidth = w - 44;
@@ -135,20 +164,16 @@ public class FlagWidget extends AbstractWidget {
         }
         graphics.drawString(font, name, x + 4, y + 6, 0xFFFFFFFF, false);
 
-        // Toggle
         toggle.setX(x + w - 36);
         toggle.setY(y + 4);
         toggle.render(graphics, mouseX, mouseY, partialTick);
 
-        // Action label
         graphics.drawString(font, "Action:", x + 4, y + 28, 0xFFAAAAAA, false);
 
-        // Action dropdown
         actionDropdown.setX(x + 4);
         actionDropdown.setY(y + 38);
         actionDropdown.render(graphics, mouseX, mouseY, partialTick);
 
-        // Config widget
         if (damagePicker != null) {
             damagePicker.setX(x + (w - 8) / 2 + 4);
             damagePicker.setY(y + 38);

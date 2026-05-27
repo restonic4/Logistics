@@ -131,6 +131,7 @@ public class ProtectionTab extends Tab {
     }
 
     private void buildRightPanel(int innerWidth) {
+        innerWidth = Math.max(20, innerWidth - 6);
         int currentY = 0;
 
         // Role name field
@@ -375,6 +376,7 @@ public class ProtectionTab extends Tab {
     }
 
     private void onAddRoleClicked() {
+        closeAllDropdowns();
         addRolePopup.show();
     }
 
@@ -465,6 +467,23 @@ public class ProtectionTab extends Tab {
         }
     }
 
+    private void closeAllDropdowns() {
+        closeDropdownsInPanel(leftPanel);
+        closeDropdownsInPanel(rightPanel);
+        for (FlagWidget flag : flagWidgets) {
+            flag.closeDropdown();
+        }
+    }
+
+    private void closeDropdownsInPanel(ScrollablePanel panel) {
+        if (panel == null) return;
+        for (AbstractWidget child : panel.getChildren()) {
+            if (child instanceof SearchableDropdownWidget<?> dropdown) {
+                dropdown.closeMenu();
+            }
+        }
+    }
+
     // === Tab Lifecycle ===
 
     @Override
@@ -482,13 +501,21 @@ public class ProtectionTab extends Tab {
         if (leftPanel != null) leftPanel.render(gfx, mouseX, mouseY, delta);
         if (rightPanel != null) rightPanel.render(gfx, mouseX, mouseY, delta);
 
-        // Render popups on top
+        // Draw flag dropdown menus that extend outside the right panel scissor
+        for (FlagWidget flag : flagWidgets) {
+            flag.renderDropdownOverlay(gfx, mouseX, mouseY, delta);
+        }
+
+        // Popups at high Z so they cover everything
+        gfx.pose().pushPose();
+        gfx.pose().translate(0, 0, 1000);
         if (addRolePopup != null && addRolePopup.isActive()) {
             addRolePopup.render(gfx, mouseX, mouseY, delta);
         }
         if (unsavedPopup != null && unsavedPopup.isActive()) {
             unsavedPopup.render(gfx, mouseX, mouseY, delta);
         }
+        gfx.pose().popPose();
     }
 
     // === Input Forwarding ===
@@ -549,6 +576,7 @@ public class ProtectionTab extends Tab {
 
         // ESC guard for unsaved changes
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && hasUnsavedChanges) {
+            closeAllDropdowns();
             unsavedPopup.show();
             return true;
         }
@@ -575,6 +603,7 @@ public class ProtectionTab extends Tab {
     @Override
     public boolean onAttemptClose() {
         if (hasUnsavedChanges) {
+            closeAllDropdowns();
             unsavedPopup.show();
             return true;
         }

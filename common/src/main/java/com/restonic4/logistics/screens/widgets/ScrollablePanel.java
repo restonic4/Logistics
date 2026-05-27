@@ -172,20 +172,47 @@ public class ScrollablePanel extends AbstractWidget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!this.clicked(mouseX, mouseY)) return false;
-
-        // Unfocus all children before handling new click
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (!this.active || !this.visible) return false;
+        if (super.isMouseOver(mouseX, mouseY)) return true;
+        // Capture hits for children that render outside our bounds (dropdown menus)
         for (AbstractWidget child : children) {
-            child.setFocused(false);
+            if (child.isMouseOver(mouseX, mouseY)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!this.active || !this.visible) return false;
+        if (!super.isMouseOver(mouseX, mouseY)) {
+            // Allow if over an expanded menu of any child
+            boolean overChildMenu = false;
+            for (AbstractWidget child : children) {
+                if (child.isMouseOver(mouseX, mouseY)) { overChildMenu = true; break; }
+            }
+            if (!overChildMenu) return false;
         }
 
+        // Priority 1: expanded dropdowns float on top — give them first dibs
+        for (AbstractWidget child : children) {
+            if (child instanceof SearchableDropdownWidget<?> dd && dd.isExpanded() && dd.isMouseOver(mouseX, mouseY)) {
+                if (dd.mouseClicked(mouseX, mouseY, button)) return true;
+            }
+            if (child instanceof com.restonic4.logistics.blocks.computer.screen.FlagWidget flag
+                    && flag.isDropdownExpanded() && flag.isMouseOver(mouseX, mouseY)) {
+                if (flag.mouseClicked(mouseX, mouseY, button)) return true;
+            }
+        }
+
+        // Unfocus everyone before normal handling
+        for (AbstractWidget child : children) child.setFocused(false);
+
+        // Priority 2: normal back-to-front hit testing
         for (int i = children.size() - 1; i >= 0; i--) {
             AbstractWidget child = children.get(i);
             if (child.isMouseOver(mouseX, mouseY)) {
-                if (child.mouseClicked(mouseX, mouseY, button)) {
-                    return true;
-                }
+                if (child.mouseClicked(mouseX, mouseY, button)) return true;
             }
         }
         return true;
@@ -193,13 +220,11 @@ public class ScrollablePanel extends AbstractWidget {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (!this.clicked(mouseX, mouseY)) return false;
+        if (!this.isMouseOver(mouseX, mouseY)) return false;
         for (int i = children.size() - 1; i >= 0; i--) {
             AbstractWidget child = children.get(i);
             if (child.isMouseOver(mouseX, mouseY)) {
-                if (child.mouseReleased(mouseX, mouseY, button)) {
-                    return true;
-                }
+                if (child.mouseReleased(mouseX, mouseY, button)) return true;
             }
         }
         return true;
@@ -207,13 +232,11 @@ public class ScrollablePanel extends AbstractWidget {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (!this.clicked(mouseX, mouseY)) return false;
+        if (!this.isMouseOver(mouseX, mouseY)) return false;
         for (int i = children.size() - 1; i >= 0; i--) {
             AbstractWidget child = children.get(i);
             if (child.isMouseOver(mouseX, mouseY)) {
-                if (child.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
-                    return true;
-                }
+                if (child.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
             }
         }
         return true;
@@ -221,19 +244,22 @@ public class ScrollablePanel extends AbstractWidget {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        if (!this.clicked(mouseX, mouseY)) return false;
+        if (!this.isMouseOver(mouseX, mouseY)) return false;
 
-        // Offer scroll to children first
-        for (int i = children.size() - 1; i >= 0; i--) {
-            AbstractWidget child = children.get(i);
-            if (child.isMouseOver(mouseX, mouseY)) {
-                if (child.mouseScrolled(mouseX, mouseY, amount)) {
-                    return true;
-                }
+        // Offer scroll to expanded dropdowns first
+        for (AbstractWidget child : children) {
+            if (child instanceof SearchableDropdownWidget<?> dd && dd.isExpanded() && dd.isMouseOver(mouseX, mouseY)) {
+                if (dd.mouseScrolled(mouseX, mouseY, amount)) return true;
             }
         }
 
-        // Scroll the panel
+        for (int i = children.size() - 1; i >= 0; i--) {
+            AbstractWidget child = children.get(i);
+            if (child.isMouseOver(mouseX, mouseY)) {
+                if (child.mouseScrolled(mouseX, mouseY, amount)) return true;
+            }
+        }
+
         setScrollOffset(scrollOffset - (int) (amount * 12));
         return true;
     }
