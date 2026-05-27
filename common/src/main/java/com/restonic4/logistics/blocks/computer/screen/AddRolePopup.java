@@ -29,7 +29,8 @@ public class AddRolePopup {
         Font font = Minecraft.getInstance().font;
         this.nameField = new EditBox(font, 0, 0, 160, 18, Component.literal("Role Name"));
         this.nameField.setTextColor(0xFFFFFFFF);
-        this.nameField.setBordered(false);
+        this.nameField.setBordered(true);
+        this.nameField.setMaxLength(64);
 
         this.createButton = new StyledButton(0, 0, 80, 20, Component.literal("Create"), () -> {
             if (!nameField.getValue().isBlank()) {
@@ -58,6 +59,12 @@ public class AddRolePopup {
 
     public boolean isActive() {
         return active;
+    }
+
+    public void tick() {
+        if (active) {
+            nameField.tick();
+        }
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

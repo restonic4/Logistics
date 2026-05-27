@@ -48,6 +48,7 @@ public class SearchableDropdownWidget<T> extends AbstractWidget {
         this.searchBar = new EditBox(font, x, y, width, height, Component.literal("Search..."));
         this.searchBar.setResponder(this::onSearch);
         this.searchBar.setVisible(false);
+        this.searchBar.setFocused(false);
         this.searchBar.setTextColor(0xFFFFFFFF);
         this.searchBar.setBordered(false);
     }
@@ -191,7 +192,7 @@ public class SearchableDropdownWidget<T> extends AbstractWidget {
         }
     }
 
-    private void renderMenu(GuiGraphics graphics, int mouseX, int mouseY) {
+    void renderMenu(GuiGraphics graphics, int mouseX, int mouseY) {
         Minecraft mc = Minecraft.getInstance();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int screenWidth = mc.getWindow().getGuiScaledWidth();
@@ -418,5 +419,15 @@ public class SearchableDropdownWidget<T> extends AbstractWidget {
 
     public List<DropdownEntry<T>> getFilteredOptions() {
         return List.copyOf(this.filteredOptions);
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public void renderMenuOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (expanded) {
+            renderMenu(graphics, mouseX, mouseY);
+        }
     }
 }

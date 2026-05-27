@@ -138,16 +138,16 @@ public class RoleEntryWidget extends AbstractWidget {
             int arrowY = y + (h - 12) / 2;
 
             if (canUp) {
-                boolean arrowHover = mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY && mouseY < arrowY + 6;
+                boolean arrowHover = mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY && mouseY < arrowY + 5;
                 int color = arrowHover ? 0xFFFFFF55 : 0xFFAAAAAA;
-                renderArrow(graphics, arrowX, arrowY, 12, 6, true, color);
+                renderArrow(graphics, arrowX, arrowY, 12, 5, true, color);
             }
 
             if (canDown) {
-                int downY = arrowY + 6;
-                boolean arrowHover = mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= downY && mouseY < downY + 6;
+                int downY = arrowY + 5 + 2; // 2px gap
+                boolean arrowHover = mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= downY && mouseY < downY + 5;
                 int color = arrowHover ? 0xFFFFFF55 : 0xFFAAAAAA;
-                renderArrow(graphics, arrowX, downY, 12, 6, false, color);
+                renderArrow(graphics, arrowX, downY, 12, 5, false, color);
             }
         }
     }
@@ -178,13 +178,13 @@ public class RoleEntryWidget extends AbstractWidget {
         int arrowY = y + (h - 12) / 2;
 
         // Check up arrow
-        if (onUp != null && mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY && mouseY < arrowY + 6) {
+        if (onUp != null && mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY && mouseY < arrowY + 5) {
             onUp.run();
             return true;
         }
 
         // Check down arrow
-        if (onDown != null && mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY + 6 && mouseY < arrowY + 12) {
+        if (onDown != null && mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= arrowY + 5 + 2 && mouseY < arrowY + 5 + 2 + 5) {
             onDown.run();
             return true;
         }

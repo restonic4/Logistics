@@ -146,6 +146,13 @@ public class ScrollablePanel extends AbstractWidget {
 
         graphics.disableScissor();
 
+        // Render expanded dropdown menus on top of scissor
+        for (AbstractWidget child : children) {
+            if (child instanceof SearchableDropdownWidget<?> dropdown && dropdown.isExpanded()) {
+                dropdown.renderMenuOverlay(graphics, mouseX, mouseY, partialTick);
+            }
+        }
+
         // Scrollbar
         int maxScroll = Math.max(0, contentHeight - contentH);
         if (maxScroll > 0) {
@@ -204,8 +211,6 @@ public class ScrollablePanel extends AbstractWidget {
         for (int i = children.size() - 1; i >= 0; i--) {
             AbstractWidget child = children.get(i);
             if (child.isMouseOver(mouseX, mouseY)) {
-                // AbstractWidget doesn't have mouseDragged in 1.20.1 MojMap? Let me check...
-                // Actually it does: mouseDragged(double, double, int, double, double)
                 if (child.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                     return true;
                 }

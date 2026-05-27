@@ -6,7 +6,9 @@ import com.restonic4.logistics.screens.widgets.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -139,10 +141,9 @@ public class ProtectionTab extends Tab {
         rightPanel.addChild(roleNameField, 0, currentY);
         currentY += 22 + 8;
 
-        // Players section label
-        // We don't add labels as widgets; we'll draw them in render if needed
-        // But for scrolling, we need to account for the space. Let's add a dummy spacer or just offset.
-        currentY += 2;
+        // Players label
+        rightPanel.addChild(createLabel("Players:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        currentY += 12;
 
         // Player search row
         int searchWidth = innerWidth - 24;
@@ -210,11 +211,15 @@ public class ProtectionTab extends Tab {
             }
             currentY = rowY + chipHeight + 12;
         } else {
-            currentY += 16 + 12; // space for "No players assigned" text
+            rightPanel.addChild(createLabel("No players assigned", innerWidth, 0xFF777777), 0, currentY);
+            currentY += 16 + 12;
         }
 
-        // Flags section
-        currentY += 4;
+        // Protection Flags label
+        rightPanel.addChild(createLabel("Protection Flags:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        currentY += 12 + 4;
+
+        // Flags grid
         flagWidgets.clear();
         if (currentRole != null) {
             int flagWidth = (innerWidth - 6) / 2;
@@ -226,15 +231,13 @@ public class ProtectionTab extends Tab {
                 if (col >= 2) {
                     col = 0;
                     rowX = 0;
-                    rowY += 54 + 6; // flag height + gap
+                    rowY += 58 + 6; // uniform flag height + gap
                 }
 
                 FlagState state = currentRole.flags.getOrDefault(flagDef.id, new FlagState(false, ActionType.DENY, 0, ""));
-                boolean needsConfig = state.action == ActionType.DAMAGE || state.action == ActionType.MESSAGE;
-                int flagHeight = needsConfig ? 54 : 34;
-
+                // Uniform height so config widgets never overflow the box
                 FlagWidget flagWidget = new FlagWidget(
-                        0, 0, flagWidth, flagHeight,
+                        0, 0, flagWidth, 58,
                         flagDef, state,
                         newState -> onFlagChanged(flagDef.id, newState)
                 );
@@ -244,13 +247,26 @@ public class ProtectionTab extends Tab {
                 rowX += flagWidth + 6;
                 col++;
             }
-            currentY = rowY + 54 + 12;
+            currentY = rowY + 58 + 12;
         }
 
         // Save button
         saveButton = new StyledButton(0, 0, 100, 20, Component.literal("Save Changes"), this::onSaveClicked);
         saveButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
         rightPanel.addChild(saveButton, innerWidth - 100, currentY);
+    }
+
+    private AbstractWidget createLabel(String text, int width, int color) {
+        return new AbstractWidget(0, 0, width, 10, Component.literal(text)) {
+            @Override
+            protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+                graphics.drawString(Minecraft.getInstance().font, getMessage(), getX(), getY(), color, false);
+            }
+            @Override
+            public boolean mouseClicked(double mouseX, double mouseY, int button) { return false; }
+            @Override
+            protected void updateWidgetNarration(NarrationElementOutput output) {}
+        };
     }
 
     private void refreshRightPanel() {
@@ -458,43 +474,13 @@ public class ProtectionTab extends Tab {
         for (FlagWidget flag : flagWidgets) {
             flag.tick();
         }
+        if (addRolePopup != null) addRolePopup.tick();
     }
 
     @Override
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float delta, int x, int y, int width, int height) {
-        // Render panels
-        if (leftPanel != null) {
-            leftPanel.render(gfx, mouseX, mouseY, delta);
-        }
-        if (rightPanel != null) {
-            rightPanel.render(gfx, mouseX, mouseY, delta);
-        }
-
-        // Render section labels directly (not as widgets, so they don't need scrolling logic)
-        Font font = Minecraft.getInstance().font;
-        int leftW = Math.max(120, Math.min(160, (int) (width * 0.35)));
-        int rightX = x + leftW + 6;
-        int rightW = width - leftW - 6;
-        int innerRightW = rightW - 12;
-
-        // Right panel labels
-        int labelY = rightPanel.getY() + 6 + 22 + 8;
-        gfx.drawString(font, "Players:", rightX + 6, labelY, 0xFFFFFFFF, false);
-
-        Role role = getSelectedRole();
-        int chipsStartY = labelY + 12 + 22 + 4;
-        if (role == null || role.players.isEmpty()) {
-            gfx.drawString(font, "No players assigned", rightX + 6, chipsStartY, 0xFF777777, false);
-        }
-
-        int flagsLabelY = chipsStartY;
-        if (role != null && !role.players.isEmpty()) {
-            int chipRows = (role.players.size() + 1) / 2;
-            flagsLabelY += chipRows * 26 + 8;
-        } else {
-            flagsLabelY += 16 + 8;
-        }
-        gfx.drawString(font, "Protection Flags:", rightX + 6, flagsLabelY, 0xFFFFFFFF, false);
+        if (leftPanel != null) leftPanel.render(gfx, mouseX, mouseY, delta);
+        if (rightPanel != null) rightPanel.render(gfx, mouseX, mouseY, delta);
 
         // Render popups on top
         if (addRolePopup != null && addRolePopup.isActive()) {
