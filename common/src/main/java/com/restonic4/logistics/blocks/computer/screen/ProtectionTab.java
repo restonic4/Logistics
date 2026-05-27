@@ -134,14 +134,6 @@ public class ProtectionTab extends Tab {
         innerWidth = Math.max(20, innerWidth - 6);
         int currentY = 0;
 
-        // Role name field
-        roleNameField = new EditBox(Minecraft.getInstance().font, 0, 0, innerWidth, 18, Component.literal("Role Name..."));
-        roleNameField.setTextColor(0xFFFFFFFF);
-        roleNameField.setBordered(false);
-        roleNameField.setResponder(this::onRoleNameFieldChanged);
-        rightPanel.addChild(roleNameField, 0, currentY);
-        currentY += 22 + 8;
-
         // Players label
         rightPanel.addChild(createLabel("Players:", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
@@ -163,7 +155,7 @@ public class ProtectionTab extends Tab {
         playerSearchDropdown.setSelectionRenderer(new SearchableDropdownWidget.SelectionRenderer<UUID>() {
             @Override
             public void render(GuiGraphics graphics, Font font, int x, int y, int width, int height,
-            SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
+                               SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
                 if (selected == null) {
                     graphics.drawString(font, "Select player...", x + 5, y + (height - 8) / 2, 0xFF777777);
                     return;
@@ -459,8 +451,6 @@ public class ProtectionTab extends Tab {
     }
 
     private void onDiscardAndClose() {
-        // Reset to original dummy data by reinitializing
-        // In a real implementation, this would revert to server-synced state
         hasUnsavedChanges = false;
         if (parent != null) {
             parent.onClose();
@@ -529,14 +519,27 @@ public class ProtectionTab extends Tab {
             return addRolePopup.mouseClicked(mouseX, mouseY, button);
         }
 
-        boolean handled = false;
+        // 1. Global Overlay Pass: Give expanded floating menus first dibs, matching their rendering stack
+        if (nodeSelector != null && nodeSelector.isExpanded() && nodeSelector.isMouseOver(mouseX, mouseY)) {
+            if (leftPanel != null && leftPanel.mouseClicked(mouseX, mouseY, button)) return true;
+        }
+        if (playerSearchDropdown != null && playerSearchDropdown.isExpanded() && playerSearchDropdown.isMouseOver(mouseX, mouseY)) {
+            if (rightPanel != null && rightPanel.mouseClicked(mouseX, mouseY, button)) return true;
+        }
+        for (FlagWidget flag : flagWidgets) {
+            if (flag != null && flag.isDropdownExpanded() && flag.isMouseOver(mouseX, mouseY)) {
+                if (rightPanel != null && rightPanel.mouseClicked(mouseX, mouseY, button)) return true;
+            }
+        }
+
+        // 2. Normal Front-to-Back Base Hit Testing (Early returns block fall-through)
         if (rightPanel != null && rightPanel.isMouseOver(mouseX, mouseY)) {
-            handled = rightPanel.mouseClicked(mouseX, mouseY, button) || handled;
+            if (rightPanel.mouseClicked(mouseX, mouseY, button)) return true;
         }
         if (leftPanel != null && leftPanel.isMouseOver(mouseX, mouseY)) {
-            handled = leftPanel.mouseClicked(mouseX, mouseY, button) || handled;
+            if (leftPanel.mouseClicked(mouseX, mouseY, button)) return true;
         }
-        return handled;
+        return false;
     }
 
     @Override
@@ -544,10 +547,9 @@ public class ProtectionTab extends Tab {
         if (unsavedPopup != null && unsavedPopup.isActive()) return true;
         if (addRolePopup != null && addRolePopup.isActive()) return true;
 
-        boolean handled = false;
-        if (rightPanel != null) handled = rightPanel.mouseReleased(mouseX, mouseY, button) || handled;
-        if (leftPanel != null) handled = leftPanel.mouseReleased(mouseX, mouseY, button) || handled;
-        return handled;
+        if (rightPanel != null && rightPanel.mouseReleased(mouseX, mouseY, button)) return true;
+        if (leftPanel != null && leftPanel.mouseReleased(mouseX, mouseY, button)) return true;
+        return false;
     }
 
     @Override
@@ -555,14 +557,26 @@ public class ProtectionTab extends Tab {
         if (unsavedPopup != null && unsavedPopup.isActive()) return true;
         if (addRolePopup != null && addRolePopup.isActive()) return true;
 
-        boolean handled = false;
+        // Global Overlay Pass for Scrolling
+        if (nodeSelector != null && nodeSelector.isExpanded() && nodeSelector.isMouseOver(mouseX, mouseY)) {
+            if (leftPanel != null && leftPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
+        }
+        if (playerSearchDropdown != null && playerSearchDropdown.isExpanded() && playerSearchDropdown.isMouseOver(mouseX, mouseY)) {
+            if (rightPanel != null && rightPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
+        }
+        for (FlagWidget flag : flagWidgets) {
+            if (flag != null && flag.isDropdownExpanded() && flag.isMouseOver(mouseX, mouseY)) {
+                if (rightPanel != null && rightPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
+            }
+        }
+
         if (rightPanel != null && rightPanel.isMouseOver(mouseX, mouseY)) {
-            handled = rightPanel.mouseScrolled(mouseX, mouseY, delta) || handled;
+            if (rightPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         }
         if (leftPanel != null && leftPanel.isMouseOver(mouseX, mouseY)) {
-            handled = leftPanel.mouseScrolled(mouseX, mouseY, delta) || handled;
+            if (leftPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         }
-        return handled;
+        return false;
     }
 
     @Override
@@ -581,10 +595,9 @@ public class ProtectionTab extends Tab {
             return true;
         }
 
-        boolean handled = false;
-        if (rightPanel != null) handled = rightPanel.keyPressed(keyCode, scanCode, modifiers) || handled;
-        if (leftPanel != null) handled = leftPanel.keyPressed(keyCode, scanCode, modifiers) || handled;
-        return handled;
+        if (rightPanel != null && rightPanel.keyPressed(keyCode, scanCode, modifiers)) return true;
+        if (leftPanel != null && leftPanel.keyPressed(keyCode, scanCode, modifiers)) return true;
+        return false;
     }
 
     @Override
@@ -594,10 +607,9 @@ public class ProtectionTab extends Tab {
             return addRolePopup.charTyped(codePoint, modifiers);
         }
 
-        boolean handled = false;
-        if (rightPanel != null) handled = rightPanel.charTyped(codePoint, modifiers) || handled;
-        if (leftPanel != null) handled = leftPanel.charTyped(codePoint, modifiers) || handled;
-        return handled;
+        if (rightPanel != null && rightPanel.charTyped(codePoint, modifiers)) return true;
+        if (leftPanel != null && leftPanel.charTyped(codePoint, modifiers)) return true;
+        return false;
     }
 
     @Override
