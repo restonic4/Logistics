@@ -89,7 +89,13 @@ public class KineticCrystalShardItem extends Item implements DyeableLeatherItem 
             ServerNetworking.sendToAllInLevel((ServerLevel) level, new ShockwavePacket(player.blockPosition(), maxRadius, thickness, expansionDuration, fadeOutDuration, getColor(stack)));
 
             if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
+                ItemStack brokenStack = new ItemStack(Items.BROKEN_KINETIC_CRYSTAL_SHARD.getItem());
+
+                if (stack.getTag() != null && stack.getTag().contains(COLOR_KEY)) {
+                    brokenStack.getOrCreateTag().putInt(COLOR_KEY, stack.getTag().getInt(COLOR_KEY));
+                }
+
+                return InteractionResultHolder.sidedSuccess(brokenStack, level.isClientSide());
             }
         }
 

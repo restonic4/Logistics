@@ -23,6 +23,6 @@ public class ChorusFruitItemMixin {
 
         FlagData fd = ServerProtectionCache.getFlagState(
                 level.dimension().location(), player.blockPosition(), player, "chorus_fruit");
-        ProtectionMixinUtils.handleStack(player, fd, cir, stack);
+        ProtectionMixinUtils.handleReturn(player, fd, cir, stack);
     }
 }

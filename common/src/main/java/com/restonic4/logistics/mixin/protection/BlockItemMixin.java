@@ -20,6 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BlockItem.class)
 public class BlockItemMixin {
 
+    /**
+     * CRITICAL: This mixin ONLY prevents actual block placement into the world.
+     * It intentionally does NOT prevent interacting with existing blocks (e.g.,
+     * opening chests, flipping levers, clicking buttons) because those interactions
+     * are handled earlier in ServerPlayerGameMode.useItemOn / MultiPlayerGameMode.useItemOn
+     * before BlockItem.place() is ever reached.
+     *
+     * If place_blocks is enabled (denied), we cancel here so that block_interaction
+     * can still allow/deny interactions independently. This separation is intentional:
+     * - place_blocks = prevents placing blocks into the world
+     * - block_interaction = prevents right-click interactions with existing blocks
+     */
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
     private void onPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         Level level = context.getLevel();

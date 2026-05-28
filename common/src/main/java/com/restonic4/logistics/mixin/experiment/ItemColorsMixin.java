@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.experiment;
 
+import com.restonic4.logistics.experiment.BrokenKineticCrystalShardItem;
 import com.restonic4.logistics.experiment.KineticCrystalShardItem;
 import com.restonic4.logistics.experiment.Items;
 import net.minecraft.client.color.block.BlockColors;
@@ -22,5 +23,12 @@ public class ItemColorsMixin {
             }
             return -1;
         }, Items.KINETIC_CRYSTAL_SHARD.getItem());
+
+        itemColors.register((ItemStack stack, int tintIndex) -> {
+            if (tintIndex == 0 && stack.getItem() instanceof BrokenKineticCrystalShardItem crystalItem) {
+                return crystalItem.getColor(stack);
+            }
+            return -1;
+        }, Items.BROKEN_KINETIC_CRYSTAL_SHARD.getItem());
     }
 }

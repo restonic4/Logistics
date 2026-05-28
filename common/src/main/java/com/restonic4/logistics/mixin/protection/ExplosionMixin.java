@@ -6,6 +6,7 @@ import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
@@ -33,11 +34,17 @@ public abstract class ExplosionMixin {
         BlockPos blockPos = BlockPos.containing(pos);
 
         LivingEntity indirectSource = ((Explosion) (Object) this).getIndirectSourceEntity();
-        Player player = indirectSource instanceof Player p ? p : null;
+        String flagId = "explosions";
+        Player player = null;
 
-        FlagData fd = player != null
-                ? ServerProtectionCache.getFlagState(this.level.dimension().location(), player.blockPosition(), player, "explosions")
-                : ServerProtectionCache.getFlagState(this.level.dimension().location(), blockPos, null, "explosions");
+        if (indirectSource instanceof Player p) {
+            player = p;
+        } else if (indirectSource instanceof Mob) {
+            flagId = "mob_grief";
+        }
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                this.level.dimension().location(), blockPos, player, flagId);
 
         if (fd == null || !fd.enabled()) return;
 

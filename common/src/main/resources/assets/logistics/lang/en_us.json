@@ -4,6 +4,7 @@
   "item.logistics.silicon": "Silicon",
   "item.logistics.chip": "Chip",
   "item.logistics.kinetic_crystal_shard": "Kinetic Crystal Shard",
+  "item.logistics.broken_kinetic_crystal_shard": "Broken Kinetic Crystal Shard",
 
   "block.logistics.cable": "Cable",
   "block.logistics.generator": "[CREATIVE] Generator",
@@ -19,6 +20,14 @@
   "block.logistics.create_motor": "Create Motor",
   "block.logistics.create_transformer": "Create Transformer",
 
+  "screen.logistics.generic.continue": "Continue",
+  "screen.logistics.generic.back": "Back",
+  "screen.logistics.generic.install": "Install",
+  "screen.logistics.generic.password": "Password",
+  "screen.logistics.generic.password.confirm": "Confirm Password",
+  "screen.logistics.generic.hostname": "Hostname",
+
+  "screen.logistics.computer.tab.install.title": "Install",
   "screen.logistics.computer.install_body.1": "Welcome to the DragonOS installation menu (TUI). Next, you will be asked a series of questions to complete the installation.",
   "screen.logistics.computer.info_body": "This mod is under alpha development, things might change on the future. Coding by restonic4, textures by Aguilex_2.0"
 }

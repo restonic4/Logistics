@@ -42,21 +42,7 @@ public record ProtectionSavePacket(BlockPos computerNodePos, Map<UUID, Protector
         }
 
         // Rebuild server cache for this dimension
-        List<ProtectionZone> zones = new ArrayList<>();
-        for (Network network : mgr.getAllNetworks()) {
-            if (network instanceof EnergyNetwork energyNetwork) {
-                for (ProtectorNode protector : energyNetwork.getProtectors()) {
-                    zones.add(new ProtectionZone(
-                            protector.getUUID(),
-                            protector.getBlockPos(),
-                            protector.getRadius(),
-                            protector.isCreative(),
-                            protector.getRoles()
-                    ));
-                }
-            }
-        }
-        ServerProtectionCache.updateDimension(dim, zones);
+        List<ProtectionZone> zones = ServerProtectionCache.rebuildForLevel(level);
 
         // Broadcast lightweight cache to all clients in this dimension
         Map<ResourceLocation, List<ProtectionZone>> wrapped = new HashMap<>();

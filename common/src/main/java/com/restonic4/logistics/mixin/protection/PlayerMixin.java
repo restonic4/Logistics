@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -106,13 +107,18 @@ public class PlayerMixin {
         try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { return; }
 
         switch (action) {
-            case DENY -> player.setShiftKeyDown(false);
+            case DENY -> {
+                player.setShiftKeyDown(false);
+                if (player.getPose() == Pose.CROUCHING) player.setPose(Pose.STANDING);
+            }
             case MESSAGE -> {
                 if (player.tickCount % 60 == 0) ProtectionMixinUtils.message(player, fd);
                 player.setShiftKeyDown(false);
+                if (player.getPose() == Pose.CROUCHING) player.setPose(Pose.STANDING);
             }
             case DAMAGE -> {
                 if (player.tickCount % 20 == 0) ProtectionMixinUtils.damage(player, fd);
+                // intentionally keep sneaking so damage ticks accumulate while they hold the key
             }
         }
     }

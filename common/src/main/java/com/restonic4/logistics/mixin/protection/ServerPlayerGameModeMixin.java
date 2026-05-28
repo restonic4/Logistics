@@ -28,6 +28,18 @@ public class ServerPlayerGameModeMixin {
         ProtectionMixinUtils.handle(player, pos, "break_blocks", cir);
     }
 
+    /**
+     * Handles block interactions on right-click. Note that place_blocks is intentionally
+     * NOT checked here — we only want to prevent actual block placement, not interactions
+     * with existing blocks (e.g., opening chests while holding dirt). BlockItemMixin
+     * handles placement prevention at BlockItem.place(), which is called after interactions
+     * are attempted.
+     *
+     * Exception order matters:
+     * 1. use_buckets — if explicitly disabled, allow; if enabled, deny
+     * 2. open_containers — if explicitly disabled, allow; if enabled, deny
+     * 3. block_interaction — general catch-all for remaining block interactions
+     */
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
     private void onUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand,
                              BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
@@ -39,7 +51,7 @@ public class ServerPlayerGameModeMixin {
         boolean isBucket = itemId.contains("bucket") || itemId.contains("_bucket");
         if (isBucket) {
             FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "use_buckets");
-            if (fd != null && !fd.enabled()) return; // allowed
+            if (fd != null && !fd.enabled()) return; // explicitly allowed
             if (fd != null && fd.enabled()) {
                 ProtectionMixinUtils.handleResult(player, fd, cir);
                 return;
@@ -50,14 +62,15 @@ public class ServerPlayerGameModeMixin {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof Container) {
             FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "open_containers");
-            if (fd != null && !fd.enabled()) return; // allowed
+            if (fd != null && !fd.enabled()) return; // explicitly allowed
             if (fd != null && fd.enabled()) {
                 ProtectionMixinUtils.handleResult(player, fd, cir);
                 return;
             }
         }
 
-        // block_interaction
+        // General block_interaction — handles everything else (levers, doors, etc.)
+        // place_blocks is NOT here; it lives in BlockItemMixin to avoid blocking interactions
         FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "block_interaction");
         ProtectionMixinUtils.handleResult(player, fd, cir);
     }

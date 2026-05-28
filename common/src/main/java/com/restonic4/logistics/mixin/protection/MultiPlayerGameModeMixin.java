@@ -10,12 +10,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(MultiPlayerGameMode.class)
@@ -52,7 +55,16 @@ public class MultiPlayerGameModeMixin {
         if (fd != null && fd.enabled()) cir.setReturnValue(false);
     }
 
-    // block_interaction + exceptions (place_blocks is handled in BlockItemMixin)
+    /**
+     * Handles client-side block interactions on right-click. place_blocks is intentionally
+     * NOT checked here — we only prevent actual block placement, not interactions with
+     * existing blocks. BlockItemMixin handles placement prevention at BlockItem.place().
+     *
+     * Exception order:
+     * 1. use_buckets
+     * 2. open_containers
+     * 3. block_interaction
+     */
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
     private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult,
                              CallbackInfoReturnable<InteractionResult> cir) {
@@ -87,8 +99,23 @@ public class MultiPlayerGameModeMixin {
         }
 
         // General block_interaction
+        // place_blocks is NOT here; it lives in BlockItemMixin to avoid blocking interactions
         FlagData fd = ClientProtectionCache.getFlagState(
                 player.level().dimension().location(), pos, player, "block_interaction");
         if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
+    }
+
+    // Inventory cursor drops (ClickType.THROW)
+    @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
+    private void onHandleInventoryMouseClick(int $$0, int $$1, int $$2, ClickType clickType, Player $$4, CallbackInfo ci) {
+        if (clickType != ClickType.THROW) return;
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || !player.level().isClientSide()) return;
+
+        FlagData fd = ClientProtectionCache.getFlagState(
+                player.level().dimension().location(), player.blockPosition(), player, "item_drop");
+        if (fd != null && fd.enabled()) {
+            ci.cancel();
+        }
     }
 }

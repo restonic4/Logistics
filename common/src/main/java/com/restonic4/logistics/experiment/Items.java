@@ -30,6 +30,14 @@ public class Items {
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
+    public static final ItemEntry BROKEN_KINETIC_CRYSTAL_SHARD = PlatformRegistry
+            .item(
+                    Logistics.id("broken_kinetic_crystal_shard"),
+                    () -> new BrokenKineticCrystalShardItem(new Item.Properties())
+            )
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
     public static void register() {
 
     }

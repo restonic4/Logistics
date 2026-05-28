@@ -49,7 +49,7 @@ public class InstallTab extends Tab {
     private int pauseTicks = 0;
 
     public InstallTab() {
-        super(Component.literal("Install"));
+        super(Component.translatable("screen.logistics.computer.tab.install.title"));
     }
 
     @Override
@@ -71,7 +71,7 @@ public class InstallTab extends Tab {
         // UI Wizard Multi-Step Engine Layout Switches
         switch (this.currentStep) {
             case WELCOME -> {
-                StyledButton continueBtn = new StyledButton(x + 15, y + 85, 80, 20, Component.literal("Continue"), () -> {
+                StyledButton continueBtn = new StyledButton(x + 15, y + 85, 80, 20, Component.translatable("screen.logistics.generic.continue"), () -> {
                     this.currentStep = Step.ROOT_PASSWORD;
                     if (parent instanceof TabbedScreen tabbedScreen) {
                         tabbedScreen.refreshCurrentTab();
@@ -81,21 +81,21 @@ public class InstallTab extends Tab {
             }
             case ROOT_PASSWORD -> {
                 // Left field: Enter Password
-                this.passwordField = new EditBox(font, x + 15, y + 52, 150, 20, Component.literal("Password"));
+                this.passwordField = new EditBox(font, x + 15, y + 52, 150, 20, Component.translatable("screen.logistics.generic.password"));
                 this.passwordField.setMaxLength(32);
                 this.passwordField.setValue(this.rootPassword); // Populates existing cached values
                 this.passwordField.setFormatter((text, bg) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
                 parent.addRenderableWidget(this.passwordField);
 
                 // Right field: Confirm Password
-                this.confirmField = new EditBox(font, x + 180, y + 52, 150, 20, Component.literal("Confirm Password"));
+                this.confirmField = new EditBox(font, x + 180, y + 52, 150, 20, Component.translatable("screen.logistics.generic.password.confirm"));
                 this.confirmField.setMaxLength(32);
                 this.confirmField.setValue(this.confirmPassword); // Populates existing cached values
                 this.confirmField.setFormatter((text, bg) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
                 parent.addRenderableWidget(this.confirmField);
 
                 // Back Button: Saves current input state text even if invalid, then steps back
-                StyledButton backBtn = new StyledButton(x + 15, y + 88, 80, 20, Component.literal("Back"), () -> {
+                StyledButton backBtn = new StyledButton(x + 15, y + 88, 80, 20, Component.translatable("screen.logistics.generic.back"), () -> {
                     savePasswordInputs();
                     this.currentStep = Step.WELCOME;
                     if (parent instanceof TabbedScreen tabbedScreen) {
@@ -105,7 +105,7 @@ public class InstallTab extends Tab {
                 parent.addRenderableWidget(backBtn);
 
                 // Continue Button
-                StyledButton continueBtn = new StyledButton(x + 100, y + 88, 80, 20, Component.literal("Continue"), () -> {
+                StyledButton continueBtn = new StyledButton(x + 100, y + 88, 80, 20, Component.translatable("screen.logistics.generic.continue"), () -> {
                     savePasswordInputs();
                     if (!this.rootPassword.isEmpty() && this.rootPassword.equals(this.confirmPassword)) {
                         this.currentStep = Step.SYSTEM_NAME;
@@ -117,13 +117,13 @@ public class InstallTab extends Tab {
                 parent.addRenderableWidget(continueBtn);
             }
             case SYSTEM_NAME -> {
-                this.hostnameField = new EditBox(font, x + 15, y + 52, 150, 20, Component.literal("Hostname"));
+                this.hostnameField = new EditBox(font, x + 15, y + 52, 150, 20, Component.translatable("screen.logistics.generic.hostname"));
                 this.hostnameField.setMaxLength(32);
                 this.hostnameField.setValue(this.systemName); // Populates existing cached values
                 parent.addRenderableWidget(this.hostnameField);
 
                 // Back Button
-                StyledButton backBtn = new StyledButton(x + 15, y + 88, 80, 20, Component.literal("Back"), () -> {
+                StyledButton backBtn = new StyledButton(x + 15, y + 88, 80, 20, Component.translatable("screen.logistics.generic.back"), () -> {
                     saveHostnameInput();
                     this.currentStep = Step.ROOT_PASSWORD;
                     if (parent instanceof TabbedScreen tabbedScreen) {
@@ -133,7 +133,7 @@ public class InstallTab extends Tab {
                 parent.addRenderableWidget(backBtn);
 
                 // Continue Button
-                StyledButton continueBtn = new StyledButton(x + 100, y + 88, 80, 20, Component.literal("Continue"), () -> {
+                StyledButton continueBtn = new StyledButton(x + 100, y + 88, 80, 20, Component.translatable("screen.logistics.generic.continue"), () -> {
                     saveHostnameInput();
                     if (!this.systemName.trim().isEmpty()) {
                         this.currentStep = Step.SUMMARY;
@@ -146,7 +146,7 @@ public class InstallTab extends Tab {
             }
             case SUMMARY -> {
                 // Back Button
-                StyledButton backBtn = new StyledButton(x + 15, y + 105, 80, 20, Component.literal("Back"), () -> {
+                StyledButton backBtn = new StyledButton(x + 15, y + 105, 80, 20, Component.translatable("screen.logistics.generic.back"), () -> {
                     this.currentStep = Step.SYSTEM_NAME;
                     if (parent instanceof TabbedScreen tabbedScreen) {
                         tabbedScreen.refreshCurrentTab();
@@ -154,7 +154,7 @@ public class InstallTab extends Tab {
                 });
                 parent.addRenderableWidget(backBtn);
 
-                StyledButton installBtn = new StyledButton(x + 100, y + 105, 80, 20, Component.literal("Install"), () -> {
+                StyledButton installBtn = new StyledButton(x + 100, y + 105, 80, 20, Component.translatable("screen.logistics.generic.install"), () -> {
                     ClientNetworking.sendToServer(new ComputerInstallPacket(ComputerScreen.getComputerNode(), this.systemName, this.rootPassword));
                     this.currentStep = Step.ANIMATION;
                     this.animationTicks = 0;

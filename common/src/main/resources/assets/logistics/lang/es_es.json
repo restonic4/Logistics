@@ -4,6 +4,7 @@
   "item.logistics.silicon": "Silicona",
   "item.logistics.chip": "Chip",
   "item.logistics.kinetic_crystal_shard": "Fragmento de cristal cinético",
+  "item.logistics.broken_kinetic_crystal_shard": "Fragmento de cristal cinético roto",
 
   "block.logistics.cable": "Cable",
   "block.logistics.generator": "[CREATIVO] Generador",

@@ -10,10 +10,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LocalPlayer.class)
 public class LocalPlayerMixin {
 
+    // ==================== chorus_fruit ====================
     @Inject(method = "startUsingItem", at = @At("HEAD"), cancellable = true)
     private void onStartUsingItem(InteractionHand hand, CallbackInfo ci) {
         LocalPlayer self = (LocalPlayer) (Object) this;
@@ -27,19 +29,8 @@ public class LocalPlayerMixin {
         if (fd != null && fd.enabled()) ci.cancel();
     }
 
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void onTickWalkIn(CallbackInfo ci) {
-        LocalPlayer self = (LocalPlayer) (Object) this;
-        if (!self.level().isClientSide()) return;
-
-        FlagData fd = ClientProtectionCache.getFlagState(
-                self.level().dimension().location(), self.blockPosition(), self, "walk_in");
-        if (fd == null || !fd.enabled()) return;
-
-        if (self.isSprinting()) self.setSprinting(false);
-    }
-
-    @Inject(method = "tick", at = @At("TAIL"))
+    // ==================== sneaking – HEAD so pose updates this tick ====================
+    @Inject(method = "tick", at = @At("HEAD"))
     private void onTickSneaking(CallbackInfo ci) {
         LocalPlayer self = (LocalPlayer) (Object) this;
         if (!self.level().isClientSide()) return;
@@ -50,5 +41,19 @@ public class LocalPlayerMixin {
         if (fd == null || !fd.enabled()) return;
 
         self.input.shiftKeyDown = false;
+        self.setShiftKeyDown(false);
+    }
+
+    // ==================== walk_in ====================
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void onTickWalkIn(CallbackInfo ci) {
+        LocalPlayer self = (LocalPlayer) (Object) this;
+        if (!self.level().isClientSide()) return;
+
+        FlagData fd = ClientProtectionCache.getFlagState(
+                self.level().dimension().location(), self.blockPosition(), self, "walk_in");
+        if (fd == null || !fd.enabled()) return;
+
+        if (self.isSprinting()) self.setSprinting(false);
     }
 }
