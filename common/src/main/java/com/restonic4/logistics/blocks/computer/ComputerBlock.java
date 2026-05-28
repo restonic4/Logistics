@@ -2,13 +2,11 @@ package com.restonic4.logistics.blocks.computer;
 
 import com.mojang.authlib.GameProfile;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData;
-import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
-import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
+import com.restonic4.logistics.blocks.protector.ProtectorNode;
+import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
 import com.restonic4.logistics.experiment.Sounds;
-import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -40,6 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeDown;
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeRight;
@@ -88,7 +87,7 @@ public class ComputerBlock extends BaseNetworkBlock {
             NetworkNode node = NetworkManager.get(serverLevel).getNodeByBlockPos(pos);
             if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork energyNetwork) {
                 Set<ItemNetwork> itemNetworks = new HashSet<>();
-                for (NetworkConnectorNode connectorNode : energyNetwork.getNetworkConnectors()) {
+                for (var connectorNode : energyNetwork.getNetworkConnectors()) {
                     if (connectorNode.getBridgedNetwork() instanceof ItemNetwork itemNetwork) {
                         itemNetworks.add(itemNetwork);
                     }
@@ -98,35 +97,40 @@ public class ComputerBlock extends BaseNetworkBlock {
                 for (ItemNetwork itemNetwork : itemNetworks) {
                     for (NetworkNode networkNode : itemNetwork.getNodeIndex().getAllNodes()) {
                         if (networkNode instanceof AccessorNode accessorNode) {
-                            accessors.add(new ComputerSyncPacket.AccessorData(accessorNode.getBlockPos(), accessorNode.getVirtualInventory((ServerLevel) level)));
+                            accessors.add(new ComputerSyncPacket.AccessorData(accessorNode.getBlockPos(), accessorNode.getVirtualInventory(serverLevel)));
                         }
                     }
                 }
 
-                List<ProtectionSyncPacket.ProtectionNodeData> protectionNodes = new ArrayList<>();
-                Map<ProtectionTabDummyData.NodeCache, List<ProtectionSyncPacket.RoleData>> rolesMap = new HashMap<>();
+                List<ProtectionZone> zones = new ArrayList<>();
                 for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
-                    protectionNodes.add(new ProtectionSyncPacket.ProtectionNodeData(protectorNode.getUUID(), protectorNode.getUUID().toString(), protectorNode.getBlockPos()));
-                    rolesMap.put(new ProtectionTabDummyData.NodeCache(protectorNode.getRadius(), protectorNode.getUUID()), protectorNode.getRoles());
+                    zones.add(new ProtectionZone(
+                            protectorNode.getUUID(),
+                            protectorNode.getBlockPos(),
+                            protectorNode.getRadius(),
+                            protectorNode.isCreative(),
+                            protectorNode.getRoles()
+                    ));
                 }
+
+                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).collect(Collectors.toList());
 
                 ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword()));
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
-                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).toList();
-                ServerNetworking.sendToClient(serverPlayer, new ProtectionSyncPacket(pos, protectionNodes, rolesMap, profiles));
+                ServerNetworking.sendToClient(serverPlayer, new ProtectionEditSyncPacket(pos, zones, profiles));
             }
         }
 
         return InteractionResult.CONSUME;
     }
 
-    private static final VoxelShape SHAPE_NORTH = Block.box(1.0, 1.0, 0.0,  15.0, 15.0, 14.0); // back=2 (Z+), front=14
-    private static final VoxelShape SHAPE_SOUTH = Block.box(1.0, 1.0, 2.0,  15.0, 15.0, 16.0); // back=2 (Z-), front=2
-    private static final VoxelShape SHAPE_EAST  = Block.box(2.0, 1.0, 1.0,  16.0, 15.0, 15.0); // back=2 (X-), front=2
-    private static final VoxelShape SHAPE_WEST  = Block.box(0.0, 1.0, 1.0,  14.0, 15.0, 15.0); // back=2 (X+), front=14
+    private static final VoxelShape SHAPE_NORTH = Block.box(1.0, 1.0, 0.0,  15.0, 15.0, 14.0);
+    private static final VoxelShape SHAPE_SOUTH = Block.box(1.0, 1.0, 2.0,  15.0, 15.0, 16.0);
+    private static final VoxelShape SHAPE_EAST  = Block.box(2.0, 1.0, 1.0,  16.0, 15.0, 15.0);
+    private static final VoxelShape SHAPE_WEST  = Block.box(0.0, 1.0, 1.0,  14.0, 15.0, 15.0);
 
     private static VoxelShape shapeFor(Direction facing) {
         return switch (facing) {

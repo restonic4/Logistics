@@ -1,134 +1,82 @@
 package com.restonic4.logistics.blocks.protector;
 
-import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
-import com.restonic4.logistics.networks.flags.DirtyFlaggable;
-import com.restonic4.logistics.networks.flags.NetworkFlag;
+import com.restonic4.logistics.blocks.protector.data_types.*;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.UnknownNullability;
 
 import java.util.*;
 
 public class ProtectorNode extends EnergyNode {
-    List<ProtectionSyncPacket.RoleData> roles = new ArrayList<>();
-    int radius = 0;
+    ProtectorData data;
 
     public ProtectorNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
+        this.data = createDefaultData();
     }
 
-    public List<ProtectionSyncPacket.RoleData> getRoles() {
-        return this.roles;
+    private static ProtectorData createDefaultData() {
+        Map<String, FlagData> defaultFlags = new HashMap<>();
+        for (FlagDefinition def : FlagRegistry.all()) {
+            defaultFlags.put(def.id(), new FlagData(false, ActionType.DENY.name(), 0, ""));
+        }
+        List<RoleData> roles = new ArrayList<>();
+        roles.add(new RoleData(
+                UUID.randomUUID(),
+                "default",
+                Integer.MAX_VALUE,
+                "logistics:textures/item/parcel.png",
+                RoleData.RoleType.DEFAULT,
+                List.of(),
+                defaultFlags
+        ));
+        return new ProtectorData(0, false, roles);
     }
 
-    public int getRadius() {
-        return radius;
-    }
 
-    public void setRoles(@NotNull List<ProtectionSyncPacket.RoleData> roles) {
-        this.roles = roles;
-    }
-
-    public void setRadius(int radius) {
-        this.radius = radius;
-    }
+    public List<RoleData> getRoles() {return data.getRoles();}
+    public int getRadius() {return data.getRadius();}
+    public void setRoles(@NotNull List<RoleData> roles) {this.data.setRoles(roles);}
+    public void setRadius(int radius) {this.data.setRadius(radius);}
+    public boolean isCreative() { return data.isCreative(); }
+    public void setCreative(boolean v) { this.data.setCreative(v); }
 
     @Override
     protected void saveExtra(CompoundTag tag) {
         super.saveExtra(tag);
-
-        ListTag rolesList = new ListTag();
-        for (ProtectionSyncPacket.RoleData role : this.roles) {
-            CompoundTag roleTag = new CompoundTag();
-            roleTag.putUUID("id", role.id());
-            roleTag.putString("name", role.name());
-            roleTag.putInt("order", role.order());
-            roleTag.putString("iconRl", role.iconRl());
-
-            // Serialize players list
-            ListTag playersList = new ListTag();
-            for (ProtectionSyncPacket.PlayerData player : role.players()) {
-                CompoundTag playerTag = new CompoundTag();
-                playerTag.putUUID("id", player.id());
-                playerTag.putString("username", player.username());
-                playersList.add(playerTag);
-            }
-            roleTag.put("players", playersList);
-
-            // Serialize flags map
-            CompoundTag flagsTag = new CompoundTag();
-            for (Map.Entry<String, ProtectionSyncPacket.FlagData> entry : role.flags().entrySet()) {
-                CompoundTag flagTag = new CompoundTag();
-                flagTag.putBoolean("enabled", entry.getValue().enabled());
-                flagTag.putString("actionType", entry.getValue().actionType());
-                flagTag.putDouble("damageValue", entry.getValue().damageValue());
-                flagTag.putString("message", entry.getValue().message());
-
-                flagsTag.put(entry.getKey(), flagTag);
-            }
-            roleTag.put("flags", flagsTag);
-
-            rolesList.add(roleTag);
-        }
-
-        tag.put("roles", rolesList);
-        tag.putInt("radius", radius);
+        data.nbtWrite(tag);
     }
 
     @Override
     protected void loadExtra(CompoundTag tag) {
         super.loadExtra(tag);
-        this.roles = new ArrayList<>();
+        data = ProtectorData.nbtRead(tag);
 
-        if (tag.contains("roles", Tag.TAG_LIST)) {
-            ListTag rolesList = tag.getList("roles", Tag.TAG_COMPOUND);
-
-            for (int i = 0; i < rolesList.size(); i++) {
-                CompoundTag roleTag = rolesList.getCompound(i);
-                UUID id = roleTag.getUUID("id");
-                String name = roleTag.getString("name");
-                int order = roleTag.getInt("order");
-                String iconRl = roleTag.getString("iconRl");
-
-                // Deserialize players list
-                List<ProtectionSyncPacket.PlayerData> players = new ArrayList<>();
-                if (roleTag.contains("players", Tag.TAG_LIST)) {
-                    ListTag playersList = roleTag.getList("players", Tag.TAG_COMPOUND);
-                    for (int j = 0; j < playersList.size(); j++) {
-                        CompoundTag playerTag = playersList.getCompound(j);
-                        players.add(new ProtectionSyncPacket.PlayerData(
-                                playerTag.getUUID("id"),
-                                playerTag.getString("username")
-                        ));
-                    }
-                }
-
-                // Deserialize flags map
-                Map<String, ProtectionSyncPacket.FlagData> flags = new HashMap<>();
-                if (roleTag.contains("flags", Tag.TAG_COMPOUND)) {
-                    CompoundTag flagsTag = roleTag.getCompound("flags");
-                    for (String key : flagsTag.getAllKeys()) {
-                        CompoundTag flagTag = flagsTag.getCompound(key);
-                        flags.put(key, new ProtectionSyncPacket.FlagData(
-                                flagTag.getBoolean("enabled"),
-                                flagTag.getString("actionType"),
-                                flagTag.getDouble("damageValue"),
-                                flagTag.getString("message")
-                        ));
-                    }
-                }
-
-                this.roles.add(new ProtectionSyncPacket.RoleData(id, name, order, iconRl, players, flags));
+        // Auto-heal: every protector MUST have a DEFAULT role AND every role must have all flags.
+        boolean hasDefault = data.getRoles().stream().anyMatch(RoleData::isDefault);
+        if (!hasDefault) {
+            Map<String, FlagData> defaultFlags = new HashMap<>();
+            for (FlagDefinition def : FlagRegistry.all()) {
+                defaultFlags.put(def.id(), new FlagData(false, ActionType.DENY.name(), 0, ""));
             }
+            List<RoleData> healed = new ArrayList<>(data.getRoles());
+            healed.add(new RoleData(
+                    UUID.randomUUID(),
+                    "default",
+                    Integer.MAX_VALUE,
+                    "logistics:textures/item/parcel.png",
+                    RoleData.RoleType.DEFAULT,
+                    List.of(),
+                    defaultFlags
+            ));
+            data.setRoles(healed);
         }
 
-        radius = tag.getInt("radius");
+        // This now heals missing flags in ALL roles, including DEFAULT.
+        data.validate();
     }
 
     @Override
@@ -138,17 +86,17 @@ public class ProtectorNode extends EnergyNode {
         builder.spacer();
         builder.title("PROTECTION DATA", net.minecraft.ChatFormatting.AQUA);
 
-        if (this.roles.isEmpty()) {
+        if (this.data.getRoles().isEmpty()) {
             builder.bullet("No roles configured on this node.", net.minecraft.ChatFormatting.GRAY);
             return true;
         }
 
         if (!isSneaking) {
             // Summary View
-            builder.keyValue("Total Roles", String.valueOf(this.roles.size()), net.minecraft.ChatFormatting.YELLOW);
+            builder.keyValue("Total Roles", String.valueOf(this.data.getRoles().size()), net.minecraft.ChatFormatting.YELLOW);
             builder.spacer();
 
-            for (ProtectionSyncPacket.RoleData role : this.roles) {
+            for (RoleData role : this.data.getRoles()) {
                 String summaryText = String.format("%s [Priority: %d] (%d Players, %d Flags)",
                         role.name(), role.order(), role.players().size(), role.flags().size());
                 builder.bullet(summaryText, net.minecraft.ChatFormatting.GOLD);
@@ -158,7 +106,7 @@ public class ProtectorNode extends EnergyNode {
             builder.text("Hold [Shift] for detailed inspection", net.minecraft.ChatFormatting.DARK_GRAY, net.minecraft.ChatFormatting.ITALIC);
         } else {
             // Detailed View (Sneaking)
-            for (ProtectionSyncPacket.RoleData role : this.roles) {
+            for (RoleData role : this.data.getRoles()) {
                 builder.line();
                 builder.title("Role: " + role.name(), net.minecraft.ChatFormatting.GOLD);
                 builder.keyValue("  Priority Order", String.valueOf(role.order()), net.minecraft.ChatFormatting.DARK_AQUA);
@@ -169,7 +117,7 @@ public class ProtectorNode extends EnergyNode {
                     builder.text("  Players: None", net.minecraft.ChatFormatting.GRAY);
                 } else {
                     builder.text("  Players:", net.minecraft.ChatFormatting.GREEN);
-                    for (ProtectionSyncPacket.PlayerData player : role.players()) {
+                    for (PlayerData player : role.players()) {
                         builder.text("    • " + player.username() + " (" + player.id().toString().substring(0, 8) + "...)", net.minecraft.ChatFormatting.GRAY);
                     }
                 }
@@ -179,9 +127,9 @@ public class ProtectorNode extends EnergyNode {
                     builder.text("  Flags: None", net.minecraft.ChatFormatting.GRAY);
                 } else {
                     builder.text("  Flags Configured:", net.minecraft.ChatFormatting.RED);
-                    for (Map.Entry<String, ProtectionSyncPacket.FlagData> entry : role.flags().entrySet()) {
+                    for (Map.Entry<String, FlagData> entry : role.flags().entrySet()) {
                         String flagName = entry.getKey();
-                        ProtectionSyncPacket.FlagData flag = entry.getValue();
+                        FlagData flag = entry.getValue();
 
                         net.minecraft.ChatFormatting statusColor = flag.enabled() ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.DARK_RED;
                         String statusStr = flag.enabled() ? "ENABLED" : "DISABLED";

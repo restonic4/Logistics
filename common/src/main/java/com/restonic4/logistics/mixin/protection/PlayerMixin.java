@@ -1,71 +1,160 @@
 package com.restonic4.logistics.mixin.protection;
 
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData;
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
+import com.restonic4.logistics.blocks.protector.data_types.ActionType;
+import com.restonic4.logistics.blocks.protector.data_types.FlagData;
+import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public class PlayerMixin {
-    @Inject(
-            method = "hurt",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void cancelPlayerCombat(
-            DamageSource source,
-            float amount,
-            CallbackInfoReturnable<Boolean> cir
-    ) {
+
+    // ==================== PvP ====================
+    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+    private void onHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         Player self = (Player) (Object) this;
-        if (self.level().isClientSide()) {
+        if (self.level().isClientSide()) return;
+
+        Entity attacker = source.getEntity();
+        if (!(attacker instanceof Player attackerPlayer) || attackerPlayer == self) return;
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                attackerPlayer.level().dimension().location(),
+                attackerPlayer.blockPosition(),
+                attackerPlayer,
+                "pvp"
+        );
+        if (fd == null || !fd.enabled()) return;
+
+        ActionType action;
+        try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { return; }
+
+        switch (action) {
+            case DENY -> cir.setReturnValue(false);
+            case MESSAGE -> {
+                if (!fd.message().isEmpty() && attackerPlayer instanceof ServerPlayer sp) {
+                    sp.sendSystemMessage(Component.literal(fd.message()));
+                }
+                cir.setReturnValue(false);
+            }
+            case DAMAGE -> {
+                attackerPlayer.hurt(self.level().damageSources().generic(), (float) fd.damageValue());
+                cir.setReturnValue(false);
+            }
+        }
+    }
+
+    // ==================== entity_interaction + villager_trade exception ====================
+    @Inject(method = "interactOn", at = @At("HEAD"), cancellable = true)
+    private void onInteractOn(Entity entity, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+        Player self = (Player) (Object) this;
+        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
+
+        if (entity instanceof AbstractVillager) {
+            FlagData villagerFd = ServerProtectionCache.getFlagState(
+                    player.level().dimension().location(), player.blockPosition(), player, "villager_trade");
+            if (villagerFd != null && !villagerFd.enabled()) return; // explicitly allowed
+            if (villagerFd != null && villagerFd.enabled()) {
+                ProtectionMixinUtils.handleResult(player, villagerFd, cir);
+                return;
+            }
+        }
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                player.level().dimension().location(), player.blockPosition(), player, "entity_interaction");
+        ProtectionMixinUtils.handleResult(player, fd, cir);
+    }
+
+    // ==================== attack_entities ====================
+    @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
+    private void onAttack(Entity target, CallbackInfo ci) {
+        Player self = (Player) (Object) this;
+        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
+        if (target instanceof Player) return; // PvP handled above
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                player.level().dimension().location(), player.blockPosition(), player, "attack_entities");
+        ProtectionMixinUtils.handle(player, fd, ci);
+    }
+
+    // ==================== sneaking (tick) ====================
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void onTickSneaking(CallbackInfo ci) {
+        Player self = (Player) (Object) this;
+        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
+        if (!player.isShiftKeyDown()) return;
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                player.level().dimension().location(), player.blockPosition(), player, "sneaking");
+        if (fd == null || !fd.enabled()) return;
+
+        ActionType action;
+        try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { return; }
+
+        switch (action) {
+            case DENY -> player.setShiftKeyDown(false);
+            case MESSAGE -> {
+                if (player.tickCount % 60 == 0) ProtectionMixinUtils.message(player, fd);
+                player.setShiftKeyDown(false);
+            }
+            case DAMAGE -> {
+                if (player.tickCount % 20 == 0) ProtectionMixinUtils.damage(player, fd);
+            }
+        }
+    }
+
+    // ==================== walk_in ====================
+    @Unique private Vec3 logistics$lastValidPos = Vec3.ZERO;
+    @Unique private boolean logistics$wasInZone = false;
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void onTickWalkIn(CallbackInfo ci) {
+        Player self = (Player) (Object) this;
+        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
+
+        FlagData fd = ServerProtectionCache.getFlagState(
+                player.level().dimension().location(), player.blockPosition(), player, "walk_in");
+
+        if (fd == null || !fd.enabled()) {
+            logistics$wasInZone = false;
+            logistics$lastValidPos = player.position();
             return;
         }
 
-        Entity attacker = source.getEntity();
+        if (!logistics$wasInZone) {
+            ActionType action;
+            try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { logistics$wasInZone = true; return; }
 
-        if (attacker instanceof Player attackerPlayer && attackerPlayer != self) {
-            // Get the flag state for "pvp" at the victim's current position
-            ProtectionTabDummyData.FlagState pvpState = ProtectionTabDummyData.getFlagState(
-                    self.level().dimension().location(),
-                    self.blockPosition(),
-                    attackerPlayer,
-                    "pvp"
-            );
-
-            // If pvpState is null, it's the wild wilderness -> proceed with regular vanilla combat
-            if (pvpState != null && pvpState.enabled) {
-
-                // 1. If it's outright DENIED, cancel the attack entirely
-                if (pvpState.action == ProtectionTabDummyData.ActionType.DENY) {
-                    cir.setReturnValue(false);
-                    return;
-                }
-
-                // 2. If it's a MESSAGE trap, warn the attacker and cancel the attack
-                if (pvpState.action == ProtectionTabDummyData.ActionType.MESSAGE) {
-                    if (pvpState.message != null && !pvpState.message.isEmpty()) {
-                        attackerPlayer.sendSystemMessage(Component.literal(pvpState.message));
+            switch (action) {
+                case DENY -> {
+                    if (logistics$lastValidPos.lengthSqr() > 0.001) {
+                        player.teleportTo(logistics$lastValidPos.x, logistics$lastValidPos.y, logistics$lastValidPos.z);
                     }
-                    cir.setReturnValue(false);
-                    return;
                 }
-
-                // 3. If it's a DAMAGE trap, turn the damage back onto the attacker and cancel the attack
-                if (pvpState.action == ProtectionTabDummyData.ActionType.DAMAGE) {
-                    attackerPlayer.hurt(
-                            self.level().damageSources().generic(),
-                            (float) pvpState.damageValue
-                    );
-                    cir.setReturnValue(false);
-                    return;
+                case MESSAGE -> {
+                    ProtectionMixinUtils.message(player, fd);
+                    if (logistics$lastValidPos.lengthSqr() > 0.001) {
+                        player.teleportTo(logistics$lastValidPos.x, logistics$lastValidPos.y, logistics$lastValidPos.z);
+                    }
                 }
+                case DAMAGE -> ProtectionMixinUtils.damage(player, fd);
             }
         }
+
+        logistics$wasInZone = true;
     }
 }

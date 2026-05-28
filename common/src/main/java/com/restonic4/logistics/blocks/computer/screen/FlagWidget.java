@@ -1,8 +1,8 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.ActionType;
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.FlagState;
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.ProtectionFlag;
+import com.restonic4.logistics.blocks.protector.data_types.ActionType;
+import com.restonic4.logistics.blocks.protector.data_types.FlagData;
+import com.restonic4.logistics.blocks.protector.data_types.FlagDefinition;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
 import com.restonic4.logistics.screens.widgets.ToggleWidget;
@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class FlagWidget extends AbstractWidget {
-    private final ProtectionFlag flag;
-    private FlagState state;
-    private final Consumer<FlagState> onChanged;
+    private final FlagDefinition flag;
+    private FlagData state;
+    private final Consumer<FlagData> onChanged;
 
     private ToggleWidget toggle;
     private SearchableDropdownWidget<ActionType> actionDropdown;
@@ -33,16 +33,22 @@ public class FlagWidget extends AbstractWidget {
     private static final int BORDER = 0xFF2A2A2A;
     private static final int MSG_BOX_HEIGHT = 16;
 
-    public FlagWidget(int x, int y, int width, int height, ProtectionFlag flag, FlagState initialState, Consumer<FlagState> onChanged) {
-        super(x, y, width, height, Component.literal(flag.name));
+    public FlagWidget(int x, int y, int width, int height, FlagDefinition flag, FlagData initialState, Consumer<FlagData> onChanged) {
+        super(x, y, width, height, Component.literal(flag.name()));
         this.flag = flag;
         this.state = initialState;
         this.onChanged = onChanged;
 
-        if (!flag.supportedActions.contains(state.action)) {
-            state.action = flag.supportedActions.isEmpty() ? ActionType.DENY : flag.supportedActions.get(0);
-            state.damageValue = 0;
-            state.message = "";
+        ActionType currentAction;
+        try {
+            currentAction = ActionType.valueOf(state.actionType());
+        } catch (IllegalArgumentException e) {
+            currentAction = flag.supportedActions().isEmpty() ? ActionType.DENY : flag.supportedActions().get(0);
+        }
+
+        if (!flag.supportedActions().contains(currentAction)) {
+            currentAction = flag.supportedActions().isEmpty() ? ActionType.DENY : flag.supportedActions().get(0);
+            state = new FlagData(state.enabled(), currentAction.name(), 0, "");
         }
 
         buildWidgets();
@@ -53,8 +59,8 @@ public class FlagWidget extends AbstractWidget {
         int y = getY();
         int w = getWidth();
 
-        toggle = new ToggleWidget(x + w - 36, y + 4, 28, 14, state.enabled, enabled -> {
-            state.enabled = enabled;
+        toggle = new ToggleWidget(x + w - 36, y + 4, 28, 14, state.enabled(), enabled -> {
+            state = new FlagData(enabled, state.actionType(), state.damageValue(), state.message());
             notifyChanged();
         });
 
@@ -64,27 +70,42 @@ public class FlagWidget extends AbstractWidget {
 
     private void createActionDropdown(int x, int y, int w) {
         List<SearchableDropdownWidget.DropdownEntry<ActionType>> actions = new ArrayList<>();
-        for (ActionType action : flag.supportedActions) {
+        for (ActionType action : flag.supportedActions()) {
             actions.add(new SearchableDropdownWidget.DropdownEntry<>(action, Component.literal(action.name()), null));
         }
 
-        boolean needsConfig = state.action == ActionType.DAMAGE || state.action == ActionType.MESSAGE;
+        ActionType currentAction;
+        try {
+            currentAction = ActionType.valueOf(state.actionType());
+        } catch (IllegalArgumentException e) {
+            currentAction = flag.supportedActions().get(0);
+        }
+
+        boolean needsConfig = currentAction == ActionType.DAMAGE || currentAction == ActionType.MESSAGE;
         int dropdownWidth = needsConfig ? (w - 16) / 2 : w - 8;
 
         actionDropdown = new SearchableDropdownWidget<>(
                 x + 4, y + 38, dropdownWidth, MSG_BOX_HEIGHT,
                 Component.empty(), actions, action -> {
-            state.action = action;
+            state = new FlagData(state.enabled(), action.name(),
+                    action == ActionType.DAMAGE ? state.damageValue() : 0,
+                    action == ActionType.MESSAGE ? state.message() : "");
             updateActionDropdownSize();
             rebuildConfigWidget();
             notifyChanged();
         });
-        actionDropdown.setSelectedValueSilently(state.action);
+        actionDropdown.setSelectedValueSilently(currentAction);
     }
 
     private void updateActionDropdownSize() {
         int w = getWidth();
-        boolean needsConfig = state.action == ActionType.DAMAGE || state.action == ActionType.MESSAGE;
+        ActionType action;
+        try {
+            action = ActionType.valueOf(state.actionType());
+        } catch (IllegalArgumentException e) {
+            action = ActionType.DENY;
+        }
+        boolean needsConfig = action == ActionType.DAMAGE || action == ActionType.MESSAGE;
         int dropdownWidth = needsConfig ? (w - 16) / 2 : w - 8;
         actionDropdown.setX(getX() + 4);
         actionDropdown.setY(getY() + 38);
@@ -99,31 +120,37 @@ public class FlagWidget extends AbstractWidget {
         damagePicker = null;
         messageField = null;
 
-        if (state.action == ActionType.DAMAGE) {
+        ActionType action;
+        try {
+            action = ActionType.valueOf(state.actionType());
+        } catch (IllegalArgumentException e) {
+            action = ActionType.DENY;
+        }
+
+        if (action == ActionType.DAMAGE) {
             int pickerX = x + (w - 8) / 2 + 4;
             int pickerY = y + 38;
             int pickerW = (w - 16) / 2;
 
-            damagePicker = new NumberPickerWidget(pickerX, pickerY, pickerW, MSG_BOX_HEIGHT, Component.empty(), state.damageValue, value -> {
-                state.damageValue = value;
+            damagePicker = new NumberPickerWidget(pickerX, pickerY, pickerW, MSG_BOX_HEIGHT, Component.empty(), state.damageValue(), value -> {
+                state = new FlagData(state.enabled(), state.actionType(), value, state.message());
                 notifyChanged();
             });
             damagePicker.setDecimalPlaces(1);
             damagePicker.setStep(0.5);
             damagePicker.setRange(0, 100);
-        } else if (state.action == ActionType.MESSAGE) {
+        } else if (action == ActionType.MESSAGE) {
             int fieldX = x + (w - 8) / 2 + 4;
             int fieldY = y + 38;
             int fieldW = (w - 16) / 2;
 
             Font font = Minecraft.getInstance().font;
-            // Position exactly like NumberPickerWidget: inset 4 px left, centred vertically
             int textX = fieldX + 4;
-            int textY = fieldY + (MSG_BOX_HEIGHT - 8) / 2; // baseline lands at visual centre
+            int textY = fieldY + (MSG_BOX_HEIGHT - 8) / 2;
             messageField = new EditBox(font, textX, textY, Math.max(20, fieldW - 8), MSG_BOX_HEIGHT, Component.empty());
-            messageField.setValue(state.message);
+            messageField.setValue(state.message());
             messageField.setResponder(text -> {
-                state.message = text;
+                state = new FlagData(state.enabled(), state.actionType(), state.damageValue(), text);
                 notifyChanged();
             });
             messageField.setTextColor(0xFFFFFFFF);
@@ -131,8 +158,6 @@ public class FlagWidget extends AbstractWidget {
             messageField.setMaxLength(128);
             messageField.setEditable(true);
             messageField.setVisible(true);
-            // NOTE: we do NOT use setSuggestion() – we draw the placeholder manually so
-            // it never overlaps real text and we control the position exactly.
         }
     }
 
@@ -140,7 +165,6 @@ public class FlagWidget extends AbstractWidget {
         if (onChanged != null) onChanged.accept(state);
     }
 
-    /** Locks internal widgets to the FlagWidget's current screen position. */
     private void syncWidgetPositions() {
         int x = getX();
         int y = getY();
@@ -216,7 +240,7 @@ public class FlagWidget extends AbstractWidget {
         graphics.renderOutline(x, y, w, h, BORDER);
 
         Font font = Minecraft.getInstance().font;
-        String name = flag.name;
+        String name = flag.name();
         int nameMaxWidth = w - 44;
         if (font.width(name) > nameMaxWidth) {
             name = font.plainSubstrByWidth(name, nameMaxWidth - font.width("...")) + "...";
@@ -238,7 +262,6 @@ public class FlagWidget extends AbstractWidget {
             int fieldY = y + 38;
             int fieldW = (w - 16) / 2;
 
-            // Black backing + outline (exactly like NumberPickerWidget's field chrome)
             graphics.fill(fieldX, fieldY, fieldX + fieldW, fieldY + MSG_BOX_HEIGHT, 0xFF000000);
 
             boolean fieldHovered = mouseX >= fieldX && mouseX < fieldX + fieldW
@@ -246,11 +269,8 @@ public class FlagWidget extends AbstractWidget {
             int borderColor = (fieldHovered || messageField.isFocused()) ? 0xFFFFFFFF : 0xFFA0A0A0;
             graphics.renderOutline(fieldX, fieldY, fieldW, MSG_BOX_HEIGHT, borderColor);
 
-            // Render the actual EditBox
             messageField.render(graphics, mouseX, mouseY, partialTick);
 
-            // Manual placeholder – only when empty and not focused.
-            // Use the EditBox's own Y position as the baseline (it's already vertically centred).
             if (messageField.getValue().isEmpty() && !messageField.isFocused()) {
                 graphics.drawString(font, "Enter message...", messageField.getX(), messageField.getY(), 0xFF777777, false);
             }
@@ -268,7 +288,6 @@ public class FlagWidget extends AbstractWidget {
                 mouseX >= fieldX && mouseX < fieldX + fieldW &&
                 mouseY >= fieldY && mouseY < fieldY + MSG_BOX_HEIGHT;
 
-        // Unfocus the text field when clicking anywhere else inside this widget
         if (!onMessageField && messageField != null && messageField.isFocused()) {
             messageField.setFocused(false);
         }
@@ -302,7 +321,6 @@ public class FlagWidget extends AbstractWidget {
         if (damagePicker != null && damagePicker.keyPressed(keyCode, scanCode, modifiers)) return true;
 
         if (messageField != null && messageField.isFocused()) {
-            // Enter / Escape commits and blurs so you can move to other widgets
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER || keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 messageField.setFocused(false);
                 this.setFocused(false);

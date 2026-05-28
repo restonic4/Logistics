@@ -2,7 +2,7 @@ package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.TabDistribution;
 import com.restonic4.logistics.screens.tabs.TabbedScreen;
@@ -27,15 +27,14 @@ public class ComputerScreen extends TabbedScreen {
     private static String systemName;
     private static String expectedPassword;
     private boolean isLoggedIn = false;
-    private static ProtectionSyncPacket lastProtectionData;
+    private static ProtectionEditSyncPacket lastProtectionData;
 
     private final TransferTab transferTab;
     private final ProtectionTab protectionTab;
     private final LogTab logTab;
-    private final InstallTab intallTab;
+    private final InstallTab installTab;
     private final LoginTab loginTab;
 
-    // === Fullscreen state ===
     private boolean maximized = false;
     private static final int DEFAULT_PANEL_WIDTH = 388;
     private static final int DEFAULT_PANEL_HEIGHT = 240;
@@ -54,8 +53,8 @@ public class ComputerScreen extends TabbedScreen {
         protectionTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/shield.png"));
         this.logTab = new LogTab();
         logTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/paper.png"));
-        this.intallTab = new InstallTab();
-        intallTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
+        this.installTab = new InstallTab();
+        installTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
         this.loginTab = new LoginTab();
         loginTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
     }
@@ -69,12 +68,10 @@ public class ComputerScreen extends TabbedScreen {
         }
     }
 
-    public static void setProtectionData(ProtectionSyncPacket packet) {
+    public static void setProtectionData(ProtectionEditSyncPacket packet) {
         lastProtectionData = packet;
-        // If the screen is already open, refresh the tab
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof ComputerScreen screen && screen.protectionTab != null) {
-            // The tab will read from the packet in its next init()
             screen.protectionTab.receiveSyncData(packet);
         }
     }
@@ -85,7 +82,7 @@ public class ComputerScreen extends TabbedScreen {
         expectedPassword = computerSyncPacket.rootPassword();
     }
 
-    public static ProtectionSyncPacket getLastProtectionData() {
+    public static ProtectionEditSyncPacket getLastProtectionData() {
         return lastProtectionData;
     }
 
@@ -102,7 +99,7 @@ public class ComputerScreen extends TabbedScreen {
         removeTab(transferTab);
         removeTab(protectionTab);
         removeTab(logTab);
-        removeTab(intallTab);
+        removeTab(installTab);
         removeTab(loginTab);
 
         if (isInstalled) {
@@ -114,7 +111,7 @@ public class ComputerScreen extends TabbedScreen {
                 addTab(loginTab);
             }
         } else {
-            addTab(intallTab);
+            addTab(installTab);
         }
     }
 
@@ -123,20 +120,23 @@ public class ComputerScreen extends TabbedScreen {
         updateTabs();
         super.init();
 
+        if (lastProtectionData != null && protectionTab != null) {
+            protectionTab.receiveSyncData(lastProtectionData);
+        }
+
         if (this.ambientSoundInstance == null && this.minecraft != null && this.minecraft.player != null) {
             this.ambientSoundInstance = new SimpleSoundInstance(
                     new ResourceLocation("logistics", "computer/ambient"),
                     SoundSource.BLOCKS,
-                    0.5F, // Volume
-                    1.0F, // Pitch
+                    0.5F,
+                    1.0F,
                     SoundInstance.createUnseededRandom(),
-                    true, // Looping -> true
-                    0,    // Delay
-                    SoundInstance.Attenuation.NONE, // No attenuation means it plays at full volume regardless of player distance/movement
-                    0.0D, 0.0D, 0.0D, // X, Y, Z coordinates
-                    true  // Relative to player
+                    true,
+                    0,
+                    SoundInstance.Attenuation.NONE,
+                    0.0D, 0.0D, 0.0D,
+                    true
             );
-
             this.minecraft.getSoundManager().play(this.ambientSoundInstance);
         }
     }
@@ -161,7 +161,6 @@ public class ComputerScreen extends TabbedScreen {
         int btnY = ((panelTop + contentTop) / 2) - btnH / 2;
         int btnX = panelRight - btnH - (btnY - panelTop);
 
-        // Close
         StyledButton close = new StyledButton(
                 btnX, btnY, btnH, btnH,
                 Component.literal("X"),
@@ -172,7 +171,6 @@ public class ComputerScreen extends TabbedScreen {
                 .withPressColor(0xFF303030);
         this.addRenderableWidget(close);
 
-        // Maximize / Restore (<>)
         StyledButton maximize = new StyledButton(
                 btnX - (btnH + tabGap), btnY, btnH, btnH,
                 Component.literal(maximized ? "[]" : "<>"),
@@ -183,7 +181,6 @@ public class ComputerScreen extends TabbedScreen {
                 .withPressColor(0xFF303030);
         this.addRenderableWidget(maximize);
 
-        // Minimize / Restore default size (-)
         StyledButton small = new StyledButton(
                 btnX - (btnH + tabGap) * 2, btnY, btnH, btnH,
                 Component.literal("-"),
@@ -242,10 +239,8 @@ public class ComputerScreen extends TabbedScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        // Let widgets (dropdowns, number pickers) handle scroll first
         if (super.mouseScrolled(mouseX, mouseY, amount)) return true;
 
-        // Then offer it to the log tab if it's currently selected
         if (selectedTab >= 0 && tabs.get(selectedTab) == logTab) {
             return logTab.handleMouseScrolled(
                     mouseX, mouseY, amount,

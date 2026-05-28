@@ -25,9 +25,7 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
 
     @Override
     public void handle(Minecraft client) {
-        ComputerScreen.setAccessors(this);
-        ComputerScreen.setComputerState(this);
-        client.setScreen(new ComputerScreen());
+        ComputerScreenLoader.open(client, this);
     }
 
     @Override

@@ -1,0 +1,64 @@
+package com.restonic4.logistics.mixin.protection;
+
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
+import com.restonic4.logistics.blocks.protector.data_types.FlagData;
+import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(ServerPlayerGameMode.class)
+public class ServerPlayerGameModeMixin {
+
+    @Inject(method = "destroyBlock", at = @At("HEAD"), cancellable = true)
+    private void onDestroyBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        ServerPlayer player = ((ServerPlayerGameMode) (Object) this).player;
+        if (player == null) return;
+        ProtectionMixinUtils.handle(player, pos, "break_blocks", cir);
+    }
+
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
+    private void onUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand,
+                             BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
+        if (player == null) return;
+        BlockPos pos = hitResult.getBlockPos();
+
+        // Exception: use_buckets
+        String itemId = stack.getItem().builtInRegistryHolder().key().location().toString();
+        boolean isBucket = itemId.contains("bucket") || itemId.contains("_bucket");
+        if (isBucket) {
+            FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "use_buckets");
+            if (fd != null && !fd.enabled()) return; // allowed
+            if (fd != null && fd.enabled()) {
+                ProtectionMixinUtils.handleResult(player, fd, cir);
+                return;
+            }
+        }
+
+        // Exception: open_containers
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof Container) {
+            FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "open_containers");
+            if (fd != null && !fd.enabled()) return; // allowed
+            if (fd != null && fd.enabled()) {
+                ProtectionMixinUtils.handleResult(player, fd, cir);
+                return;
+            }
+        }
+
+        // block_interaction
+        FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "block_interaction");
+        ProtectionMixinUtils.handleResult(player, fd, cir);
+    }
+}

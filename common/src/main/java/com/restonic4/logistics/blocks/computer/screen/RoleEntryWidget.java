@@ -18,6 +18,7 @@ public class RoleEntryWidget extends AbstractWidget {
     private final Consumer<String> onNameChanged;
     private final Runnable onUp;
     private final Runnable onDown;
+    private final Runnable onDelete;          // NEW
     private final Consumer<Boolean> onSelect;
 
     private boolean selected = false;
@@ -29,13 +30,16 @@ public class RoleEntryWidget extends AbstractWidget {
     private static final int HOVER_BG = 0x22FFFFFF;
 
     public RoleEntryWidget(int x, int y, int width, int height, ResourceLocation icon, String name,
-                           Consumer<String> onNameChanged, Runnable onUp, Runnable onDown, Consumer<Boolean> onSelect) {
+                           Consumer<String> onNameChanged, Runnable onUp, Runnable onDown,
+                           Runnable onDelete,                       // NEW parameter
+                           Consumer<Boolean> onSelect) {
         super(x, y, width, height, Component.literal(name));
         this.icon = icon;
         this.roleName = name;
         this.onNameChanged = onNameChanged;
         this.onUp = onUp;
         this.onDown = onDown;
+        this.onDelete = onDelete;             // NEW
         this.onSelect = onSelect;
 
         Font font = Minecraft.getInstance().font;
@@ -61,9 +65,13 @@ public class RoleEntryWidget extends AbstractWidget {
         this.setMessage(Component.literal(name));
     }
 
+    /*  LIVE COMMIT: every keystroke updates the underlying role immediately  */
     private void onTextChanged(String text) {
         if (!editing) return;
         this.roleName = text;
+        if (onNameChanged != null) {
+            onNameChanged.accept(roleName);
+        }
     }
 
     private void startEditing() {
@@ -71,7 +79,7 @@ public class RoleEntryWidget extends AbstractWidget {
         this.nameField.setVisible(true);
         this.nameField.setEditable(true);
         this.nameField.setFocused(true);
-        this.nameField.setValue(roleName);
+        this.setFocused(true);   // ensure we receive setFocused(false) when clicked away
     }
 
     private void stopEditing(boolean confirm) {
@@ -82,15 +90,26 @@ public class RoleEntryWidget extends AbstractWidget {
         this.nameField.setFocused(false);
 
         if (!confirm || roleName.isBlank()) {
-            roleName = getMessage().getString();
-            nameField.setValue(roleName);
+            /*  Escape / blank = revert both visual and underlying data  */
+            String oldName = getMessage().getString();
+            roleName = oldName;
+            nameField.setValue(oldName);
+            if (onNameChanged != null) {
+                onNameChanged.accept(oldName);
+            }
         } else {
             if (!roleName.equals(getMessage().getString())) {
                 this.setMessage(Component.literal(roleName));
-                if (onNameChanged != null) {
-                    onNameChanged.accept(roleName);
-                }
+                // onNameChanged was already fired by onTextChanged, no need again
             }
+        }
+    }
+
+    @Override
+    public void setFocused(boolean focused) {
+        super.setFocused(focused);
+        if (!focused && editing) {
+            stopEditing(true);
         }
     }
 
@@ -130,7 +149,7 @@ public class RoleEntryWidget extends AbstractWidget {
             graphics.drawString(font, text, x + 24, y + (h - 8) / 2, 0xFFFFFFFF, false);
         }
 
-        // Arrows (visible on hover or selected)
+        // Arrows + Delete (visible on hover or selected)
         if (hovered || selected) {
             boolean canUp = onUp != null;
             boolean canDown = onDown != null;
@@ -144,10 +163,19 @@ public class RoleEntryWidget extends AbstractWidget {
             }
 
             if (canDown) {
-                int downY = arrowY + 5 + 2; // 2px gap
+                int downY = arrowY + 5 + 2;
                 boolean arrowHover = mouseX >= arrowX && mouseX < arrowX + 12 && mouseY >= downY && mouseY < downY + 5;
                 int color = arrowHover ? 0xFFFFFF55 : 0xFFAAAAAA;
                 renderArrow(graphics, arrowX, downY, 12, 5, false, color);
+            }
+
+            /*  DELETE BUTTON  */
+            if (onDelete != null) {
+                int delX = x + w - 14;
+                int delY = y + (h - 10) / 2;
+                boolean delHover = mouseX >= delX && mouseX < delX + 12 && mouseY >= delY && mouseY < delY + 10;
+                int delColor = delHover ? 0xFFFF5555 : 0xFFAAAAAA;
+                graphics.drawString(Minecraft.getInstance().font, "×", delX, delY, delColor, false);
             }
         }
     }
@@ -174,6 +202,14 @@ public class RoleEntryWidget extends AbstractWidget {
         int y = getY();
         int w = getWidth();
         int h = getHeight();
+
+        /*  DELETE CHECK  */
+        if (onDelete != null && mouseX >= x + w - 14 && mouseX < x + w - 2
+                && mouseY >= y + (h - 10) / 2 && mouseY < y + (h - 10) / 2 + 10) {
+            onDelete.run();
+            return true;
+        }
+
         int arrowX = x + w - 28;
         int arrowY = y + (h - 12) / 2;
 
@@ -198,7 +234,7 @@ public class RoleEntryWidget extends AbstractWidget {
             boolean isDoubleClick = (now - lastClickTime) < 250;
             lastClickTime = now;
 
-            if (selected && isDoubleClick) {
+            if (selected && isDoubleClick && onNameChanged != null) {
                 startEditing();
                 return true;
             }

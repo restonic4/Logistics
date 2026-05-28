@@ -1,9 +1,11 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
 import com.mojang.authlib.GameProfile;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
-import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.*;
+import com.restonic4.logistics.blocks.protector.data_types.*;
+import com.restonic4.logistics.blocks.protector.data_types.ui.EditableProtector;
+import com.restonic4.logistics.blocks.protector.data_types.ui.EditableRole;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.*;
@@ -11,7 +13,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -24,25 +25,26 @@ import java.util.*;
 
 public class ProtectionTab extends Tab {
 
-    // UI State (preserved across init() calls)
     private int selectedNodeIndex = 0;
     private int selectedRoleIndex = -1;
+    private int pendingDeleteIndex = -1;
     private boolean hasUnsavedChanges = false;
 
-    // Popups
+    private final List<EditableProtector> protectors = new ArrayList<>();
+    private List<GameProfile> playerPool = new ArrayList<>();
+    private BlockPos computerPos;
+
     private AddRolePopup addRolePopup;
     private UnsavedChangesPopup unsavedPopup;
+    private ConfirmDeletePopup confirmDeletePopup;
 
-    // Panels
     private ScrollablePanel leftPanel;
     private ScrollablePanel rightPanel;
 
-    // Left panel widgets
-    private SearchableDropdownWidget<ProtectionNode> nodeSelector;
+    private SearchableDropdownWidget<Integer> nodeSelector;
     private final List<RoleEntryWidget> roleEntries = new ArrayList<>();
     private StyledButton addRoleButton;
 
-    // Right panel widgets
     private SearchableDropdownWidget<UUID> playerSearchDropdown;
     private StyledButton addPlayerButton;
     private final List<PlayerChipWidget> playerChips = new ArrayList<>();
@@ -50,36 +52,39 @@ public class ProtectionTab extends Tab {
     private StyledButton saveButton;
     private NumberPickerWidget radiusPicker;
 
-    private ProtectionSyncPacket syncData;
-    private BlockPos computerNodePos;
-
-    // Parent reference
     private Screen parent;
-
-    public boolean isCreativeBlockSource() {
-        if (Minecraft.getInstance().player == null) return false;
-        return Minecraft.getInstance().player.isCreative();
-    }
 
     public ProtectionTab() {
         super(Component.literal("Protection"));
     }
 
-    public void receiveSyncData(ProtectionSyncPacket packet) {
-        this.syncData = packet;
-        this.computerNodePos = packet.computerNodePos();
-        // Refresh the dummy data from server state
-        ProtectionTabDummyData.loadFromPacket(packet);
-        // Rebuild UI with new data
+    public void receiveSyncData(ProtectionEditSyncPacket packet) {
+        this.computerPos = packet.computerPos();
+        this.playerPool = packet.allPlayers();
+        this.protectors.clear();
+        for (ProtectionZone zone : packet.zones()) {
+            this.protectors.add(new EditableProtector(zone));
+        }
+
+        // CRITICAL: heal client-side so missing flags appear as OFF and are saved back.
+        for (EditableProtector ep : this.protectors) {
+            for (EditableRole role : ep.roles) {
+                for (FlagDefinition def : FlagRegistry.forZone(ep.creative)) {
+                    role.flags.putIfAbsent(def.id(), new FlagData(false, ActionType.DENY.name(), 0, ""));
+                }
+            }
+        }
+
+        this.selectedNodeIndex = 0;
+        this.selectedRoleIndex = -1;
+        this.hasUnsavedChanges = false;
         refreshLeftPanel();
         refreshRightPanel();
     }
 
     public int getCurrentNodeRadius() {
-        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) {
-            return 0;
-        }
-        return ProtectionTabDummyData.RADIUS.get(selectedNodeIndex);
+        if (selectedNodeIndex < 0 || selectedNodeIndex >= protectors.size()) return 0;
+        return protectors.get(selectedNodeIndex).radius;
     }
 
     public int getSelectedNodeIndex() {
@@ -87,7 +92,7 @@ public class ProtectionTab extends Tab {
     }
 
     public BlockPos getComputerNodePos() {
-        return computerNodePos;
+        return computerPos;
     }
 
     @Override
@@ -98,57 +103,62 @@ public class ProtectionTab extends Tab {
         int rightPanelWidth = width - leftPanelWidth - 6;
         int gap = 6;
 
-        // Left panel
         leftPanel = new ScrollablePanel(x, y, leftPanelWidth, height);
         leftPanel.setPadding(6);
 
-        // Right panel
         rightPanel = new ScrollablePanel(x + leftPanelWidth + gap, y, rightPanelWidth, height);
         rightPanel.setPadding(6);
 
         buildLeftPanel(leftPanelWidth - 12);
         buildRightPanel(rightPanelWidth - 12);
 
-        // Popups
         if (addRolePopup == null) {
             addRolePopup = new AddRolePopup(parent, this::onRoleCreated, () -> {});
         }
         if (unsavedPopup == null) {
             unsavedPopup = new UnsavedChangesPopup(parent, this::onSaveAndClose, this::onDiscardAndClose, () -> {});
         }
+
+        if (confirmDeletePopup == null) {
+            confirmDeletePopup = new ConfirmDeletePopup(parent, this::doConfirmDelete, () -> pendingDeleteIndex = -1);
+        }
     }
 
     private void buildLeftPanel(int innerWidth) {
         int currentY = 0;
 
-        // Node selector
-        List<SearchableDropdownWidget.DropdownEntry<ProtectionNode>> nodeOptions = new ArrayList<>();
-        for (ProtectionNode node : ProtectionTabDummyData.NODES) {
+        List<SearchableDropdownWidget.DropdownEntry<Integer>> nodeOptions = new ArrayList<>();
+        for (int i = 0; i < protectors.size(); i++) {
+            EditableProtector ep = protectors.get(i);
+            String label = "Protector @ " + ep.pos.toShortString();
             SearchableDropdownWidget.DropdownIcon icon = SearchableDropdownWidget.DropdownIcon.of(Blocks.BEACON);
-            nodeOptions.add(new SearchableDropdownWidget.DropdownEntry<>(node, Component.literal(node.name), icon));
+            nodeOptions.add(new SearchableDropdownWidget.DropdownEntry<>(i, Component.literal(label), icon));
         }
 
         nodeSelector = new SearchableDropdownWidget<>(
                 0, 0, innerWidth, 20,
                 Component.empty(), nodeOptions, this::onNodeSelected
         );
-        if (selectedNodeIndex >= 0 && selectedNodeIndex < ProtectionTabDummyData.NODES.size()) {
+        if (selectedNodeIndex >= 0 && selectedNodeIndex < protectors.size()) {
             nodeSelector.setSelectedIndex(selectedNodeIndex);
         }
         leftPanel.addChild(nodeSelector, 0, currentY);
         currentY += 24 + 4;
 
-        // Role list
         roleEntries.clear();
-        List<Role> roles = getCurrentRoles();
+        List<EditableRole> roles = getCurrentRoles();
         for (int i = 0; i < roles.size(); i++) {
-            Role role = roles.get(i);
+            EditableRole role = roles.get(i);
+            boolean isDefault = role.type == RoleData.RoleType.DEFAULT;
             int finalI = i;
             RoleEntryWidget entry = new RoleEntryWidget(
-                    0, 0, innerWidth, 24, role.icon, role.name,
-                    newName -> onRoleNameChanged(finalI, newName),
-                    i > 0 ? () -> onRoleMoveUp(finalI) : null,
-                    i < roles.size() - 1 ? () -> onRoleMoveDown(finalI) : null,
+                    0, 0, innerWidth, 24,
+                    new ResourceLocation(role.iconRl),
+                    role.name,
+                    isDefault ? null : newName -> onRoleNameChanged(finalI, newName),
+                    isDefault ? null : (i > 0 ? () -> onRoleMoveUp(finalI) : null),
+                    isDefault ? null : (i < roles.size() - 1 ? () -> onRoleMoveDown(finalI) : null),
+                    isDefault ? null : () -> onDeleteRole(finalI),
                     selected -> onRoleSelected(finalI)
             );
             entry.setSelected(i == selectedRoleIndex);
@@ -157,7 +167,6 @@ public class ProtectionTab extends Tab {
             currentY += 24 + 4;
         }
 
-        // Add role button
         addRoleButton = new StyledButton(0, 0, innerWidth, 20, Component.literal("+"), this::onAddRoleClicked);
         addRoleButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
         leftPanel.addChild(addRoleButton, 0, currentY);
@@ -167,10 +176,11 @@ public class ProtectionTab extends Tab {
         innerWidth = Math.max(20, innerWidth - 6);
         int currentY = 0;
 
+        EditableProtector currentProtector = getCurrentProtector();
+
         rightPanel.addChild(createLabel("Radius:", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
 
-        // Radius number picker
         radiusPicker = new NumberPickerWidget(
                 0, 0, innerWidth, 18,
                 Component.empty(),
@@ -183,109 +193,110 @@ public class ProtectionTab extends Tab {
         rightPanel.addChild(radiusPicker, 0, currentY);
         currentY += 18 + 12;
 
-        // Players label
+        EditableRole currentRole = getSelectedRole();
+        boolean isDefault = currentRole != null && currentRole.type == RoleData.RoleType.DEFAULT;
+
         rightPanel.addChild(createLabel("Players:", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
 
-        // Player search row
-        int searchWidth = innerWidth - 24;
-        List<SearchableDropdownWidget.DropdownEntry<UUID>> playerEntries = new ArrayList<>();
-        for (GameProfile gameProfile : ProtectionTabDummyData.ALL_PLAYERS) {
-            UUID uuid = gameProfile.getId();
-            String name = gameProfile.getName();
-            SearchableDropdownWidget.DropdownIcon icon = (gfx, x, y, size) -> PlayerHeadRenderer.renderHead(gfx, name, uuid, x, y, size);
-            playerEntries.add(new SearchableDropdownWidget.DropdownEntry<>(uuid, Component.literal(name), icon));
-        }
-
-        playerSearchDropdown = new SearchableDropdownWidget<>(
-                0, 0, searchWidth, 18,
-                Component.empty(), playerEntries, uuid -> {}
-        );
-        playerSearchDropdown.setSelectionRenderer(new SearchableDropdownWidget.SelectionRenderer<UUID>() {
-            @Override
-            public void render(GuiGraphics graphics, Font font, int x, int y, int width, int height,
-                               SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
-                if (selected == null) {
-                    graphics.drawString(font, "Select player...", x + 5, y + (height - 8) / 2, 0xFF777777);
-                    return;
-                }
-                if (selected.icon() != null) {
-                    selected.icon().render(graphics, x + 4, y + (height - 10) / 2, 10);
-                }
-                graphics.drawString(font, selected.label(), x + 18, y + (height - 8) / 2, 0xFFFFFFFF);
+        if (!isDefault && currentRole != null) {
+            int searchWidth = innerWidth - 24;
+            List<SearchableDropdownWidget.DropdownEntry<UUID>> playerEntries = new ArrayList<>();
+            for (GameProfile profile : playerPool) {
+                UUID uuid = profile.getId();
+                String name = profile.getName();
+                SearchableDropdownWidget.DropdownIcon icon = (gfx, x, y, size) -> PlayerHeadRenderer.renderHead(gfx, name, uuid, x, y, size);
+                playerEntries.add(new SearchableDropdownWidget.DropdownEntry<>(uuid, Component.literal(name), icon));
             }
-        });
-        rightPanel.addChild(playerSearchDropdown, 0, currentY);
 
-        addPlayerButton = new StyledButton(0, 0, 20, 18, Component.literal("+"), this::onAddPlayerClicked);
-        addPlayerButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
-        rightPanel.addChild(addPlayerButton, searchWidth + 4, currentY);
-        currentY += 22 + 4;
-
-        // Player chips grid
-        playerChips.clear();
-        Role currentRole = getSelectedRole();
-        if (currentRole != null && !currentRole.players.isEmpty()) {
-            int chipWidth = Math.min(140, (innerWidth - 4) / 2);
-            int chipHeight = 22;
-            int col = 0;
-            int rowY = currentY;
-            int rowX = 0;
-
-            for (int i = 0; i < currentRole.players.size(); i++) {
-                AssignedPlayer player = currentRole.players.get(i);
-                if (col >= 2) {
-                    col = 0;
-                    rowX = 0;
-                    rowY += chipHeight + 4;
+            playerSearchDropdown = new SearchableDropdownWidget<>(
+                    0, 0, searchWidth, 18,
+                    Component.empty(), playerEntries, uuid -> {}
+            );
+            playerSearchDropdown.setSelectionRenderer(new SearchableDropdownWidget.SelectionRenderer<UUID>() {
+                @Override
+                public void render(GuiGraphics graphics, Font font, int x, int y, int width, int height,
+                SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
+                    if (selected == null) {
+                        graphics.drawString(font, "Select player...", x + 5, y + (height - 8) / 2, 0xFF777777);
+                        return;
+                    }
+                    if (selected.icon() != null) {
+                        selected.icon().render(graphics, x + 4, y + (height - 10) / 2, 10);
+                    }
+                    graphics.drawString(font, selected.label(), x + 18, y + (height - 8) / 2, 0xFFFFFFFF);
                 }
+            });
+            rightPanel.addChild(playerSearchDropdown, 0, currentY);
 
-                PlayerChipWidget chip = new PlayerChipWidget(
-                        0, 0, chipWidth, chipHeight,
-                        player.id, player.username,
-                        () -> onRemovePlayer(player.id)
-                );
-                rightPanel.addChild(chip, rowX, rowY);
-                playerChips.add(chip);
+            addPlayerButton = new StyledButton(0, 0, 20, 18, Component.literal("+"), this::onAddPlayerClicked);
+            addPlayerButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
+            rightPanel.addChild(addPlayerButton, searchWidth + 4, currentY);
+            currentY += 22 + 4;
 
-                rowX += chipWidth + 4;
-                col++;
+            playerChips.clear();
+            if (!currentRole.players.isEmpty()) {
+                int chipWidth = Math.min(140, (innerWidth - 4) / 2);
+                int chipHeight = 22;
+                int col = 0;
+                int rowY = currentY;
+                int rowX = 0;
+
+                for (int i = 0; i < currentRole.players.size(); i++) {
+                    PlayerData player = currentRole.players.get(i);
+                    if (col >= 2) {
+                        col = 0;
+                        rowX = 0;
+                        rowY += chipHeight + 4;
+                    }
+
+                    PlayerChipWidget chip = new PlayerChipWidget(
+                            0, 0, chipWidth, chipHeight,
+                            player.id(), player.username(),
+                            () -> onRemovePlayer(player.id())
+                    );
+                    rightPanel.addChild(chip, rowX, rowY);
+                    playerChips.add(chip);
+
+                    rowX += chipWidth + 4;
+                    col++;
+                }
+                currentY = rowY + chipHeight + 12;
+            } else {
+                rightPanel.addChild(createLabel("No players assigned", innerWidth, 0xFF777777), 0, currentY);
+                currentY += 16 + 12;
             }
-            currentY = rowY + chipHeight + 12;
         } else {
-            rightPanel.addChild(createLabel("No players assigned", innerWidth, 0xFF777777), 0, currentY);
+            rightPanel.addChild(createLabel(
+                    isDefault ? "Applies to all players by default" : "Select a role",
+                    innerWidth, 0xFF777777), 0, currentY);
             currentY += 16 + 12;
         }
 
-        // Protection Flags label
         rightPanel.addChild(createLabel("Protection Flags:", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12 + 4;
 
-        // Flags grid
         flagWidgets.clear();
-        if (currentRole != null) {
+        if (currentRole != null && currentProtector != null) {
             int flagWidth = (innerWidth - 6) / 2;
             int col = 0;
             int rowX = 0;
             int rowY = currentY;
 
-            for (ProtectionFlag flagDef : ProtectionTabDummyData.FLAGS) {
-                if (flagDef.isOP && !isCreativeBlockSource()) {
-                    continue;
-                }
-
+            for (FlagDefinition flagDef : FlagRegistry.forZone(currentProtector.creative)) {
                 if (col >= 2) {
                     col = 0;
                     rowX = 0;
-                    rowY += 58 + 6; // uniform flag height + gap
+                    rowY += 58 + 6;
                 }
 
-                FlagState state = currentRole.flags.getOrDefault(flagDef.id, new FlagState(false, ActionType.DENY, 0, ""));
-                // Uniform height so config widgets never overflow the box
+                FlagData state = currentRole.flags.getOrDefault(flagDef.id(),
+                        new FlagData(false, ActionType.DENY.name(), 0, ""));
+
                 FlagWidget flagWidget = new FlagWidget(
                         0, 0, flagWidth, 58,
                         flagDef, state,
-                        newState -> onFlagChanged(flagDef.id, newState)
+                        newState -> onFlagChanged(flagDef.id(), newState)
                 );
                 rightPanel.addChild(flagWidget, rowX, rowY);
                 flagWidgets.add(flagWidget);
@@ -296,7 +307,6 @@ public class ProtectionTab extends Tab {
             currentY = rowY + 58 + 12;
         }
 
-        // Save button
         saveButton = new StyledButton(0, 0, 100, 20, Component.literal("Save Changes"), this::onSaveClicked);
         saveButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
         rightPanel.addChild(saveButton, innerWidth - 100, currentY);
@@ -331,27 +341,27 @@ public class ProtectionTab extends Tab {
         }
     }
 
-    private List<Role> getCurrentRoles() {
-        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) {
-            return new ArrayList<>();
-        }
-        ProtectionNode node = ProtectionTabDummyData.NODES.get(selectedNodeIndex);
-        return ProtectionTabDummyData.getRolesForNode(node.id);
+    private EditableProtector getCurrentProtector() {
+        if (selectedNodeIndex < 0 || selectedNodeIndex >= protectors.size()) return null;
+        return protectors.get(selectedNodeIndex);
     }
 
-    private Role getSelectedRole() {
-        List<Role> roles = getCurrentRoles();
+    private List<EditableRole> getCurrentRoles() {
+        EditableProtector protector = getCurrentProtector();
+        if (protector == null) return List.of();
+        return protector.roles;
+    }
+
+    private EditableRole getSelectedRole() {
+        List<EditableRole> roles = getCurrentRoles();
         if (selectedRoleIndex >= 0 && selectedRoleIndex < roles.size()) {
             return roles.get(selectedRoleIndex);
         }
         return null;
     }
 
-    // === Event Handlers ===
-
-    private void onNodeSelected(ProtectionNode node) {
-        int index = ProtectionTabDummyData.NODES.indexOf(node);
-        if (index != selectedNodeIndex) {
+    private void onNodeSelected(Integer index) {
+        if (index != null && index != selectedNodeIndex) {
             selectedNodeIndex = index;
             selectedRoleIndex = -1;
             refreshLeftPanel();
@@ -362,7 +372,6 @@ public class ProtectionTab extends Tab {
     private void onRoleSelected(int index) {
         if (selectedRoleIndex != index) {
             selectedRoleIndex = index;
-            // Update selection visuals
             for (int i = 0; i < roleEntries.size(); i++) {
                 roleEntries.get(i).setSelected(i == index);
             }
@@ -371,21 +380,20 @@ public class ProtectionTab extends Tab {
     }
 
     private void onRoleNameChanged(int index, String newName) {
-        List<Role> roles = getCurrentRoles();
+        List<EditableRole> roles = getCurrentRoles();
         if (index >= 0 && index < roles.size()) {
             roles.get(index).name = newName;
             markDirty();
-            // Update left panel entry
-            if (index < roleEntries.size()) {
-                roleEntries.get(index).setName(newName);
-            }
         }
     }
 
     private void onRoleMoveUp(int index) {
-        List<Role> roles = getCurrentRoles();
+        List<EditableRole> roles = getCurrentRoles();
         if (index > 0 && index < roles.size()) {
+            if (roles.get(index).type == RoleData.RoleType.DEFAULT) return;
+            if (roles.get(index - 1).type == RoleData.RoleType.DEFAULT) return;
             Collections.swap(roles, index, index - 1);
+            for (int i = 0; i < roles.size(); i++) roles.get(i).order = i;
             markDirty();
             selectedRoleIndex = index - 1;
             refreshLeftPanel();
@@ -394,9 +402,12 @@ public class ProtectionTab extends Tab {
     }
 
     private void onRoleMoveDown(int index) {
-        List<Role> roles = getCurrentRoles();
+        List<EditableRole> roles = getCurrentRoles();
         if (index >= 0 && index < roles.size() - 1) {
+            if (roles.get(index).type == RoleData.RoleType.DEFAULT) return;
+            if (roles.get(index + 1).type == RoleData.RoleType.DEFAULT) return;
             Collections.swap(roles, index, index + 1);
+            for (int i = 0; i < roles.size(); i++) roles.get(i).order = i;
             markDirty();
             selectedRoleIndex = index + 1;
             refreshLeftPanel();
@@ -410,73 +421,117 @@ public class ProtectionTab extends Tab {
     }
 
     private void onRoleCreated(String name) {
-        List<Role> roles = getCurrentRoles();
-        if (roles != null) {
-            // Create new role with default flags (all off/deny)
-            Map<String, FlagState> defaultFlags = new HashMap<>();
-            for (ProtectionFlag f : ProtectionTabDummyData.FLAGS) {
-                if (f.isOP && !isCreativeBlockSource()) {
-                    continue;
-                }
-                defaultFlags.put(f.id, new FlagState(false, ActionType.DENY, 0, ""));
+        EditableProtector protector = getCurrentProtector();
+        if (protector == null) return;
+
+        Map<String, FlagData> defaultFlags = new HashMap<>();
+        for (FlagDefinition def : FlagRegistry.forZone(protector.creative)) {
+            defaultFlags.put(def.id(), new FlagData(false, ActionType.DENY.name(), 0, ""));
+        }
+
+        RoleData data = new RoleData(
+                UUID.randomUUID(),
+                name,
+                0, // will be reassigned below
+                "logistics:textures/item/parcel.png",
+                RoleData.RoleType.CUSTOM,
+                List.of(),
+                defaultFlags
+        );
+
+        // Insert at the very top (index 0) so the user can move it DOWN among custom roles
+        protector.roles.add(0, new EditableRole(data));
+
+        // Reassign orders so they match list index (DEFAULT keeps its own value)
+        for (int i = 0; i < protector.roles.size(); i++) {
+            EditableRole r = protector.roles.get(i);
+            if (r.type != RoleData.RoleType.DEFAULT) {
+                r.order = i;
             }
-            Role newRole = new Role(
-                    UUID.randomUUID(),
-                    name,
-                    roles.size(),
-                    new ResourceLocation("logistics", "textures/item/parcel.png"),
-                    defaultFlags
-            );
-            roles.add(newRole);
+        }
+
+        markDirty();
+        selectedRoleIndex = 0;
+        refreshLeftPanel();
+        refreshRightPanel();
+    }
+
+    private void onDeleteRole(int index) {
+        pendingDeleteIndex = index;
+        confirmDeletePopup.show();
+    }
+
+    private void doConfirmDelete() {
+        if (pendingDeleteIndex < 0) return;
+        EditableProtector protector = getCurrentProtector();
+        if (protector == null) return;
+
+        List<EditableRole> roles = protector.roles;
+        if (pendingDeleteIndex >= 0 && pendingDeleteIndex < roles.size()) {
+            roles.remove(pendingDeleteIndex);
+
+            // Reassign orders after removal
+            for (int i = 0; i < roles.size(); i++) {
+                EditableRole r = roles.get(i);
+                if (r.type != RoleData.RoleType.DEFAULT) {
+                    r.order = i;
+                }
+            }
+
+            if (selectedRoleIndex == pendingDeleteIndex) {
+                selectedRoleIndex = -1;
+            } else if (selectedRoleIndex > pendingDeleteIndex) {
+                selectedRoleIndex--;
+            }
             markDirty();
-            selectedRoleIndex = roles.size() - 1;
             refreshLeftPanel();
             refreshRightPanel();
         }
+        pendingDeleteIndex = -1;
     }
 
     private void onRadiusChanged(double newRadius) {
-        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) return;
+        EditableProtector protector = getCurrentProtector();
+        if (protector == null) return;
         hasUnsavedChanges = true;
-        ProtectionTabDummyData.RADIUS.set(selectedNodeIndex, (int) newRadius);
+        protector.radius = (int) newRadius;
     }
 
     private void onAddPlayerClicked() {
         UUID selectedPlayer = playerSearchDropdown.getSelectedValue();
         if (selectedPlayer == null) return;
 
-        Role role = getSelectedRole();
-        if (role == null) return;
+        EditableRole role = getSelectedRole();
+        if (role == null || role.type == RoleData.RoleType.DEFAULT) return;
 
-        // Check for duplicates
-        for (AssignedPlayer p : role.players) {
-            if (p.id.equals(selectedPlayer)) return;
+        for (PlayerData p : role.players) {
+            if (p.id().equals(selectedPlayer)) return;
         }
 
         String username = null;
-        for (GameProfile gameProfile : ProtectionTabDummyData.ALL_PLAYERS) {
-            if (gameProfile.getId().equals(selectedPlayer)) {
-                username = gameProfile.getName();
+        for (GameProfile profile : playerPool) {
+            if (profile.getId().equals(selectedPlayer)) {
+                username = profile.getName();
+                break;
             }
         }
         if (username != null) {
-            role.players.add(new AssignedPlayer(selectedPlayer, username));
+            role.players.add(new PlayerData(selectedPlayer, username));
             markDirty();
             refreshRightPanel();
         }
     }
 
     private void onRemovePlayer(UUID playerId) {
-        Role role = getSelectedRole();
-        if (role == null) return;
-
-        role.players.removeIf(p -> p.id.equals(playerId));
+        EditableRole role = getSelectedRole();
+        if (role == null || role.type == RoleData.RoleType.DEFAULT) return;
+        role.players.removeIf(p -> p.id().equals(playerId));
         markDirty();
         refreshRightPanel();
     }
 
-    private void onFlagChanged(String flagId, FlagState newState) {
-        Role role = getSelectedRole();
+    private void onFlagChanged(String flagId, FlagData newState) {
+        EditableRole role = getSelectedRole();
         if (role != null) {
             role.flags.put(flagId, newState);
             markDirty();
@@ -484,25 +539,19 @@ public class ProtectionTab extends Tab {
     }
 
     private void onSaveClicked() {
-        // Build packet from current client state
-        if (computerNodePos == null) {
-            computerNodePos = ComputerScreen.getComputerNode(); // fallback
+        if (computerPos == null) return;
+        Map<UUID, ProtectorData> data = new HashMap<>();
+        for (EditableProtector ep : protectors) {
+            ProtectionZone zone = ep.toZone();
+            data.put(zone.nodeId(), new ProtectorData(zone.radius(), zone.creative(), zone.roles()));
         }
-
-        ProtectionSavePacket packet = ProtectionSavePacket.fromTabState(this);
-        ClientNetworking.sendToServer(packet);
-
+        ClientNetworking.sendToServer(new ProtectionSavePacket(computerPos, data));
         hasUnsavedChanges = false;
-
-        // Optional: show brief feedback
-        // Minecraft.getInstance().player.displayClientMessage(Component.literal("Saved!"), true);
     }
 
     private void markDirty() {
         hasUnsavedChanges = true;
     }
-
-    // === Popup Handlers ===
 
     private void onSaveAndClose() {
         onSaveClicked();
@@ -535,8 +584,6 @@ public class ProtectionTab extends Tab {
         }
     }
 
-    // === Tab Lifecycle ===
-
     @Override
     public void tick() {
         if (leftPanel != null) leftPanel.tick();
@@ -552,14 +599,15 @@ public class ProtectionTab extends Tab {
         if (leftPanel != null) leftPanel.render(gfx, mouseX, mouseY, delta);
         if (rightPanel != null) rightPanel.render(gfx, mouseX, mouseY, delta);
 
-        // Draw flag dropdown menus that extend outside the right panel scissor
         for (FlagWidget flag : flagWidgets) {
             flag.renderDropdownOverlay(gfx, mouseX, mouseY, delta);
         }
 
-        // Popups at high Z so they cover everything
         gfx.pose().pushPose();
         gfx.pose().translate(0, 0, 1000);
+        if (confirmDeletePopup != null && confirmDeletePopup.isActive()) {
+            confirmDeletePopup.render(gfx, mouseX, mouseY, delta);
+        }
         if (addRolePopup != null && addRolePopup.isActive()) {
             addRolePopup.render(gfx, mouseX, mouseY, delta);
         }
@@ -569,10 +617,12 @@ public class ProtectionTab extends Tab {
         gfx.pose().popPose();
     }
 
-    // === Input Forwarding ===
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (confirmDeletePopup != null && confirmDeletePopup.isActive()) {
+            return confirmDeletePopup.mouseClicked(mouseX, mouseY, button);
+        }
+
         if (unsavedPopup != null && unsavedPopup.isActive()) {
             return unsavedPopup.mouseClicked(mouseX, mouseY, button);
         }
@@ -580,7 +630,6 @@ public class ProtectionTab extends Tab {
             return addRolePopup.mouseClicked(mouseX, mouseY, button);
         }
 
-        // 1. Global Overlay Pass: Give expanded floating menus first dibs, matching their rendering stack
         if (nodeSelector != null && nodeSelector.isExpanded() && nodeSelector.isMouseOver(mouseX, mouseY)) {
             if (leftPanel != null && leftPanel.mouseClicked(mouseX, mouseY, button)) return true;
         }
@@ -593,7 +642,6 @@ public class ProtectionTab extends Tab {
             }
         }
 
-        // 2. Normal Front-to-Back Base Hit Testing (Early returns block fall-through)
         if (rightPanel != null && rightPanel.isMouseOver(mouseX, mouseY)) {
             if (rightPanel.mouseClicked(mouseX, mouseY, button)) return true;
         }
@@ -618,7 +666,6 @@ public class ProtectionTab extends Tab {
         if (unsavedPopup != null && unsavedPopup.isActive()) return true;
         if (addRolePopup != null && addRolePopup.isActive()) return true;
 
-        // Global Overlay Pass for Scrolling
         if (nodeSelector != null && nodeSelector.isExpanded() && nodeSelector.isMouseOver(mouseX, mouseY)) {
             if (leftPanel != null && leftPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         }
@@ -648,8 +695,10 @@ public class ProtectionTab extends Tab {
         if (addRolePopup != null && addRolePopup.isActive()) {
             return addRolePopup.keyPressed(keyCode, scanCode, modifiers);
         }
+        if (confirmDeletePopup != null && confirmDeletePopup.isActive()) {
+            return confirmDeletePopup.keyPressed(keyCode, scanCode, modifiers);
+        }
 
-        // ESC guard for unsaved changes
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && hasUnsavedChanges) {
             closeAllDropdowns();
             unsavedPopup.show();

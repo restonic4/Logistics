@@ -8,6 +8,7 @@ import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
+import com.restonic4.logistics.blocks.protector.data_types.FlagRegistry;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
@@ -31,6 +32,7 @@ public class Logistics {
             .register();
 
     public static void init() {
+        FlagRegistry.init();
         Items.register();
         BlockRegistry.register();
         Sounds.register();
