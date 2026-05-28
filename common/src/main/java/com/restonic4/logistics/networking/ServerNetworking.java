@@ -4,6 +4,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -20,6 +21,15 @@ public class ServerNetworking {
 
         ClientboundCustomPayloadPacket vanillaPacket = new ClientboundCustomPayloadPacket(packet.getId(), buf);
         for (ServerPlayer player : level.players()) {
+            player.connection.send(vanillaPacket);
+        }
+    }
+
+    public static void sendToAll(MinecraftServer server, S2CPacket packet) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        packet.write(buf);
+        ClientboundCustomPayloadPacket vanillaPacket = new ClientboundCustomPayloadPacket(packet.getId(), buf);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.connection.send(vanillaPacket);
         }
     }

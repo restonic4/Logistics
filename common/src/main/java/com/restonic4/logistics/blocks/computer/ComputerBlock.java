@@ -1,9 +1,14 @@
 package com.restonic4.logistics.blocks.computer;
 
+import com.mojang.authlib.GameProfile;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData;
+import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.experiment.Sounds;
+import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -90,7 +95,6 @@ public class ComputerBlock extends BaseNetworkBlock {
                 }
 
                 List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
-
                 for (ItemNetwork itemNetwork : itemNetworks) {
                     for (NetworkNode networkNode : itemNetwork.getNodeIndex().getAllNodes()) {
                         if (networkNode instanceof AccessorNode accessorNode) {
@@ -99,10 +103,20 @@ public class ComputerBlock extends BaseNetworkBlock {
                     }
                 }
 
+                List<ProtectionSyncPacket.ProtectionNodeData> protectionNodes = new ArrayList<>();
+                Map<ProtectionTabDummyData.NodeCache, List<ProtectionSyncPacket.RoleData>> rolesMap = new HashMap<>();
+                for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
+                    protectionNodes.add(new ProtectionSyncPacket.ProtectionNodeData(protectorNode.getUUID(), protectorNode.getUUID().toString(), protectorNode.getBlockPos()));
+                    rolesMap.put(new ProtectionTabDummyData.NodeCache(protectorNode.getRadius(), protectorNode.getUUID()), protectorNode.getRoles());
+                }
+
                 ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword()));
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
+
+                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).toList();
+                ServerNetworking.sendToClient(serverPlayer, new ProtectionSyncPacket(pos, protectionNodes, rolesMap, profiles));
             }
         }
 

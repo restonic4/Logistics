@@ -20,6 +20,8 @@ import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
+import com.restonic4.logistics.blocks.protector.ProtectorBlock;
+import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.PlatformRegistry;
@@ -104,6 +106,17 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, ChargingStationNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<ProtectorBlock, ProtectorNode> PROTECTOR_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("protector"),
+                    () -> new ProtectorBlock(BlockBehaviour.Properties.copy(Blocks.BEACON).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, ProtectorNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

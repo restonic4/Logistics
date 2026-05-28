@@ -2,8 +2,15 @@ package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
+import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData;
+import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.events.ChunkEvents;
+import com.restonic4.logistics.events.PlayerEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.events.core.EventResult;
 import com.restonic4.logistics.migration.MigrationManager;
 import com.restonic4.logistics.migration.NbtWalker;
 import com.restonic4.logistics.networking.ServerNetworking;
@@ -11,20 +18,25 @@ import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -88,6 +100,75 @@ public class NetworkManager extends SavedData {
                 Constants.LOG.info("BlockState for node {} has changed! Updating facing property from {} to {}!", pos, facingNode.getFacing(), live);
                 facingNode.setFacing(live);
             }
+        });
+
+        PlayerEvents.JOIN.register((server, serverPlayer) -> {
+            // Group protectors by dimension to avoid sending data for levels the player isn't in
+            Map<ResourceLocation, Map<UUID, List<ProtectionSyncPacket.RoleData>>> nodeRolesByDimension = new HashMap<>();
+
+            for (ServerLevel level : server.getAllLevels()) {
+                NetworkManager networkManager = NetworkManager.get(level);
+                Map<UUID, List<ProtectionSyncPacket.RoleData>> nodeRoles = new HashMap<>();
+
+                for (Network network : networkManager.networks.values()) {
+                    if (network instanceof EnergyNetwork energyNetwork) {
+                        for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
+                            nodeRoles.put(protectorNode.getUUID(), protectorNode.getRoles());
+                        }
+                    }
+                }
+
+                if (!nodeRoles.isEmpty()) {
+                    nodeRolesByDimension.put(level.dimension().location(), nodeRoles);
+                }
+            }
+
+            // Send each dimension's data wrapped properly
+            for (Map.Entry<ResourceLocation, Map<UUID, List<ProtectionSyncPacket.RoleData>>> entry : nodeRolesByDimension.entrySet()) {
+                ResourceLocation dimensionId = entry.getKey();
+                Map<UUID, List<ProtectionSyncPacket.RoleData>> nodeRoles = entry.getValue();
+
+                // Convert to the per-dimension BlockPos map that the packet expects
+                Map<ProtectionTabDummyData.ReworkThisNonsense, List<ProtectionTabDummyData.Role>> caches = new HashMap<>();
+                ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimensionId));
+
+                for (Map.Entry<UUID, List<ProtectionSyncPacket.RoleData>> roleEntry : nodeRoles.entrySet()) {
+                    NetworkNode node = NetworkManager.get(level).getNodeByUUID(roleEntry.getKey());
+                    if (node instanceof ProtectorNode protectorNode) {
+                        protectorNode.setRoles(roleEntry.getValue());
+
+                        List<ProtectionTabDummyData.Role> convertedRoles = new ArrayList<>();
+                        for (ProtectionSyncPacket.RoleData roleData : roleEntry.getValue()) {
+                            ResourceLocation icon = new ResourceLocation(roleData.iconRl());
+
+                            Map<String, ProtectionTabDummyData.FlagState> flags = new HashMap<>();
+                            for (Map.Entry<String, ProtectionSyncPacket.FlagData> flagEntry : roleData.flags().entrySet()) {
+                                ProtectionSyncPacket.FlagData fd = flagEntry.getValue();
+                                ProtectionTabDummyData.ActionType action = ProtectionTabDummyData.ActionType.valueOf(fd.actionType());
+                                flags.put(flagEntry.getKey(), new ProtectionTabDummyData.FlagState(fd.enabled(), action, fd.damageValue(), fd.message()));
+                            }
+
+                            ProtectionTabDummyData.Role role = new ProtectionTabDummyData.Role(
+                                    roleData.id(), roleData.name(), roleData.order(), icon, flags
+                            );
+                            for (ProtectionSyncPacket.PlayerData pd : roleData.players()) {
+                                role.players.add(new ProtectionTabDummyData.AssignedPlayer(pd.id(), pd.username()));
+                            }
+
+                            convertedRoles.add(role);
+                        }
+
+                        caches.put(new ProtectionTabDummyData.ReworkThisNonsense(protectorNode.getBlockPos(), protectorNode.getRadius()), convertedRoles);
+                    }
+                }
+
+                Map<ResourceLocation, Map<ProtectionTabDummyData.ReworkThisNonsense, List<ProtectionTabDummyData.Role>>> wrapped = new HashMap<>();
+                wrapped.put(dimensionId, caches);
+
+                ServerNetworking.sendToClient(serverPlayer, new ProtectionCacheSyncPacket(wrapped));
+            }
+
+            return EventResult.PASS;
         });
     }
 
@@ -399,6 +480,18 @@ public class NetworkManager extends SavedData {
         Network network = getNetworkByBlockPos(blockPos);
         if (network == null) return null;
         return network.getNodeIndex().findByBlockPos(blockPos);
+    }
+
+    // TODO: Expensive, me no likie ):
+    public @Nullable NetworkNode getNodeByUUID(@NotNull UUID uuid) {
+        for (Network candidate : networks.values()) {
+            NetworkNode node = candidate.getNodeIndex().findByUUID(uuid);
+            if (node != null) {
+                return node;
+            }
+        }
+
+        return null;
     }
 
     public ServerLevel getServerLevel() {

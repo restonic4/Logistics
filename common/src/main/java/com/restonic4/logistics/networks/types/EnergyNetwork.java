@@ -2,6 +2,7 @@ package com.restonic4.logistics.networks.types;
 
 import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
+import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
@@ -162,6 +163,13 @@ public class EnergyNetwork extends Network {
         return getNodeIndex().getAllNodes().stream()
                 .filter(node -> node instanceof NetworkConnectorNode)
                 .map(node -> (NetworkConnectorNode) node)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<ProtectorNode> getProtectors() {
+        return getNodeIndex().getAllNodes().stream()
+                .filter(node -> node instanceof ProtectorNode)
+                .map(node -> (ProtectorNode) node)
                 .collect(Collectors.toSet());
     }
 

@@ -3,6 +3,7 @@
 
   "item.logistics.silicon": "Silicon",
   "item.logistics.chip": "Chip",
+  "item.logistics.kinetic_crystal_shard": "Kinetic Crystal Shard",
 
   "block.logistics.cable": "Cable",
   "block.logistics.generator": "[CREATIVE] Generator",
@@ -10,6 +11,8 @@
   "block.logistics.battery": "Battery",
   "block.logistics.network_connector": "Network Connector",
   "block.logistics.computer": "Computer",
+  "block.logistics.charging_station": "Charging Station",
+  "block.logistics.protector": "Protector",
 
   "block.logistics.pipe": "Pipe",
   "block.logistics.accessor": "Accessor",

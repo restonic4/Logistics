@@ -7,11 +7,13 @@
   "mixins": [
     "CreativeModeTabMixin",
     "events.LevelChunkMixin",
+    "events.PlayerListMixin",
     "events.ServerLevelMixin",
     "migration.ChunkSerializerMixin",
     "migration.EntityMixin",
     "migration.PlayerMixin",
     "networking.ServerGamePacketListenerImplMixin",
+    "protection.PlayerMixin",
     "registries.LootDataManagerMixin",
     "registries.TagLoaderMixin"
   ],

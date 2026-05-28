@@ -7,6 +7,8 @@ import com.restonic4.logistics.blocks.computer.ComputerLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerLogSyncPacket;
 import com.restonic4.logistics.blocks.computer.ComputerOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.RenderCallbacks;
 import com.restonic4.logistics.experiment.ShockwavePacket;
@@ -40,5 +42,7 @@ public class LogisticsClient {
         NetworkingRegistry.registerClientTargetedPacket(ParcelRenderSyncPacket.ID, ParcelRenderSyncPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ShockwavePacket.ID, ShockwavePacket::new);
         NetworkingRegistry.registerClientTargetedPacket(ChargingStationSyncPacket.ID, ChargingStationSyncPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(ProtectionSyncPacket.ID, ProtectionSyncPacket::read);
+        NetworkingRegistry.registerClientTargetedPacket(ProtectionCacheSyncPacket.ID, ProtectionCacheSyncPacket::read);
     }
 }

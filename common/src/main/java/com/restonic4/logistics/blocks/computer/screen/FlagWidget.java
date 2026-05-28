@@ -38,6 +38,13 @@ public class FlagWidget extends AbstractWidget {
         this.flag = flag;
         this.state = initialState;
         this.onChanged = onChanged;
+
+        if (!flag.supportedActions.contains(state.action)) {
+            state.action = flag.supportedActions.isEmpty() ? ActionType.DENY : flag.supportedActions.get(0);
+            state.damageValue = 0;
+            state.message = "";
+        }
+
         buildWidgets();
     }
 

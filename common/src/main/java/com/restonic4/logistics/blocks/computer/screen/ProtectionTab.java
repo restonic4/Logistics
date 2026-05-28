@@ -1,6 +1,10 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
+import com.mojang.authlib.GameProfile;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
 import com.restonic4.logistics.blocks.computer.screen.ProtectionTabDummyData.*;
+import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.*;
 import net.minecraft.client.Minecraft;
@@ -10,6 +14,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
@@ -38,28 +43,56 @@ public class ProtectionTab extends Tab {
     private StyledButton addRoleButton;
 
     // Right panel widgets
-    private EditBox roleNameField;
     private SearchableDropdownWidget<UUID> playerSearchDropdown;
     private StyledButton addPlayerButton;
     private final List<PlayerChipWidget> playerChips = new ArrayList<>();
     private final List<FlagWidget> flagWidgets = new ArrayList<>();
     private StyledButton saveButton;
+    private NumberPickerWidget radiusPicker;
+
+    private ProtectionSyncPacket syncData;
+    private BlockPos computerNodePos;
 
     // Parent reference
     private Screen parent;
-    private int contentX, contentY, contentWidth, contentHeight;
+
+    public boolean isCreativeBlockSource() {
+        if (Minecraft.getInstance().player == null) return false;
+        return Minecraft.getInstance().player.isCreative();
+    }
 
     public ProtectionTab() {
         super(Component.literal("Protection"));
     }
 
+    public void receiveSyncData(ProtectionSyncPacket packet) {
+        this.syncData = packet;
+        this.computerNodePos = packet.computerNodePos();
+        // Refresh the dummy data from server state
+        ProtectionTabDummyData.loadFromPacket(packet);
+        // Rebuild UI with new data
+        refreshLeftPanel();
+        refreshRightPanel();
+    }
+
+    public int getCurrentNodeRadius() {
+        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) {
+            return 0;
+        }
+        return ProtectionTabDummyData.RADIUS.get(selectedNodeIndex);
+    }
+
+    public int getSelectedNodeIndex() {
+        return selectedNodeIndex;
+    }
+
+    public BlockPos getComputerNodePos() {
+        return computerNodePos;
+    }
+
     @Override
     public void init(Screen parent, int x, int y, int width, int height) {
         this.parent = parent;
-        this.contentX = x;
-        this.contentY = y;
-        this.contentWidth = width;
-        this.contentHeight = height;
 
         int leftPanelWidth = Math.max(120, Math.min(160, (int) (width * 0.35)));
         int rightPanelWidth = width - leftPanelWidth - 6;
@@ -134,6 +167,22 @@ public class ProtectionTab extends Tab {
         innerWidth = Math.max(20, innerWidth - 6);
         int currentY = 0;
 
+        rightPanel.addChild(createLabel("Radius:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        currentY += 12;
+
+        // Radius number picker
+        radiusPicker = new NumberPickerWidget(
+                0, 0, innerWidth, 18,
+                Component.empty(),
+                getCurrentNodeRadius(),
+                this::onRadiusChanged
+        );
+        radiusPicker.setRange(0, 320);
+        radiusPicker.setDecimalPlaces(0);
+        radiusPicker.setStep(1.0);
+        rightPanel.addChild(radiusPicker, 0, currentY);
+        currentY += 18 + 12;
+
         // Players label
         rightPanel.addChild(createLabel("Players:", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
@@ -141,9 +190,9 @@ public class ProtectionTab extends Tab {
         // Player search row
         int searchWidth = innerWidth - 24;
         List<SearchableDropdownWidget.DropdownEntry<UUID>> playerEntries = new ArrayList<>();
-        for (Map.Entry<UUID, String> entry : ProtectionTabDummyData.ALL_PLAYERS.entrySet()) {
-            UUID uuid = entry.getKey();
-            String name = entry.getValue();
+        for (GameProfile gameProfile : ProtectionTabDummyData.ALL_PLAYERS) {
+            UUID uuid = gameProfile.getId();
+            String name = gameProfile.getName();
             SearchableDropdownWidget.DropdownIcon icon = (gfx, x, y, size) -> PlayerHeadRenderer.renderHead(gfx, name, uuid, x, y, size);
             playerEntries.add(new SearchableDropdownWidget.DropdownEntry<>(uuid, Component.literal(name), icon));
         }
@@ -221,6 +270,10 @@ public class ProtectionTab extends Tab {
             int rowY = currentY;
 
             for (ProtectionFlag flagDef : ProtectionTabDummyData.FLAGS) {
+                if (flagDef.isOP && !isCreativeBlockSource()) {
+                    continue;
+                }
+
                 if (col >= 2) {
                     col = 0;
                     rowX = 0;
@@ -326,22 +379,6 @@ public class ProtectionTab extends Tab {
             if (index < roleEntries.size()) {
                 roleEntries.get(index).setName(newName);
             }
-            // Update right panel field if this is the selected role
-            if (index == selectedRoleIndex && roleNameField != null) {
-                roleNameField.setValue(newName);
-            }
-        }
-    }
-
-    private void onRoleNameFieldChanged(String text) {
-        Role role = getSelectedRole();
-        if (role != null && !text.isBlank()) {
-            role.name = text;
-            markDirty();
-            // Sync to left panel
-            if (selectedRoleIndex >= 0 && selectedRoleIndex < roleEntries.size()) {
-                roleEntries.get(selectedRoleIndex).setName(text);
-            }
         }
     }
 
@@ -378,6 +415,9 @@ public class ProtectionTab extends Tab {
             // Create new role with default flags (all off/deny)
             Map<String, FlagState> defaultFlags = new HashMap<>();
             for (ProtectionFlag f : ProtectionTabDummyData.FLAGS) {
+                if (f.isOP && !isCreativeBlockSource()) {
+                    continue;
+                }
                 defaultFlags.put(f.id, new FlagState(false, ActionType.DENY, 0, ""));
             }
             Role newRole = new Role(
@@ -395,6 +435,12 @@ public class ProtectionTab extends Tab {
         }
     }
 
+    private void onRadiusChanged(double newRadius) {
+        if (selectedNodeIndex < 0 || selectedNodeIndex >= ProtectionTabDummyData.NODES.size()) return;
+        hasUnsavedChanges = true;
+        ProtectionTabDummyData.RADIUS.set(selectedNodeIndex, (int) newRadius);
+    }
+
     private void onAddPlayerClicked() {
         UUID selectedPlayer = playerSearchDropdown.getSelectedValue();
         if (selectedPlayer == null) return;
@@ -407,7 +453,12 @@ public class ProtectionTab extends Tab {
             if (p.id.equals(selectedPlayer)) return;
         }
 
-        String username = ProtectionTabDummyData.ALL_PLAYERS.get(selectedPlayer);
+        String username = null;
+        for (GameProfile gameProfile : ProtectionTabDummyData.ALL_PLAYERS) {
+            if (gameProfile.getId().equals(selectedPlayer)) {
+                username = gameProfile.getName();
+            }
+        }
         if (username != null) {
             role.players.add(new AssignedPlayer(selectedPlayer, username));
             markDirty();
@@ -433,8 +484,18 @@ public class ProtectionTab extends Tab {
     }
 
     private void onSaveClicked() {
-        // Currently a no-op for dummy data
+        // Build packet from current client state
+        if (computerNodePos == null) {
+            computerNodePos = ComputerScreen.getComputerNode(); // fallback
+        }
+
+        ProtectionSavePacket packet = ProtectionSavePacket.fromTabState(this);
+        ClientNetworking.sendToServer(packet);
+
         hasUnsavedChanges = false;
+
+        // Optional: show brief feedback
+        // Minecraft.getInstance().player.displayClientMessage(Component.literal("Saved!"), true);
     }
 
     private void markDirty() {

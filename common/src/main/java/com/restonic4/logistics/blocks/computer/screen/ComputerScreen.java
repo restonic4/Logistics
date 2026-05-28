@@ -2,6 +2,7 @@ package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionSyncPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.TabDistribution;
 import com.restonic4.logistics.screens.tabs.TabbedScreen;
@@ -26,6 +27,7 @@ public class ComputerScreen extends TabbedScreen {
     private static String systemName;
     private static String expectedPassword;
     private boolean isLoggedIn = false;
+    private static ProtectionSyncPacket lastProtectionData;
 
     private final TransferTab transferTab;
     private final ProtectionTab protectionTab;
@@ -67,10 +69,24 @@ public class ComputerScreen extends TabbedScreen {
         }
     }
 
+    public static void setProtectionData(ProtectionSyncPacket packet) {
+        lastProtectionData = packet;
+        // If the screen is already open, refresh the tab
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen instanceof ComputerScreen screen && screen.protectionTab != null) {
+            // The tab will read from the packet in its next init()
+            screen.protectionTab.receiveSyncData(packet);
+        }
+    }
+
     public static void setComputerState(ComputerSyncPacket computerSyncPacket) {
         isInstalled = computerSyncPacket.isInstalled();
         systemName = computerSyncPacket.systemName();
         expectedPassword = computerSyncPacket.rootPassword();
+    }
+
+    public static ProtectionSyncPacket getLastProtectionData() {
+        return lastProtectionData;
     }
 
     public void performLogin() {
