@@ -42,6 +42,16 @@ public final class ProtectionMixinUtils {
         }
     }
 
+    /** True when a zone exists and the flag is explicitly disabled (allowed). Used for exception logic. */
+    public static boolean isExplicitlyAllowed(FlagData fd) {
+        return fd != null && !fd.enabled();
+    }
+
+    /** True when a zone exists and the flag is enabled (denied). */
+    public static boolean isZoneDenied(FlagData fd) {
+        return fd != null && fd.enabled();
+    }
+
     public static void message(Player player, FlagData fd) {
         if (!fd.message().isEmpty() && player instanceof ServerPlayer sp) {
             sp.sendSystemMessage(Component.literal(fd.message()));

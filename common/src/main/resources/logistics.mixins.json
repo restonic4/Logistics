@@ -28,6 +28,7 @@
     "protection.LivingEntityMixin",
     "protection.MobMixin",
     "protection.PlayerMixin",
+    "protection.ServerGamePacketListenerImplMixin",
     "protection.ServerLevelMixin",
     "protection.ServerPlayerGameModeMixin",
     "protection.ServerPlayerMixin",

@@ -56,4 +56,15 @@ public class LocalPlayerMixin {
 
         if (self.isSprinting()) self.setSprinting(false);
     }
+
+    // ==================== item_drop ====================
+    @Inject(method = "drop", at = @At("HEAD"), cancellable = true)
+    private void onDrop(boolean dropAll, CallbackInfoReturnable<Boolean> cir) {
+        LocalPlayer self = (LocalPlayer) (Object) this;
+        if (!self.level().isClientSide()) return;
+
+        FlagData fd = ClientProtectionCache.getFlagState(
+                self.level().dimension().location(), self.blockPosition(), self, "item_drop");
+        if (fd != null && fd.enabled()) cir.setReturnValue(false);
+    }
 }

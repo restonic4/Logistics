@@ -105,12 +105,15 @@ public class MultiPlayerGameModeMixin {
         if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
     }
 
-    // Inventory cursor drops (ClickType.THROW)
     @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
-    private void onHandleInventoryMouseClick(int $$0, int $$1, int $$2, ClickType clickType, Player $$4, CallbackInfo ci) {
-        if (clickType != ClickType.THROW) return;
+    private void onHandleInventoryMouseClick(int $$0, int $$1, int $$2, ClickType $$3, Player $$4, CallbackInfo ci) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.level().isClientSide()) return;
+
+        boolean isThrow = $$3 == ClickType.THROW;
+        boolean isCursorDrop = $$3 == ClickType.PICKUP && $$1 == -999 && !player.containerMenu.getCarried().isEmpty();
+
+        if (!isThrow && !isCursorDrop) return;
 
         FlagData fd = ClientProtectionCache.getFlagState(
                 player.level().dimension().location(), player.blockPosition(), player, "item_drop");
