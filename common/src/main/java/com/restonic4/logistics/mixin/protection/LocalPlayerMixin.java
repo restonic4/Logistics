@@ -19,21 +19,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LocalPlayer.class)
 public class LocalPlayerMixin {
-
-    // ==================== chorus_fruit ====================
-    @Inject(method = "startUsingItem", at = @At("HEAD"), cancellable = true)
-    private void onStartUsingItem(InteractionHand hand, CallbackInfo ci) {
-        LocalPlayer self = (LocalPlayer) (Object) this;
-        if (!self.level().isClientSide()) return;
-
-        ItemStack stack = self.getItemInHand(hand);
-        if (!stack.is(Items.CHORUS_FRUIT)) return;
-
-        FlagData fd = ClientProtectionCache.getFlagState(
-                self.level().dimension().location(), self.blockPosition(), self, "chorus_fruit");
-        if (fd != null && fd.enabled()) ci.cancel();
-    }
-
     // ==================== sneaking – HEAD so pose updates this tick ====================
     @Inject(method = "tick", at = @At("TAIL"))
     private void logistics$onClientTickTail(CallbackInfo ci) {
@@ -64,18 +49,6 @@ public class LocalPlayerMixin {
             player.setPose(Pose.STANDING);
             player.refreshDimensions();
         }
-    }
-
-    // ==================== walk_in ====================
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void onTickWalkIn(CallbackInfo ci) {
-        LocalPlayer self = (LocalPlayer) (Object) this;
-        if (!self.level().isClientSide()) return;
-
-        FlagData fd = ClientProtectionCache.getFlagState(self.level().dimension().location(), self.blockPosition(), self, "walk_in");
-        if (fd == null || !fd.enabled()) return;
-
-        if (self.isSprinting()) self.setSprinting(false);
     }
 
     // ==================== item_drop ====================

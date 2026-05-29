@@ -52,6 +52,18 @@ public final class ProtectionMixinUtils {
         return fd != null && fd.enabled();
     }
 
+    public static ActionType getActionType(FlagData fd, ActionType defaultAction) {
+        try {
+            return ActionType.valueOf(fd.actionType());
+        } catch (IllegalArgumentException e) {
+            return defaultAction;
+        }
+    }
+
+    public static ActionType getActionType(FlagData fd) {
+        return getActionType(fd, ActionType.DENY);
+    }
+
     public static void message(Player player, FlagData fd) {
         if (!fd.message().isEmpty() && player instanceof ServerPlayer sp) {
             sp.sendSystemMessage(Component.literal(fd.message()));

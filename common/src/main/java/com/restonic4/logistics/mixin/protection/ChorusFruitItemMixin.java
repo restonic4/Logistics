@@ -19,10 +19,9 @@ public class ChorusFruitItemMixin {
 
     @Inject(method = "finishUsingItem", at = @At("HEAD"), cancellable = true)
     private void onFinishUsing(ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> cir) {
-        if (level.isClientSide() || !(entity instanceof Player player) || !(player instanceof ServerPlayer)) return;
+        if (!(entity instanceof Player player)) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                level.dimension().location(), player.blockPosition(), player, "chorus_fruit");
+        FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), player.blockPosition(), player, "chorus_fruit");
         ProtectionMixinUtils.handleReturn(player, fd, cir, stack);
     }
 }

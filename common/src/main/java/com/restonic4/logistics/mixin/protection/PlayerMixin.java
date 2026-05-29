@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -94,42 +95,53 @@ public class PlayerMixin {
         ProtectionMixinUtils.handle(player, fd, ci);
     }
 
-    // ==================== sneaking (tick) ====================
+    // ==================== sneaking (tick) and walk_in ====================
     @Inject(method = "tick", at = @At("TAIL"))
     private void logistics$onTickTail(CallbackInfo ci) {
         Player player = (Player) (Object) this;
         if (player.level().isClientSide()) return;
 
-        FlagData fd = ProtectionMixinUtils.getServerFlag(
-                player.level(), player.blockPosition(), player, "sneaking"
-        );
-        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+        BlockPos pos = player.blockPosition();
 
-        try {
-            ActionType action = ActionType.valueOf(fd.actionType());
-            switch (action) {
+        // ==================== SNEAKING SYSTEM ====================
+        FlagData sneakingFlag = ProtectionMixinUtils.getServerFlag(player.level(), pos, player, "sneaking");
+        if (ProtectionMixinUtils.isZoneDenied(sneakingFlag)) {
+            ActionType sneakingAction = ProtectionMixinUtils.getActionType(sneakingFlag);
+
+            switch (sneakingAction) {
                 case DENY -> {
-                    if (player.getPose() == Pose.CROUCHING
-                            && player.canEnterPose(Pose.STANDING)) {
+                    if (player.getPose() == Pose.CROUCHING && player.canEnterPose(Pose.STANDING)) {
                         player.setPose(Pose.STANDING);
                         player.refreshDimensions();
                     }
                     player.setShiftKeyDown(false);
                 }
                 case MESSAGE -> {
-                    // Only message if they are actively trying to sneak
                     if (player.isShiftKeyDown() && player.canEnterPose(Pose.STANDING) && player.tickCount % 20 == 0) {
-                        ProtectionMixinUtils.message(player, fd);
+                        ProtectionMixinUtils.message(player, sneakingFlag);
                     }
                 }
                 case DAMAGE -> {
-                    // Only damage if they are actively trying to sneak
                     if (player.isShiftKeyDown() && player.canEnterPose(Pose.STANDING) && player.tickCount % 20 == 0) {
-                        ProtectionMixinUtils.damage(player, fd);
+                        ProtectionMixinUtils.damage(player, sneakingFlag);
                     }
                 }
             }
-        } catch (IllegalArgumentException ignored) {}
+        }
+
+        // ==================== WALK_IN SYSTEM ====================
+        if (player.tickCount % 20 == 0) {
+            FlagData walkInFlag = ProtectionMixinUtils.getServerFlag(player.level(), pos, player, "walk_in");
+
+            if (ProtectionMixinUtils.isZoneDenied(walkInFlag)) {
+                ActionType walkInAction = ProtectionMixinUtils.getActionType(walkInFlag);
+
+                switch (walkInAction) {
+                    case DAMAGE -> ProtectionMixinUtils.damage(player, walkInFlag);
+                    case MESSAGE -> ProtectionMixinUtils.message(player, walkInFlag);
+                }
+            }
+        }
     }
 
     @Inject(
@@ -164,46 +176,5 @@ public class PlayerMixin {
                 cir.setReturnValue(Entity.MovementEmission.ALL);
             }
         } catch (IllegalArgumentException ignored) {}
-    }
-
-    // ==================== walk_in ====================
-    @Unique private Vec3 logistics$lastValidPos = Vec3.ZERO;
-    @Unique private boolean logistics$wasInZone = false;
-
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void onTickWalkIn(CallbackInfo ci) {
-        Player self = (Player) (Object) this;
-        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
-
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "walk_in");
-
-        if (fd == null || !fd.enabled()) {
-            logistics$wasInZone = false;
-            logistics$lastValidPos = player.position();
-            return;
-        }
-
-        if (!logistics$wasInZone) {
-            ActionType action;
-            try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { logistics$wasInZone = true; return; }
-
-            switch (action) {
-                case DENY -> {
-                    if (logistics$lastValidPos.lengthSqr() > 0.001) {
-                        player.teleportTo(logistics$lastValidPos.x, logistics$lastValidPos.y, logistics$lastValidPos.z);
-                    }
-                }
-                case MESSAGE -> {
-                    ProtectionMixinUtils.message(player, fd);
-                    if (logistics$lastValidPos.lengthSqr() > 0.001) {
-                        player.teleportTo(logistics$lastValidPos.x, logistics$lastValidPos.y, logistics$lastValidPos.z);
-                    }
-                }
-                case DAMAGE -> ProtectionMixinUtils.damage(player, fd);
-            }
-        }
-
-        logistics$wasInZone = true;
     }
 }

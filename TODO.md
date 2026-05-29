@@ -11,5 +11,13 @@ Version del bloque en creativo? Que no haga falta una network, sea standalone. E
 Tipos de acciones, es decir, Denegar, Dañar (Con variacion de una sola vez, como poner un bloque, o por tiempo, como sneak, ej: 2 corazones cada 20 ticks)
 Beacon
 
-- Rango
 - Disable tab si no hay protectors
+
+- Interactions (Abrir puerta, click derecho)
+- Entity damaging
+- (OP) Fire damage
+- (OP) Hunger
+- Explosions (Si break blocks esta activado, entonces de por si los bloques no se romperan)
+- (OP por ahora) Mob spawn
+- (OP) Fall damage
+- Mob grief (Creepers, endermans)

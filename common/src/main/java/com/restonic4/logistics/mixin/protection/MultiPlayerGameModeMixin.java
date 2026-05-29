@@ -66,25 +66,10 @@ public class MultiPlayerGameModeMixin {
      * 3. block_interaction
      */
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
-    private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult,
-                             CallbackInfoReturnable<InteractionResult> cir) {
+    private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
         if (player == null || !player.level().isClientSide()) return;
 
         BlockPos pos = hitResult.getBlockPos();
-        ItemStack stack = player.getItemInHand(hand);
-        String itemId = stack.getItem().builtInRegistryHolder().key().location().toString();
-        boolean isBucket = itemId.contains("bucket") || itemId.contains("_bucket");
-
-        // Exception: use_buckets
-        if (isBucket) {
-            FlagData fd = ClientProtectionCache.getFlagState(
-                    player.level().dimension().location(), pos, player, "use_buckets");
-            if (fd != null && !fd.enabled()) return; // explicitly allowed
-            if (fd != null && fd.enabled()) {
-                cir.setReturnValue(InteractionResult.FAIL);
-                return;
-            }
-        }
 
         // Exception: open_containers
         BlockEntity be = player.level().getBlockEntity(pos);
@@ -100,8 +85,7 @@ public class MultiPlayerGameModeMixin {
 
         // General block_interaction
         // place_blocks is NOT here; it lives in BlockItemMixin to avoid blocking interactions
-        FlagData fd = ClientProtectionCache.getFlagState(
-                player.level().dimension().location(), pos, player, "block_interaction");
+        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), pos, player, "block_interaction");
         if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
     }
 

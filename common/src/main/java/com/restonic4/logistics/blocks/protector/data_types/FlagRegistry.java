@@ -18,7 +18,7 @@ public final class FlagRegistry {
         register("entity_interaction", "Entity Interaction", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
         register("attack_entities", "Attack Entities", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
         register("villager_trade", "Villager Trade", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
-        register("fire_spread", "Fire Spread", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
+        register("fire_tick", "Fire Tick", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
         register("explosions", "Explosions", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
         register("walk_in", "Walk In", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
         register("item_pickup", "Item Pickup", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);

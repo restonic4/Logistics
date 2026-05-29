@@ -20,8 +20,7 @@ public class FireBlockMixin {
     private void onTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
         if (level.isClientSide()) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                level.dimension().location(), pos, null, "fire_spread");
+        FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, null, "fire_tick");
         if (fd == null || !fd.enabled()) return;
 
         try {

@@ -41,22 +41,9 @@ public class ServerPlayerGameModeMixin {
      * 3. block_interaction — general catch-all for remaining block interactions
      */
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
-    private void onUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand,
-                             BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
+    private void onUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
         if (player == null) return;
         BlockPos pos = hitResult.getBlockPos();
-
-        // Exception: use_buckets
-        String itemId = stack.getItem().builtInRegistryHolder().key().location().toString();
-        boolean isBucket = itemId.contains("bucket") || itemId.contains("_bucket");
-        if (isBucket) {
-            FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "use_buckets");
-            if (fd != null && !fd.enabled()) return; // explicitly allowed
-            if (fd != null && fd.enabled()) {
-                ProtectionMixinUtils.handleResult(player, fd, cir);
-                return;
-            }
-        }
 
         // Exception: open_containers
         BlockEntity be = level.getBlockEntity(pos);
