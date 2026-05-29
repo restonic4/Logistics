@@ -4,7 +4,6 @@ import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -39,16 +38,11 @@ public class BlockItemMixin {
         Player player = context.getPlayer();
         if (player == null) return;
 
+        FlagData fd = ProtectionMixinUtils.getFlag(level, pos, player, "place_blocks");
         if (level.isClientSide()) {
-            if (!(player instanceof LocalPlayer localPlayer)) return;
-            FlagData fd = ClientProtectionCache.getFlagState(
-                    localPlayer.level().dimension().location(), pos, localPlayer, "place_blocks");
             if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
         } else {
-            if (!(player instanceof ServerPlayer serverPlayer)) return;
-            FlagData fd = ServerProtectionCache.getFlagState(
-                    level.dimension().location(), pos, serverPlayer, "place_blocks");
-            ProtectionMixinUtils.handleResult(serverPlayer, fd, cir);
+            ProtectionMixinUtils.handleResult(player, fd, cir);
         }
     }
 }

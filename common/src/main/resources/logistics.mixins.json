@@ -20,6 +20,7 @@
     "protection.EndermanLeaveBlockMixin",
     "protection.EndermanTakeBlockMixin",
     "protection.EnderpearlItemMixin",
+    "protection.EntityMixin",
     "protection.ExplosionMixin",
     "protection.FarmBlockMixin",
     "protection.FireBlockMixin",

@@ -8,3 +8,5 @@ accessible class net/minecraft/client/sounds/SoundManager$Preparations
 accessible field net/minecraft/client/gui/components/SplashRenderer splash Ljava/lang/String;
 accessible field net/minecraft/server/level/ServerPlayerGameMode player Lnet/minecraft/server/level/ServerPlayer;
 accessible field net/minecraft/world/level/Explosion level Lnet/minecraft/world/level/Level;
+accessible field net/minecraft/client/player/LocalPlayer crouching Z
+accessible method net/minecraft/world/entity/Entity canEnterPose (Lnet/minecraft/world/entity/Pose;)Z

@@ -2,6 +2,7 @@ package com.restonic4.logistics.mixin.protection;
 
 import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
+import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import net.minecraft.network.chat.Component;
@@ -10,6 +11,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -93,34 +95,75 @@ public class PlayerMixin {
     }
 
     // ==================== sneaking (tick) ====================
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void onTickSneaking(CallbackInfo ci) {
-        Player self = (Player) (Object) this;
-        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
-        if (!player.isShiftKeyDown()) return;
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void logistics$onTickTail(CallbackInfo ci) {
+        Player player = (Player) (Object) this;
+        if (player.level().isClientSide()) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "sneaking");
-        if (fd == null || !fd.enabled()) return;
+        FlagData fd = ProtectionMixinUtils.getServerFlag(
+                player.level(), player.blockPosition(), player, "sneaking"
+        );
+        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
 
-        ActionType action;
-        try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { return; }
+        try {
+            ActionType action = ActionType.valueOf(fd.actionType());
+            switch (action) {
+                case DENY -> {
+                    if (player.getPose() == Pose.CROUCHING
+                            && player.canEnterPose(Pose.STANDING)) {
+                        player.setPose(Pose.STANDING);
+                        player.refreshDimensions();
+                    }
+                    player.setShiftKeyDown(false);
+                }
+                case MESSAGE -> {
+                    // Only message if they are actively trying to sneak
+                    if (player.isShiftKeyDown() && player.canEnterPose(Pose.STANDING) && player.tickCount % 20 == 0) {
+                        ProtectionMixinUtils.message(player, fd);
+                    }
+                }
+                case DAMAGE -> {
+                    // Only damage if they are actively trying to sneak
+                    if (player.isShiftKeyDown() && player.canEnterPose(Pose.STANDING) && player.tickCount % 20 == 0) {
+                        ProtectionMixinUtils.damage(player, fd);
+                    }
+                }
+            }
+        } catch (IllegalArgumentException ignored) {}
+    }
 
-        switch (action) {
-            case DENY -> {
-                player.setShiftKeyDown(false);
-                if (player.getPose() == Pose.CROUCHING) player.setPose(Pose.STANDING);
+    @Inject(
+            method = "maybeBackOffFromEdge",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void logistics$cancelEdgeBackOff(Vec3 movement, MoverType mover, CallbackInfoReturnable<Vec3> cir) {
+        Player player = (Player)(Object)this;
+
+        // Use the correct cache for the logical side
+        FlagData fd = ProtectionMixinUtils.getFlag(player.level(), player.blockPosition(), player, "sneaking");
+        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+
+        try {
+            if (ActionType.valueOf(fd.actionType()) == ActionType.DENY) {
+                // Return the original, unmodified movement vector — do not back off from the edge
+                cir.setReturnValue(movement);
             }
-            case MESSAGE -> {
-                if (player.tickCount % 60 == 0) ProtectionMixinUtils.message(player, fd);
-                player.setShiftKeyDown(false);
-                if (player.getPose() == Pose.CROUCHING) player.setPose(Pose.STANDING);
+        } catch (IllegalArgumentException ignored) {}
+    }
+
+    @Inject(method = "getMovementEmission", at = @At("HEAD"), cancellable = true)
+    private void logistics$forceMovementEmission(CallbackInfoReturnable<Entity.MovementEmission> cir) {
+        Player player = (Player)(Object)this;
+
+        FlagData fd = ProtectionMixinUtils.getFlag(player.level(), player.blockPosition(), player, "sneaking");
+        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+
+        try {
+            if (ActionType.valueOf(fd.actionType()) == ActionType.DENY) {
+                cir.setReturnValue(Entity.MovementEmission.ALL);
             }
-            case DAMAGE -> {
-                if (player.tickCount % 20 == 0) ProtectionMixinUtils.damage(player, fd);
-                // intentionally keep sneaking so damage ticks accumulate while they hold the key
-            }
-        }
+        } catch (IllegalArgumentException ignored) {}
     }
 
     // ==================== walk_in ====================
