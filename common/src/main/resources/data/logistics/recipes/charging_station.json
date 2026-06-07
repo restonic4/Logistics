@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "# #",
+    "TLT",
+    "TTT"
+  ],
+  "key": {
+    "#": {
+      "item": "minecraft:copper_ingot"
+    },
+    "T": {
+      "item": "minecraft:tuff"
+    },
+    "L": {
+      "item": "logistics:chip"
+    }
+  },
+  "result": {
+    "item": "logistics:charging_station"
+  }
+}

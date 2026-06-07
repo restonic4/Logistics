@@ -27,12 +27,12 @@ public class AddRolePopup {
         this.onCancel = onCancel;
 
         Font font = Minecraft.getInstance().font;
-        this.nameField = new EditBox(font, 0, 0, 160, 18, Component.literal("Role Name"));
+        this.nameField = new EditBox(font, 0, 0, 160, 18, Component.translatable("screen.logistics.computer.tab.protector.role.name"));
         this.nameField.setTextColor(0xFFFFFFFF);
         this.nameField.setBordered(true);
         this.nameField.setMaxLength(64);
 
-        this.createButton = new StyledButton(0, 0, 80, 20, Component.literal("Create"), () -> {
+        this.createButton = new StyledButton(0, 0, 80, 20, Component.translatable("screen.logistics.generic.create"), () -> {
             if (!nameField.getValue().isBlank()) {
                 active = false;
                 onCreate.accept(nameField.getValue().trim());
@@ -40,7 +40,7 @@ public class AddRolePopup {
         });
         this.createButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
 
-        this.cancelButton = new StyledButton(0, 0, 80, 20, Component.literal("Cancel"), () -> {
+        this.cancelButton = new StyledButton(0, 0, 80, 20, Component.translatable("screen.logistics.generic.cancel"), () -> {
             active = false;
             onCancel.run();
         });
@@ -90,8 +90,10 @@ public class AddRolePopup {
 
         // Title
         Font font = Minecraft.getInstance().font;
-        String title = "Create New Role";
-        graphics.drawString(font, title, x + (width - font.width(title)) / 2, y + 8, 0xFFFFFFFF, false);
+        /*String title = Component.translatable("screen.logistics.computer.tab.protector.role.create").getString();
+        graphics.drawString(font, title, x + (width - font.width(title)) / 2, y + 8, 0xFFFFFFFF, false);*/
+        Component title = Component.translatable("screen.logistics.computer.tab.protector.role.create");
+        graphics.drawCenteredString(font, title, x + width / 2, y + 8, 0xFFFFFFFF);
 
         // Name field
         nameField.setX(x + 20);

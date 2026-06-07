@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "logistics:broken_kinetic_crystal_shard"
+    },
+    {
+      "item": "logistics:broken_kinetic_crystal_shard"
+    },
+    {
+      "item": "logistics:broken_kinetic_crystal_shard"
+    },
+    {
+      "item": "logistics:broken_kinetic_crystal_shard"
+    }
+  ],
+  "result": {
+    "item": "logistics:kinetic_crystal_shard",
+    "count": 1
+  }
+}

@@ -29,6 +29,7 @@ public final class NodeIndex {
     }
 
     public void unregister(NetworkNode node) {
+        node.onRemove();
         node.setNetwork(null);
         byUUID.remove(node.getUUID());
         byBlockPos.remove(node.getBlockPos());

@@ -38,16 +38,11 @@ public record ProtectionSavePacket(BlockPos computerNodePos, Map<UUID, Protector
                 protector.setRadius(data.getRadius());
                 protector.setCreative(data.isCreative());
                 protector.setRoles(data.getRoles());
+                // we ignore power
             }
         }
 
-        // Rebuild server cache for this dimension
-        List<ProtectionZone> zones = ServerProtectionCache.rebuildForLevel(level);
-
-        // Broadcast lightweight cache to all clients in this dimension
-        Map<ResourceLocation, List<ProtectionZone>> wrapped = new HashMap<>();
-        wrapped.put(dim, zones);
-        ServerNetworking.sendToAllInLevel(level, new ProtectionCacheSyncPacket(wrapped));
+        ServerProtectionCache.updateAllCachesForLevel(level, "Client data changes");
     }
 
     @Override

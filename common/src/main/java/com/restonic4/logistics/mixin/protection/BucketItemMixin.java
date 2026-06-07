@@ -37,22 +37,15 @@ public class BucketItemMixin {
     ) {
         BlockPos pos = hitResult.getBlockPos();
         ItemStack itemStack = player.getItemInHand(interactionHand);
+
         FlagData fd = ProtectionMixinUtils.getFlag(level, pos, player, "use_buckets");
+        if (!ProtectionMixinUtils.isZoneActive(level, pos, fd)) return;
 
-        if (ProtectionMixinUtils.isExplicitlyAllowed(fd)) return;
-        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
-
-        ActionType action = ActionType.valueOf(fd.actionType());
-        switch (action) {
+        ActionType actionType = ProtectionMixinUtils.getActionType(fd);
+        switch (actionType) {
             case DENY -> cir.setReturnValue(InteractionResultHolder.pass(itemStack));
-            case MESSAGE -> {
-                ProtectionMixinUtils.message(player, fd);
-                cir.setReturnValue(InteractionResultHolder.pass(itemStack));
-            }
-            case DAMAGE -> {
-                ProtectionMixinUtils.damage(player, fd);
-                cir.setReturnValue(InteractionResultHolder.pass(itemStack));
-            }
+            case MESSAGE -> ProtectionMixinUtils.message(player, fd);
+            case DAMAGE -> ProtectionMixinUtils.damage(player, fd);
         }
     }
 }

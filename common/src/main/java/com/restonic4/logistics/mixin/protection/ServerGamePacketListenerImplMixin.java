@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
@@ -20,21 +21,12 @@ public class ServerGamePacketListenerImplMixin {
     @Inject(method = "handlePlayerAction", at = @At("HEAD"), cancellable = true)
     private void onHandlePlayerAction(ServerboundPlayerActionPacket packet, CallbackInfo ci) {
         ServerboundPlayerActionPacket.Action action = packet.getAction();
-
-        if (action != ServerboundPlayerActionPacket.Action.DROP_ITEM && action != ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) {
-            return;
-        }
-
+        if (action != ServerboundPlayerActionPacket.Action.DROP_ITEM && action != ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) return;
         if (this.player == null) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                this.player.level().dimension().location(),
-                this.player.blockPosition(),
-                this.player,
-                "item_drop"
-        );
-        if (fd != null && fd.enabled()) {
-            ci.cancel();
-        }
+        FlagData fd = ServerProtectionCache.getFlagState(this.player.level().dimension().location(), this.player.blockPosition(), this.player, "item_drop");
+        if (!ProtectionMixinUtils.isZoneActive(this.player.level(), this.player.blockPosition(), fd)) return;
+
+        ci.cancel();
     }
 }

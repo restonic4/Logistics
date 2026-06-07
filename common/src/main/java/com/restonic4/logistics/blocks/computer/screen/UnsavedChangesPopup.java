@@ -25,19 +25,19 @@ public class UnsavedChangesPopup {
         this.onDiscardAndClose = onDiscardAndClose;
         this.onCancel = onCancel;
 
-        this.saveButton = new StyledButton(0, 0, 90, 20, Component.literal("Save & Close"), () -> {
+        this.saveButton = new StyledButton(0, 0, 90, 20, Component.translatable("screen.logistics.generic.save_close"), () -> {
             active = false;
             onSaveAndClose.run();
         });
         this.saveButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
 
-        this.discardButton = new StyledButton(0, 0, 110, 20, Component.literal("Discard & Close"), () -> {
+        this.discardButton = new StyledButton(0, 0, 110, 20, Component.translatable("screen.logistics.generic.discard_close"), () -> {
             active = false;
             onDiscardAndClose.run();
         });
         this.discardButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
 
-        this.cancelButton = new StyledButton(0, 0, 70, 20, Component.literal("Cancel"), () -> {
+        this.cancelButton = new StyledButton(0, 0, 70, 20, Component.translatable("screen.logistics.generic.cancel"), () -> {
             active = false;
             onCancel.run();
         });
@@ -79,7 +79,7 @@ public class UnsavedChangesPopup {
 
         // Title
         Font font = Minecraft.getInstance().font;
-        String title = "You have unsaved changes. Save before closing?";
+        String title = Component.translatable("screen.logistics.computer.tab.protector.unsaved").getString();
         graphics.drawString(font, title, x + (width - font.width(title)) / 2, y + 15, 0xFFFFFFFF, false);
 
         // Buttons

@@ -21,8 +21,9 @@ public class FarmBlockMixin {
     private void onFallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance, CallbackInfo ci) {
         if (level.isClientSide() || !(entity instanceof Player player)) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                level.dimension().location(), pos, player, "trample_crops");
+        FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, player, "trample_crops");
+        if (!(ProtectionMixinUtils.isZoneActive(level, pos, fd))) return;
+
         ProtectionMixinUtils.handle(player, fd, ci);
     }
 }

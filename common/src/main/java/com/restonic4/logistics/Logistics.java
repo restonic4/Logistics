@@ -1,8 +1,8 @@
 package com.restonic4.logistics;
 
+import com.restonic4.logistics.audio.network.ServerboundAudioControlPacket;
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
-import com.restonic4.logistics.blocks.charging_station.ChargingStationInteractPacket;
 import com.restonic4.logistics.blocks.computer.ComputerClientLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
@@ -10,9 +10,9 @@ import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
 import com.restonic4.logistics.blocks.protector.data_types.FlagRegistry;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
-import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
 import com.restonic4.logistics.experiment.Items;
+import com.restonic4.logistics.experiment.Recipes;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.NetworkManager;
@@ -38,6 +38,7 @@ public class Logistics {
         Sounds.register();
         CompatibilityManager.registerCommon();
         NetworkManager.register();
+        Recipes.register();
 
         ServerTickEvents.END.register(server -> {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
@@ -51,8 +52,8 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(ComputerScreenOffPacket.ID, ComputerScreenOffPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerInstallPacket.ID, ComputerInstallPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerClientLogPushPacket.ID, ComputerClientLogPushPacket::new);
-        NetworkingRegistry.registerServerTargetedPacket(ChargingStationInteractPacket.ID, ChargingStationInteractPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ProtectionSavePacket.ID, ProtectionSavePacket::read);
+        NetworkingRegistry.registerServerTargetedPacket(ServerboundAudioControlPacket.ID, ServerboundAudioControlPacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

@@ -36,6 +36,7 @@ public abstract class InventoryNode extends ItemNode {
 
     @Nullable protected abstract BlockPos resolveTargetPos();
 
+    // TODO: Broken, ghost items
     public List<ItemStack> getRawPhysicalInventory(ServerLevel level) {
         Container container = resolveContainer(level);
 
@@ -64,6 +65,7 @@ public abstract class InventoryNode extends ItemNode {
         }
     }
 
+    // TODO: Broken, ghost items
     public List<ItemStack> getVirtualInventory(ServerLevel level) {
         List<ItemStack> rawInv = getRawPhysicalInventory(level);
 
@@ -263,7 +265,7 @@ public abstract class InventoryNode extends ItemNode {
     }
 
     @Nullable
-    private Container resolveContainer(ServerLevel level) {
+    protected Container resolveContainer(ServerLevel level) {
         BlockPos target = resolveTargetPos();
         if (target == null) return null;
         if (!level.isLoaded(target)) return null;
@@ -290,7 +292,8 @@ public abstract class InventoryNode extends ItemNode {
         }
     }
 
-    private List<ItemStack> readFromContainer(Container container) {
+    // TODO: Broken, ghost items
+    protected List<ItemStack> readFromContainer(Container container) {
         List<ItemStack> result = new ArrayList<>(container.getContainerSize());
         for (int i = 0; i < container.getContainerSize(); i++) {
             result.add(container.getItem(i).copy());

@@ -19,6 +19,15 @@ repositories {
 
     // Reach Entity Attributes
     maven { url = "https://maven.jamieswhiteshirt.com/libs-release" }
+
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
+
+    maven { url = "https://maven.createmod.net" }
 }
 
 dependencies {
@@ -32,6 +41,15 @@ dependencies {
 
     // Fabric Create compatibility
     modCompileOnly "com.simibubi.create:create-fabric:${project.create_version_fabric}"
+
+    implementation "de.maxhenkel.voicechat:voicechat-api:2.5.0"
+    modRuntimeOnly "maven.modrinth:simple-voice-chat:fabric-1.20.1-2.5.25"
+
+    modImplementation("net.createmod.ponder:Ponder-Fabric-${minecraft_version}:${ponder_version}")
+
+    implementation 'com.googlecode.soundlibs:jlayer:1.0.1.4'
+    implementation 'com.googlecode.soundlibs:jorbis:0.0.17.4'
+    implementation 'com.googlecode.soundlibs:tritonus-share:0.3.7.4'
 }
 
 sourceSets {

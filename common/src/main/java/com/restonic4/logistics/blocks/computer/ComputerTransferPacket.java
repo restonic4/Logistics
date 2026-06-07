@@ -114,6 +114,7 @@ public record ComputerTransferPacket(BlockPos computerNode, @Nullable BlockPos f
                                 "Transfer failed: could not find %dx %s in any accessible accessor.",
                                 quantity, query
                         ));
+                Constants.LOG.warn("sourceNode: {}, sourceNetwork: {}", sourceNode, sourceNetwork);
                 level.playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 return;
             }

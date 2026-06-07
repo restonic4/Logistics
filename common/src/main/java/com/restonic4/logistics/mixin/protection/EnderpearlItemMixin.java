@@ -21,6 +21,7 @@ public class EnderpearlItemMixin {
         if (player == null) return;
 
         FlagData fd = ProtectionMixinUtils.getFlag(level, player.blockPosition(), player, "ender_pearl");
+        if (!(ProtectionMixinUtils.isZoneActive(level, player.blockPosition(), fd))) return;
         if (!ProtectionMixinUtils.isDenied(fd)) return;
 
         ItemStack stack = player.getItemInHand(hand);

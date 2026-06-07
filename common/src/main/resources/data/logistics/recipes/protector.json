@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " # ",
+    "LBL",
+    " l "
+  ],
+  "key": {
+    "#": {
+      "item": "logistics:kinetic_crystal_shard"
+    },
+    "L": {
+      "item": "logistics:cable"
+    },
+    "B": {
+      "item": "minecraft:beacon"
+    },
+    "l": {
+      "item": "logistics:chip"
+    }
+  },
+  "result": {
+    "item": "logistics:protector"
+  }
+}

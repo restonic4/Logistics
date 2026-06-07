@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
+import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.PlayerEvents;
 import com.restonic4.logistics.events.ServerTickEvents;
@@ -101,28 +102,7 @@ public class NetworkManager extends SavedData {
 
         PlayerEvents.JOIN.register((server, serverPlayer) -> {
             for (ServerLevel level : server.getAllLevels()) {
-                NetworkManager networkManager = NetworkManager.get(level);
-                List<ProtectionZone> zones = new ArrayList<>();
-
-                for (Network network : networkManager.getAllNetworks()) {
-                    if (network instanceof EnergyNetwork energyNetwork) {
-                        for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
-                            zones.add(new ProtectionZone(
-                                    protectorNode.getUUID(),
-                                    protectorNode.getBlockPos(),
-                                    protectorNode.getRadius(),
-                                    protectorNode.isCreative(),
-                                    protectorNode.getRoles()
-                            ));
-                        }
-                    }
-                }
-
-                if (!zones.isEmpty()) {
-                    Map<ResourceLocation, List<ProtectionZone>> wrapped = new HashMap<>();
-                    wrapped.put(level.dimension().location(), zones);
-                    ServerNetworking.sendToClient(serverPlayer, new ProtectionCacheSyncPacket(wrapped));
-                }
+                ServerProtectionCache.updateAllCachesForLevel(level, "Player joined");
             }
             return EventResult.PASS;
         });

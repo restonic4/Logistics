@@ -1,9 +1,6 @@
 package com.restonic4.logistics.blocks.protector;
 
-import com.restonic4.logistics.blocks.protector.data_types.ActionType;
-import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
-import com.restonic4.logistics.blocks.protector.data_types.FlagData;
-import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
+import com.restonic4.logistics.blocks.protector.data_types.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,8 +45,15 @@ public final class ProtectionMixinUtils {
     }
 
     /** True when a zone exists and the flag is enabled (denied). */
-    public static boolean isZoneDenied(FlagData fd) {
-        return fd != null && fd.enabled();
+    public static boolean isZoneActive(Level level, BlockPos pos, FlagData fd) {
+        return (fd != null && fd.enabled()) && hasPower(level, pos);
+    }
+
+    public static boolean hasPower(Level level, BlockPos pos) {
+        if (level.isClientSide()) {
+            return ClientProtectionCache.hasPower(level.dimension().location(), pos);
+        }
+        return ServerProtectionCache.hasPower(level.dimension().location(), pos);
     }
 
     public static ActionType getActionType(FlagData fd, ActionType defaultAction) {

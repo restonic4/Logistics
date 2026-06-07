@@ -22,6 +22,8 @@ public class ChorusFruitItemMixin {
         if (!(entity instanceof Player player)) return;
 
         FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), player.blockPosition(), player, "chorus_fruit");
+        if (!(ProtectionMixinUtils.isZoneActive(level, player.blockPosition(), fd))) return;
+
         ProtectionMixinUtils.handleReturn(player, fd, cir, stack);
     }
 }

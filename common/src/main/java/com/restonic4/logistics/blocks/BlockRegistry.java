@@ -3,12 +3,15 @@ package com.restonic4.logistics.blocks;
 import com.restonic4.logistics.Logistics;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.audio_station.AudioStationBlock;
+import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.battery.BatteryBlock;
 import com.restonic4.logistics.blocks.battery.BatteryBlockItem;
 import com.restonic4.logistics.blocks.battery.BatteryNode;
 import com.restonic4.logistics.blocks.cable.CableBlock;
 import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.blocks.charging_station.ChargingStationBlock;
+import com.restonic4.logistics.blocks.charging_station.ChargingStationBlockEntity;
 import com.restonic4.logistics.blocks.charging_station.ChargingStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerBlock;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
@@ -20,6 +23,7 @@ import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
+import com.restonic4.logistics.blocks.protector.CreativeProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.experiment.Sounds;
@@ -31,6 +35,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.PushReaction;
 
 public class BlockRegistry {
     public static final BlockEntry<CableBlock, CableNode> CABLE_BLOCK = PlatformRegistry
@@ -106,6 +111,18 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, ChargingStationNode::new)
+            .withBlockEntity(ChargingStationBlockEntity::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<AudioStationBlock, AudioStationNode> AUDIO_STATION_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("audio_station"),
+                    () -> new AudioStationBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, AudioStationNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
@@ -113,11 +130,22 @@ public class BlockRegistry {
     public static final BlockEntry<ProtectorBlock, ProtectorNode> PROTECTOR_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("protector"),
-                    () -> new ProtectorBlock(BlockBehaviour.Properties.copy(Blocks.BEACON).noOcclusion().requiresCorrectToolForDrops())
+                    () -> new ProtectorBlock(BlockBehaviour.Properties.copy(Blocks.BEACON).noOcclusion().requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK))
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, ProtectorNode::new)
             .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<CreativeProtectorBlock, ProtectorNode> CREATIVE_PROTECTOR_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("creative_protector"),
+                    () -> new CreativeProtectorBlock(BlockBehaviour.Properties.copy(Blocks.BEACON).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, ProtectorNode::new)
+            .withItem(new Item.Properties().rarity(Rarity.EPIC))
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 

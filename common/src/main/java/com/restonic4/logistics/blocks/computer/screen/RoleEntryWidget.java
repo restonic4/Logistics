@@ -31,7 +31,7 @@ public class RoleEntryWidget extends AbstractWidget {
 
     public RoleEntryWidget(int x, int y, int width, int height, ResourceLocation icon, String name,
                            Consumer<String> onNameChanged, Runnable onUp, Runnable onDown,
-                           Runnable onDelete,                       // NEW parameter
+                           Runnable onDelete,
                            Consumer<Boolean> onSelect) {
         super(x, y, width, height, Component.literal(name));
         this.icon = icon;
@@ -39,7 +39,7 @@ public class RoleEntryWidget extends AbstractWidget {
         this.onNameChanged = onNameChanged;
         this.onUp = onUp;
         this.onDown = onDown;
-        this.onDelete = onDelete;             // NEW
+        this.onDelete = onDelete;
         this.onSelect = onSelect;
 
         Font font = Minecraft.getInstance().font;

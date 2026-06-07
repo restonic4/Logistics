@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
@@ -23,23 +24,13 @@ public abstract class AbstractContainerMenuMixin {
         if (!isThrow && !isCursorDrop) return;
 
         if (player instanceof ServerPlayer serverPlayer) {
-            FlagData fd = ServerProtectionCache.getFlagState(
-                    serverPlayer.level().dimension().location(),
-                    serverPlayer.blockPosition(),
-                    serverPlayer,
-                    "item_drop"
-            );
-            if (fd != null && fd.enabled()) {
+            FlagData fd = ServerProtectionCache.getFlagState(serverPlayer.level().dimension().location(), serverPlayer.blockPosition(), serverPlayer, "item_drop");
+            if (ProtectionMixinUtils.isZoneActive(serverPlayer.level(), serverPlayer.blockPosition(), fd)) {
                 ci.cancel();
             }
         } else {
-            FlagData fd = ClientProtectionCache.getFlagState(
-                    player.level().dimension().location(),
-                    player.blockPosition(),
-                    player,
-                    "item_drop"
-            );
-            if (fd != null && fd.enabled()) {
+            FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "item_drop");
+            if (ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) {
                 ci.cancel();
             }
         }

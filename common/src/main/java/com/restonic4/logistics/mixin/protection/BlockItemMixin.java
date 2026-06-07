@@ -39,8 +39,10 @@ public class BlockItemMixin {
         if (player == null) return;
 
         FlagData fd = ProtectionMixinUtils.getFlag(level, pos, player, "place_blocks");
+        if (!ProtectionMixinUtils.isZoneActive(level, pos, fd)) return;
+
         if (level.isClientSide()) {
-            if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
+            cir.setReturnValue(InteractionResult.FAIL);
         } else {
             ProtectionMixinUtils.handleResult(player, fd, cir);
         }

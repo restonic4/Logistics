@@ -14,10 +14,10 @@ public final class FlagRegistry {
         register("open_containers", "Open Containers", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
         register("block_interaction", "Block Interaction", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
         register("use_buckets", "Use Buckets", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
-        register("trample_crops", "Trample Crops", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
-        register("entity_interaction", "Entity Interaction", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
-        register("attack_entities", "Attack Entities", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
-        register("villager_trade", "Villager Trade", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);
+        register("trample_crops", "Trample Crops", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
+        register("entity_interaction", "Entity Interaction", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
+        register("attack_entities", "Attack Entities", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
+        register("villager_trade", "Villager Trade", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
         register("fire_tick", "Fire Tick", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
         register("explosions", "Explosions", List.of(ActionType.DENY), FlagDefinition.FlagCategory.STANDARD);
         register("walk_in", "Walk In", List.of(ActionType.DENY, ActionType.DAMAGE, ActionType.MESSAGE), FlagDefinition.FlagCategory.STANDARD);

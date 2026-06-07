@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
@@ -21,7 +22,7 @@ public class FireBlockMixin {
         if (level.isClientSide()) return;
 
         FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, null, "fire_tick");
-        if (fd == null || !fd.enabled()) return;
+        if (!(ProtectionMixinUtils.isZoneActive(level, pos, fd))) return;
 
         try {
             ActionType action = ActionType.valueOf(fd.actionType());

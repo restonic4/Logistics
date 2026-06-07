@@ -19,7 +19,7 @@ public class LoginTab extends Tab {
     private boolean showDeniedMsg = false;
 
     public LoginTab() {
-        super(Component.literal("Login"));
+        super(Component.translatable("screen.logistics.computer.tab.login.title"));
     }
 
     @Override
@@ -28,25 +28,25 @@ public class LoginTab extends Tab {
         this.passwordField = null;
         this.showDeniedMsg = false;
 
-        this.passwordField = new EditBox(font, x + 15, y + 52, 150, 20, Component.literal("Password"));
+        this.passwordField = new EditBox(font, x + 15, y + 52, 150, 20, Component.translatable("screen.logistics.generic.password"));
         this.passwordField.setMaxLength(32);
         // Mask the password
         this.passwordField.setFormatter((text, bg) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
         parent.addRenderableWidget(this.passwordField);
 
-        StyledButton loginBtn = new StyledButton(x + 15, y + 80, 80, 20, Component.literal("Login"), () -> {
+        StyledButton loginBtn = new StyledButton(x + 15, y + 80, 80, 20, Component.translatable("screen.logistics.computer.tab.login.title"), () -> {
             if (parent instanceof ComputerScreen screen) {
                 if (this.passwordField.getValue().equals(ComputerScreen.getExpectedPassword())) {
                     screen.performLogin();
                     ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode(),
                             ComputerLogEntry.Severity.INFO,
-                            "Access granted."
+                            Component.translatable("screen.logistics.computer.tab.login.granted").getString()
                     ));
                 } else {
                     this.showDeniedMsg = true;
                     ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode(),
                             ComputerLogEntry.Severity.ERROR,
-                            "Access Denied. Incorrect Password."
+                            Component.translatable("screen.logistics.computer.tab.login.denied").getString()
                     ));
                 }
             }
@@ -69,7 +69,7 @@ public class LoginTab extends Tab {
         gfx.pose().pushPose();
         gfx.pose().translate(currentX, currentY, 0);
         gfx.pose().scale(1.2f, 1.2f, 1.0f);
-        gfx.drawString(font, "Authorization Required", 0, 0, 0xFFFFFFFF, true);
+        gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.login.required").getString(), 0, 0, 0xFFFFFFFF, true);
         gfx.pose().popPose();
 
         currentY += 16;
@@ -77,12 +77,12 @@ public class LoginTab extends Tab {
         currentY += 8;
 
         // Dynamic strings
-        gfx.drawString(font, "System: " + ComputerScreen.getSystemName(), currentX, currentY, 0xFF55FF55, false);
-        gfx.drawString(font, "Root Password", currentX, currentY + 18, 0xFFAAAAAA, false);
+        gfx.drawString(font, Component.translatable("screen.logistics.generic.system").getString() + ": " + ComputerScreen.getSystemName(), currentX, currentY, 0xFF55FF55, false);
+        gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.login.password").getString(), currentX, currentY + 18, 0xFFAAAAAA, false);
 
         // Error message
         if (this.showDeniedMsg) {
-            gfx.drawString(font, "Access Denied. Incorrect Password.", currentX + 90, currentY + 46, 0xFFFF5555, false);
+            gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.login.denied").getString(), currentX + 90, currentY + 46, 0xFFFF5555, false);
         }
     }
 }

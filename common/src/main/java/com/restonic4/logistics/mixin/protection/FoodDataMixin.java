@@ -18,8 +18,8 @@ public class FoodDataMixin {
     private void onTick(Player player, CallbackInfo ci) {
         if (player.level().isClientSide()) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "hunger");
+        FlagData fd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "hunger");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
         if (!ProtectionMixinUtils.isDenied(fd)) return;
 
         try {

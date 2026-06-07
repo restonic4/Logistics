@@ -4,7 +4,6 @@ import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -27,7 +26,7 @@ public class BlockBehaviourBlockStateBaseMixin {
     private void makeZoneSolidForPlayers(BlockGetter blockGetter, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
         if (context instanceof EntityCollisionContext ecc && ecc.getEntity() instanceof Player player) {
             FlagData fd = ProtectionMixinUtils.getFlag(player.level(), pos, player, "walk_in");
-            if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+            if (!ProtectionMixinUtils.isZoneActive(player.level(), pos, fd)) return;
             ActionType action = ProtectionMixinUtils.getActionType(fd);
             if (action == ActionType.DENY) {
                 cir.setReturnValue(Shapes.block());

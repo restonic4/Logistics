@@ -1,6 +1,9 @@
 package com.restonic4.logistics.blocks.protector.data_types;
 
+import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
+import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
@@ -32,7 +35,8 @@ public class ServerProtectionCache {
                             protector.getBlockPos(),
                             protector.getRadius(),
                             protector.isCreative(),
-                            protector.getRoles()
+                            protector.getRoles(),
+                            protector.isPowered()
                     ));
                 }
             }
@@ -42,20 +46,46 @@ public class ServerProtectionCache {
         return zones;
     }
 
+    public static void updateAllCachesForLevel(ServerLevel level, String reason) {
+        Constants.LOG.warn("Updating protection caches for {} due to: {}", level.dimension().location(), reason);
+        List<ProtectionZone> zones = ServerProtectionCache.rebuildForLevel(level);
+
+        Map<ResourceLocation, List<ProtectionZone>> wrapped = new HashMap<>();
+        wrapped.put(level.dimension().location(), zones);
+        ServerNetworking.sendToAllInLevel(level, new ProtectionCacheSyncPacket(wrapped));
+    }
+
+    public static boolean hasPower(ResourceLocation dim, BlockPos target) {
+        List<ProtectionZone> list = ZONES.get(dim);
+        if (list == null) return false;
+        for (ProtectionZone zone : list) {
+            if (zone.contains(target) && zone.powered()) return true;
+        }
+        return false;
+    }
+
+
     public static FlagData getFlagState(ResourceLocation dim, BlockPos target, Player player, String flagId) {
         List<ProtectionZone> list = ZONES.get(dim);
         if (list == null) return null;
 
+        List<FlagData> matches = new ArrayList<>();
         for (ProtectionZone zone : list) {
-            if (zone.contains(target)) {
-                return zone.resolveFlag(player, flagId).orElse(null);
+            if (zone.contains(target) && zone.powered()) {
+                zone.resolveFlag(player, flagId).ifPresent(matches::add);
             }
         }
-        return null;
+        return FlagData.merge(matches);
     }
 
     public static boolean isActionAllowed(ResourceLocation dim, BlockPos target, Player player, String flagId) {
         FlagData fd = getFlagState(dim, target, player, flagId);
-        return fd == null || !fd.enabled() || !fd.actionType().equals(ActionType.DENY.name());
+        if (fd == null || !fd.enabled()) return true;
+        try {
+            ActionType action = ActionType.valueOf(fd.actionType());
+            return action != ActionType.DENY && action != ActionType.DAMAGE && action != ActionType.MESSAGE;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
     }
 }

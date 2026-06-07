@@ -22,43 +22,43 @@ public class LivingEntityMixin {
         if (!(self instanceof Player player)) return;
         if (player.level().isClientSide()) return;
 
-        String flagId = null;
+        String specificFlag = null;
+        boolean isEnvironmental = false;
 
         if (source.is(DamageTypes.FALL) || source.is(DamageTypes.FALLING_BLOCK) || source.is(DamageTypes.STALAGMITE)) {
-            flagId = "fall_damage";
+            specificFlag = "fall_damage";
+            isEnvironmental = true;
         } else if (source.is(DamageTypes.IN_FIRE) || source.is(DamageTypes.ON_FIRE) || source.is(DamageTypes.HOT_FLOOR) || source.is(DamageTypes.LAVA)) {
-            flagId = "fire_damage";
+            specificFlag = "fire_damage";
+            isEnvironmental = true;
         } else if (source.is(DamageTypes.GENERIC) || source.is(DamageTypes.MAGIC) || source.is(DamageTypes.WITHER)
                 || source.is(DamageTypes.STARVE) || source.is(DamageTypes.DROWN) || source.is(DamageTypes.DRY_OUT)
                 || source.is(DamageTypes.FREEZE) || source.is(DamageTypes.SONIC_BOOM) || source.is(DamageTypes.FELL_OUT_OF_WORLD)
                 || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypes.THORNS)) {
-            flagId = "lose_health";
+            isEnvironmental = true;
         }
 
-        if (flagId == null && !source.is(DamageTypes.PLAYER_ATTACK) && !source.is(DamageTypes.MOB_ATTACK)
+        if (specificFlag == null && !source.is(DamageTypes.PLAYER_ATTACK) && !source.is(DamageTypes.MOB_ATTACK)
                 && !source.is(DamageTypes.ARROW) && !source.is(DamageTypes.TRIDENT)
                 && !source.is(DamageTypes.FIREBALL) && !source.is(DamageTypes.WITHER_SKULL)) {
-            flagId = "lose_health";
+            isEnvironmental = true;
         }
 
-        if (flagId == null) return;
+        // Check specific flag first (e.g., fall_damage, fire_damage)
+        if (specificFlag != null) {
+            FlagData fd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, specificFlag);
+            if (ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) {
+                ProtectionMixinUtils.handle(player, fd, cir);
+                if (cir.isCancelled()) return;
+            }
+        }
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, flagId);
-        ProtectionMixinUtils.handle(player, fd, cir);
-    }
-
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
-    private void onAttacked(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        LivingEntity self = (LivingEntity) (Object) this;
-        if (self.level().isClientSide()) return;
-
-        Entity attacker = source.getEntity();
-        if (!(attacker instanceof Player player)) return;
-        if (self instanceof Player) return; // PvP handled elsewhere
-
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "attack_entities");
-        ProtectionMixinUtils.handle(player, fd, cir);
+        // Check lose_health flag for all environmental damage (including fall and fire)
+        if (isEnvironmental) {
+            FlagData fd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "lose_health");
+            if (ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) {
+                ProtectionMixinUtils.handle(player, fd, cir);
+            }
+        }
     }
 }

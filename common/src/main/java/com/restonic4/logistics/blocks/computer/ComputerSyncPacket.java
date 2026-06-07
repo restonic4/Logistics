@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword) implements S2CPacket {
+public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword, boolean hasProtectors) implements S2CPacket {
     public static final ResourceLocation ID = Logistics.id("computer_sync");
 
     public ComputerSyncPacket(FriendlyByteBuf buf) {
@@ -20,7 +20,7 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
     }
 
     private ComputerSyncPacket(DecodedData data) {
-        this(data.computerNode, data.accessors, data.isInstalled, data.systemName, data.rootPassword);
+        this(data.computerNode, data.accessors, data.isInstalled, data.systemName, data.rootPassword, data.hasProtectors);
     }
 
     @Override
@@ -46,6 +46,7 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
         buf.writeBoolean(isInstalled);
         buf.writeUtf(systemName);
         buf.writeUtf(rootPassword);
+        buf.writeBoolean(hasProtectors);
     }
 
     @Override
@@ -74,10 +75,11 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
         boolean isInstalled = buf.readBoolean();
         String systemName = buf.readUtf();
         String rootPassword = buf.readUtf();
+        boolean hasProtectors = buf.readBoolean();
 
-        return new DecodedData(computerNode, accessors, isInstalled, systemName, rootPassword);
+        return new DecodedData(computerNode, accessors, isInstalled, systemName, rootPassword, hasProtectors);
     }
 
     public record AccessorData(BlockPos pos, List<ItemStack> inventory) {}
-    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword) {}
+    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword, boolean hasProtectors) {}
 }

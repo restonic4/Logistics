@@ -2,6 +2,7 @@ package com.restonic4.logistics.blocks.accersor;
 
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
+import com.restonic4.logistics.blocks.base.InvertiblePlacement;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -17,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 import java.util.Set;
 
-public class AccessorBlock extends BaseNetworkBlock {
+public class AccessorBlock extends BaseNetworkBlock implements InvertiblePlacement {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     public AccessorBlock(Properties properties) {
@@ -38,9 +40,15 @@ public class AccessorBlock extends BaseNetworkBlock {
     }
 
     @Override
+    public Property<Direction> getFacingProperty() {
+        return FACING;
+    }
+
+    @Override
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getNearestLookingDirection());
+        BlockState state = defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
+        return applyShiftInversion(context, state);
     }
 
     @Override

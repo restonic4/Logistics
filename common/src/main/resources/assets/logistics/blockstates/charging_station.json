@@ -1,5 +1,8 @@
 {
   "variants": {
-    "": { "model": "logistics:block/charging_station" }
+    "facing=north": { "model": "logistics:block/charging_station" },
+    "facing=east":  { "model": "logistics:block/charging_station", "y": 90 },
+    "facing=south": { "model": "logistics:block/charging_station", "y": 180 },
+    "facing=west":  { "model": "logistics:block/charging_station", "y": 270 }
   }
 }

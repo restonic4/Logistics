@@ -22,13 +22,13 @@ public class ConfirmDeletePopup {
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
 
-        this.confirmButton = new StyledButton(0, 0, 80, 20, Component.literal("Delete"), () -> {
+        this.confirmButton = new StyledButton(0, 0, 80, 20, Component.translatable("screen.logistics.generic.delete"), () -> {
             active = false;
             onConfirm.run();
         });
         this.confirmButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
 
-        this.cancelButton = new StyledButton(0, 0, 80, 20, Component.literal("Cancel"), () -> {
+        this.cancelButton = new StyledButton(0, 0, 80, 20, Component.translatable("screen.logistics.generic.cancel"), () -> {
             active = false;
             onCancel.run();
         });
@@ -70,11 +70,11 @@ public class ConfirmDeletePopup {
 
         // Title
         Font font = Minecraft.getInstance().font;
-        String title = "Delete Role";
+        String title = Component.translatable("screen.logistics.computer.tab.protector.role.delete").getString();
         graphics.drawString(font, title, x + (width - font.width(title)) / 2, y + 8, 0xFFFFFFFF, false);
 
         // Message
-        String msg = "Are you sure you want to delete this role?";
+        String msg = Component.translatable("screen.logistics.computer.tab.protector.role.delete.confirm.msg").getString();
         graphics.drawString(font, msg, x + (width - font.width(msg)) / 2, y + 32, 0xFFCCCCCC, false);
 
         // Buttons

@@ -4,16 +4,11 @@ import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
-import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -24,10 +19,8 @@ public class LocalPlayerMixin {
     private void logistics$onClientTickTail(CallbackInfo ci) {
         LocalPlayer player = (LocalPlayer) (Object) this;
 
-        FlagData fd = ProtectionMixinUtils.getFlag(
-                player.level(), player.blockPosition(), player, "sneaking"
-        );
-        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+        FlagData fd = ProtectionMixinUtils.getFlag(player.level(), player.blockPosition(), player, "sneaking");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
 
         try {
             if (ActionType.valueOf(fd.actionType()) != ActionType.DENY) return;
@@ -57,8 +50,9 @@ public class LocalPlayerMixin {
         LocalPlayer self = (LocalPlayer) (Object) this;
         if (!self.level().isClientSide()) return;
 
-        FlagData fd = ClientProtectionCache.getFlagState(
-                self.level().dimension().location(), self.blockPosition(), self, "item_drop");
-        if (fd != null && fd.enabled()) cir.setReturnValue(false);
+        FlagData fd = ClientProtectionCache.getFlagState(self.level().dimension().location(), self.blockPosition(), self, "item_drop");
+        if (!ProtectionMixinUtils.isZoneActive(self.level(), self.blockPosition(), fd)) return;
+
+        cir.setReturnValue(false);
     }
 }

@@ -7,6 +7,7 @@ import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
+import com.restonic4.logistics.screens.widgets.StyledButton;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -28,7 +29,7 @@ public class TransferTab extends Tab {
     private SearchableDropdownWidget<String> textBox;
     private SearchableDropdownWidget<BlockPos> leftAccessor;
     private SearchableDropdownWidget<BlockPos> rightAccessor;
-    private Button transferButton;
+    private StyledButton transferButton;
 
     // Persisted state across tab switches / resizes
     private int savedQuantity = 1;
@@ -37,7 +38,7 @@ public class TransferTab extends Tab {
     private BlockPos savedRight = null;
 
     public TransferTab() {
-        super(Component.literal("Transfer"));
+        super(Component.translatable("screen.logistics.computer.tab.transfer.title"));
     }
 
     @Override
@@ -69,8 +70,14 @@ public class TransferTab extends Tab {
         parent.addRenderableWidget(this.rightAccessor);
 
         // Transfer button
-        this.transferButton = Button.builder(Component.literal("Transfer"), btn -> executeTransfer())
-                .bounds(x + width / 2 - 50, y + height - 30, 100, 20).build();
+        this.transferButton = new StyledButton(
+                x + width / 2 - 50,
+                y + height - 30,
+                100,
+                20,
+                Component.translatable("screen.logistics.computer.tab.transfer.title"),
+                this::executeTransfer
+        );
         parent.addRenderableWidget(this.transferButton);
 
         refreshAccessorDropdowns();
@@ -84,7 +91,7 @@ public class TransferTab extends Tab {
         List<SearchableDropdownWidget.DropdownEntry<String>> itemEntries = new ArrayList<>();
 
         leftEntries.add(new SearchableDropdownWidget.DropdownEntry<>(null,
-                Component.literal("Auto"),
+                Component.translatable("screen.logistics.computer.tab.transfer.auto"),
                 SearchableDropdownWidget.DropdownIcon.of(com.restonic4.logistics.experiment.Items.CHIP.getItem())));
 
         Set<String> addedItemIds = new HashSet<>();

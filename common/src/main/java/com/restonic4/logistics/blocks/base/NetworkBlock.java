@@ -37,4 +37,8 @@ public interface NetworkBlock {
             facingNode.setFacing(state.getValue(BlockStateProperties.FACING));
         }
     }
+
+    default void onNodeRemoved(NetworkNode node, ServerLevel level, BlockPos pos) {
+
+    }
 }

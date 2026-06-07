@@ -17,8 +17,9 @@ public class ItemEntityMixin {
     private void onPlayerTouch(Player player, CallbackInfo ci) {
         if (player.level().isClientSide() || !(player instanceof net.minecraft.server.level.ServerPlayer)) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "item_pickup");
+        FlagData fd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "item_pickup");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
+
         ProtectionMixinUtils.handle(player, fd, ci);
     }
 }

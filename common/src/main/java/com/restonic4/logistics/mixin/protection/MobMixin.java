@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
@@ -19,15 +20,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MobMixin {
 
     @Inject(method = "checkMobSpawnRules", at = @At("HEAD"), cancellable = true)
-    private static void onCheckSpawn(EntityType<? extends Mob> type, LevelAccessor levelAccessor,
-                                     MobSpawnType spawnType, BlockPos pos, RandomSource random,
-                                     CallbackInfoReturnable<Boolean> cir) {
+    private static void onCheckSpawn(
+            EntityType<? extends Mob> type, LevelAccessor levelAccessor,
+            MobSpawnType spawnType, BlockPos pos, RandomSource random,
+            CallbackInfoReturnable<Boolean> cir
+    ) {
         if (!(levelAccessor instanceof ServerLevel level)) return;
         if (level.isClientSide()) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                level.dimension().location(), pos, null, "mob_spawning");
-        if (fd == null || !fd.enabled()) return;
+        FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, null, "mob_spawning");
+        if (!ProtectionMixinUtils.isZoneActive(level, pos, fd)) return;
 
         try {
             ActionType action = ActionType.valueOf(fd.actionType());

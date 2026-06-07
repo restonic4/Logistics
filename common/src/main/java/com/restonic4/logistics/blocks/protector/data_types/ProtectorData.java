@@ -11,24 +11,28 @@ public class ProtectorData {
     private int radius;
     private boolean creative;
     private List<RoleData> roles;
+    private boolean powered;
 
-    public ProtectorData(int radius, boolean creative, List<RoleData> roles) {
+    public ProtectorData(int radius, boolean creative, List<RoleData> roles, boolean powered) {
         this.radius = radius;
         this.creative = creative;
         this.roles = roles;
+        this.powered = powered;
     }
 
     public void netWrite(FriendlyByteBuf buf) {
         buf.writeInt(this.radius);
         buf.writeBoolean(this.creative);
         buf.writeCollection(this.roles, (b, r) -> r.netWrite(b));
+        buf.writeBoolean(this.powered);
     }
 
     public static ProtectorData netRead(FriendlyByteBuf buf) {
         int radius = buf.readInt();
         boolean creative = buf.readBoolean();
         List<RoleData> roles = buf.readList(RoleData::netRead);
-        return new ProtectorData(radius, creative, roles);
+        boolean powered = buf.readBoolean();
+        return new ProtectorData(radius, creative, roles, powered);
     }
 
     public void nbtWrite(CompoundTag tag) {
@@ -41,6 +45,7 @@ public class ProtectorData {
             rolesTag.add(roleCompound);
         }
         tag.put("roles", rolesTag);
+        tag.putBoolean("powered", this.powered);
     }
 
     public static ProtectorData nbtRead(CompoundTag tag) {
@@ -51,7 +56,8 @@ public class ProtectorData {
         for (int i = 0; i < rolesTag.size(); i++) {
             roles.add(RoleData.nbtRead(rolesTag.getCompound(i)));
         }
-        return new ProtectorData(radius, creative, roles);
+        boolean powered = tag.getBoolean("powered");
+        return new ProtectorData(radius, creative, roles, powered);
     }
 
     public int getRadius() { return radius; }
@@ -60,6 +66,8 @@ public class ProtectorData {
     public void setCreative(boolean creative) { this.creative = creative; }
     public List<RoleData> getRoles() { return roles; }
     public void setRoles(List<RoleData> roles) { this.roles = roles; }
+    public boolean isPowered() { return this.powered; }
+    public void setPowered(boolean powered) { this.powered = powered; }
 
     public void validate() {
         long defaultCount = roles.stream().filter(RoleData::isDefault).count();
@@ -115,14 +123,14 @@ public class ProtectorData {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ProtectorData that = (ProtectorData) o;
-        return radius == that.radius && creative == that.creative && Objects.equals(roles, that.roles);
+        return radius == that.radius && creative == that.creative && Objects.equals(roles, that.roles) && powered == that.powered;
     }
 
     @Override
-    public int hashCode() { return Objects.hash(radius, creative, roles); }
+    public int hashCode() { return Objects.hash(radius, creative, roles, powered); }
 
     @Override
     public String toString() {
-        return "ProtectorData{radius=" + radius + ", creative=" + creative + ", roles=" + roles + '}';
+        return "ProtectorData{radius=" + radius + ", creative=" + creative + ", roles=" + roles + ", powered=" + powered + '}';
     }
 }

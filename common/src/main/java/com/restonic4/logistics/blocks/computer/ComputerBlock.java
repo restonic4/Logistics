@@ -3,6 +3,7 @@ package com.restonic4.logistics.blocks.computer;
 import com.mojang.authlib.GameProfile;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
+import com.restonic4.logistics.blocks.base.InvertiblePlacement;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
@@ -32,6 +33,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -43,7 +45,7 @@ import java.util.stream.Collectors;
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeDown;
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeRight;
 
-public class ComputerBlock extends BaseNetworkBlock {
+public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlacement {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
@@ -60,7 +62,8 @@ public class ComputerBlock extends BaseNetworkBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        BlockState state = this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return applyShiftInversion(context, state);
     }
 
     @Override
@@ -109,17 +112,17 @@ public class ComputerBlock extends BaseNetworkBlock {
                             protectorNode.getBlockPos(),
                             protectorNode.getRadius(),
                             protectorNode.isCreative(),
-                            protectorNode.getRoles()
+                            protectorNode.getRoles(),
+                            protectorNode.isPowered()
                     ));
                 }
 
-                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).collect(Collectors.toList());
-
-                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword()));
+                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword(), !zones.isEmpty()));
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
+                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).collect(Collectors.toList());
                 ServerNetworking.sendToClient(serverPlayer, new ProtectionEditSyncPacket(pos, zones, profiles));
             }
         }
@@ -163,5 +166,10 @@ public class ComputerBlock extends BaseNetworkBlock {
                 right,
                 right.getOpposite()
         );
+    }
+
+    @Override
+    public Property<Direction> getFacingProperty() {
+        return FACING;
     }
 }

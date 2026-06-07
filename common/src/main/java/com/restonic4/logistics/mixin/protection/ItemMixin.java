@@ -24,9 +24,9 @@ public class ItemMixin {
         if (!itemStack.is(Items.CHORUS_FRUIT)) return;
 
         FlagData fd = ProtectionMixinUtils.getFlag(level, player.blockPosition(), player, "chorus_fruit");
-        if (fd != null && fd.enabled()) {
-            cir.setReturnValue(InteractionResultHolder.fail(itemStack));
-            cir.cancel();
-        }
+        if (!ProtectionMixinUtils.isZoneActive(level, player.blockPosition(), fd)) return;
+
+        cir.setReturnValue(InteractionResultHolder.fail(itemStack));
+        cir.cancel();
     }
 }

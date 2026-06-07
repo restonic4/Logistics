@@ -117,6 +117,20 @@ public class ComputerNode extends EnergyNode {
     }
 
     @Override
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        super.buildScannerTooltip(builder, isSneaking);
+
+        builder.spacer();
+        if (installed) {
+            builder.keyValue("Hostname", systemName, ChatFormatting.GOLD);
+        } else {
+            builder.text("OS not found, installation required!", ChatFormatting.RED);
+        }
+
+        return true;
+    }
+
+    @Override
     public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         super.buildDebugScannerTooltip(builder, isSneaking);
 

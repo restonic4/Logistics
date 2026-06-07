@@ -23,9 +23,11 @@ import java.util.List;
 public class ComputerScreen extends TabbedScreen {
     private static BlockPos computerNode;
     private static List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
+
     private static boolean isInstalled = false;
     private static String systemName;
     private static String expectedPassword;
+    private static boolean hasProtectors;
     private boolean isLoggedIn = false;
     private static ProtectionEditSyncPacket lastProtectionData;
 
@@ -42,7 +44,7 @@ public class ComputerScreen extends TabbedScreen {
     private SimpleSoundInstance ambientSoundInstance;
 
     public ComputerScreen() {
-        super(Component.literal("Computer"));
+        super(Component.translatable("screen.logistics.computer.title"));
 
         this.distribution = TabDistribution.FILL_NO_PAGES;
         this.tabGap = 2;
@@ -80,6 +82,7 @@ public class ComputerScreen extends TabbedScreen {
         isInstalled = computerSyncPacket.isInstalled();
         systemName = computerSyncPacket.systemName();
         expectedPassword = computerSyncPacket.rootPassword();
+        hasProtectors = computerSyncPacket.hasProtectors();
     }
 
     public static ProtectionEditSyncPacket getLastProtectionData() {
@@ -104,8 +107,8 @@ public class ComputerScreen extends TabbedScreen {
 
         if (isInstalled) {
             if (isLoggedIn) {
-                addTab(transferTab);
-                addTab(protectionTab);
+                if (!accessors.isEmpty()) addTab(transferTab);
+                if (hasProtectors) addTab(protectionTab);
                 addTab(logTab);
             } else {
                 addTab(loginTab);

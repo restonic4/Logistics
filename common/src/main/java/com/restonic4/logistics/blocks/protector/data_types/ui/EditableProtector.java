@@ -30,6 +30,6 @@ public class EditableProtector {
             list.add(new RoleData(r.id, r.name, r.order, r.iconRl, r.type,
                     List.copyOf(r.players), Map.copyOf(completeFlags)));
         }
-        return new ProtectionZone(nodeId, pos, radius, creative, list);
+        return new ProtectionZone(nodeId, pos, radius, creative, list, false); // we don't care about power here, the server handles it
     }
 }

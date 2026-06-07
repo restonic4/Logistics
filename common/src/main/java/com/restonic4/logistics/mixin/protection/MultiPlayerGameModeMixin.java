@@ -1,5 +1,7 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.computer.ComputerBlock;
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import net.minecraft.client.Minecraft;
@@ -13,11 +15,15 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -30,9 +36,9 @@ public class MultiPlayerGameModeMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.level().isClientSide()) return;
 
-        FlagData fd = ClientProtectionCache.getFlagState(
-                player.level().dimension().location(), pos, player, "break_blocks");
-        if (fd != null && fd.enabled()) cir.setReturnValue(false);
+        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), pos, player, "break_blocks");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), pos, fd)) return;
+        cir.setReturnValue(false);
     }
 
     @Inject(method = "continueDestroyBlock", at = @At("HEAD"), cancellable = true)
@@ -40,9 +46,9 @@ public class MultiPlayerGameModeMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.level().isClientSide()) return;
 
-        FlagData fd = ClientProtectionCache.getFlagState(
-                player.level().dimension().location(), pos, player, "break_blocks");
-        if (fd != null && fd.enabled()) cir.setReturnValue(false);
+        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), pos, player, "break_blocks");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), pos, fd)) return;
+        cir.setReturnValue(false);
     }
 
     @Inject(method = "destroyBlock", at = @At("HEAD"), cancellable = true)
@@ -50,43 +56,41 @@ public class MultiPlayerGameModeMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.level().isClientSide()) return;
 
-        FlagData fd = ClientProtectionCache.getFlagState(
-                player.level().dimension().location(), pos, player, "break_blocks");
-        if (fd != null && fd.enabled()) cir.setReturnValue(false);
+        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), pos, player, "break_blocks");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), pos, fd)) return;
+        cir.setReturnValue(false);
     }
 
-    /**
-     * Handles client-side block interactions on right-click. place_blocks is intentionally
-     * NOT checked here — we only prevent actual block placement, not interactions with
-     * existing blocks. BlockItemMixin handles placement prevention at BlockItem.place().
-     *
-     * Exception order:
-     * 1. use_buckets
-     * 2. open_containers
-     * 3. block_interaction
-     */
-    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
-    private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        if (player == null || !player.level().isClientSide()) return;
-
+    @Redirect(
+            method = "performUseItemOn",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;use(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;"
+            )
+    )
+    private InteractionResult logistics$interceptBlockUseClient(BlockState state, Level level, Player player, InteractionHand hand, BlockHitResult hitResult) {
         BlockPos pos = hitResult.getBlockPos();
+        Block block = state.getBlock();
 
-        // Exception: open_containers
-        BlockEntity be = player.level().getBlockEntity(pos);
-        if (be instanceof Container) {
-            FlagData fd = ClientProtectionCache.getFlagState(
-                    player.level().dimension().location(), pos, player, "open_containers");
-            if (fd != null && !fd.enabled()) return; // explicitly allowed
-            if (fd != null && fd.enabled()) {
-                cir.setReturnValue(InteractionResult.FAIL);
-                return;
-            }
+        if (block instanceof ComputerBlock) {
+            return state.use(level, player, hand, hitResult);
         }
 
-        // General block_interaction
-        // place_blocks is NOT here; it lives in BlockItemMixin to avoid blocking interactions
-        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), pos, player, "block_interaction");
-        if (fd != null && fd.enabled()) cir.setReturnValue(InteractionResult.FAIL);
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof Container) {
+            FlagData fd = ClientProtectionCache.getFlagState(level.dimension().location(), pos, player, "open_containers");
+            if (ProtectionMixinUtils.isZoneActive(level, pos, fd) && ProtectionMixinUtils.isDenied(fd)) {
+                return InteractionResult.PASS;
+            }
+            return state.use(level, player, hand, hitResult);
+        }
+
+        FlagData fd = ClientProtectionCache.getFlagState(level.dimension().location(), pos, player, "block_interaction");
+        if (ProtectionMixinUtils.isZoneActive(level, pos, fd) && ProtectionMixinUtils.isDenied(fd)) {
+            return InteractionResult.PASS;
+        }
+
+        return state.use(level, player, hand, hitResult);
     }
 
     @Inject(method = "handleInventoryMouseClick", at = @At("HEAD"), cancellable = true)
@@ -99,10 +103,9 @@ public class MultiPlayerGameModeMixin {
 
         if (!isThrow && !isCursorDrop) return;
 
-        FlagData fd = ClientProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "item_drop");
-        if (fd != null && fd.enabled()) {
-            ci.cancel();
-        }
+        FlagData fd = ClientProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "item_drop");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
+
+        ci.cancel();
     }
 }

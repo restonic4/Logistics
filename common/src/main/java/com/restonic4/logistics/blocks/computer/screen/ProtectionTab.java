@@ -55,7 +55,7 @@ public class ProtectionTab extends Tab {
     private Screen parent;
 
     public ProtectionTab() {
-        super(Component.literal("Protection"));
+        super(Component.translatable("screen.logistics.computer.tab.protector.title"));
     }
 
     public void receiveSyncData(ProtectionEditSyncPacket packet) {
@@ -178,7 +178,7 @@ public class ProtectionTab extends Tab {
 
         EditableProtector currentProtector = getCurrentProtector();
 
-        rightPanel.addChild(createLabel("Radius:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        rightPanel.addChild(createLabel(Component.translatable("screen.logistics.computer.tab.protector.radius").getString() + ":", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
 
         radiusPicker = new NumberPickerWidget(
@@ -196,7 +196,7 @@ public class ProtectionTab extends Tab {
         EditableRole currentRole = getSelectedRole();
         boolean isDefault = currentRole != null && currentRole.type == RoleData.RoleType.DEFAULT;
 
-        rightPanel.addChild(createLabel("Players:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        rightPanel.addChild(createLabel(Component.translatable("screen.logistics.computer.tab.protector.players").getString() + ":", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12;
 
         if (!isDefault && currentRole != null) {
@@ -218,7 +218,7 @@ public class ProtectionTab extends Tab {
                 public void render(GuiGraphics graphics, Font font, int x, int y, int width, int height,
                 SearchableDropdownWidget.DropdownEntry<UUID> selected, boolean isHovered) {
                     if (selected == null) {
-                        graphics.drawString(font, "Select player...", x + 5, y + (height - 8) / 2, 0xFF777777);
+                        graphics.drawString(font, Component.translatable("screen.logistics.computer.tab.protector.players.select").getString(), x + 5, y + (height - 8) / 2, 0xFF777777);
                         return;
                     }
                     if (selected.icon() != null) {
@@ -263,17 +263,17 @@ public class ProtectionTab extends Tab {
                 }
                 currentY = rowY + chipHeight + 12;
             } else {
-                rightPanel.addChild(createLabel("No players assigned", innerWidth, 0xFF777777), 0, currentY);
+                rightPanel.addChild(createLabel(Component.translatable("screen.logistics.computer.tab.protector.players.none_assigned").getString(), innerWidth, 0xFF777777), 0, currentY);
                 currentY += 16 + 12;
             }
         } else {
             rightPanel.addChild(createLabel(
-                    isDefault ? "Applies to all players by default" : "Select a role",
+                    Component.translatable(isDefault ? "screen.logistics.computer.tab.protector.players.applies_to_all" : "screen.logistics.computer.tab.protector.role.select").getString(),
                     innerWidth, 0xFF777777), 0, currentY);
             currentY += 16 + 12;
         }
 
-        rightPanel.addChild(createLabel("Protection Flags:", innerWidth, 0xFFFFFFFF), 0, currentY);
+        rightPanel.addChild(createLabel(Component.translatable("screen.logistics.computer.tab.protector.players.flags").getString() + ":", innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 12 + 4;
 
         flagWidgets.clear();
@@ -307,7 +307,7 @@ public class ProtectionTab extends Tab {
             currentY = rowY + 58 + 12;
         }
 
-        saveButton = new StyledButton(0, 0, 100, 20, Component.literal("Save Changes"), this::onSaveClicked);
+        saveButton = new StyledButton(0, 0, 100, 20, Component.translatable("screen.logistics.generic.save_changes"), this::onSaveClicked);
         saveButton.withColors(0xFF161616, 0xFF2A2A2A, 0xFFFFFFFF);
         rightPanel.addChild(saveButton, innerWidth - 100, currentY);
     }
@@ -543,7 +543,7 @@ public class ProtectionTab extends Tab {
         Map<UUID, ProtectorData> data = new HashMap<>();
         for (EditableProtector ep : protectors) {
             ProtectionZone zone = ep.toZone();
-            data.put(zone.nodeId(), new ProtectorData(zone.radius(), zone.creative(), zone.roles()));
+            data.put(zone.nodeId(), new ProtectorData(zone.radius(), zone.creative(), zone.roles(), zone.powered()));
         }
         ClientNetworking.sendToServer(new ProtectionSavePacket(computerPos, data));
         hasUnsavedChanges = false;

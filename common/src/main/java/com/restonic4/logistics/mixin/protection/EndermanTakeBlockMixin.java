@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.protection;
 
+import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
@@ -38,7 +39,7 @@ public class EndermanTakeBlockMixin {
     private boolean logistics$isProtected(Level level, BlockPos pos) {
         if (level == null || level.isClientSide()) return false;
         FlagData fd = ServerProtectionCache.getFlagState(level.dimension().location(), pos, null, "mob_grief");
-        if (fd == null || !fd.enabled()) return false;
+        if (!(ProtectionMixinUtils.isZoneActive(level, pos, fd))) return false;
         try {
             ActionType action = ActionType.valueOf(fd.actionType());
             return action == ActionType.DENY || action == ActionType.MESSAGE || action == ActionType.DAMAGE;

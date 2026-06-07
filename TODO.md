@@ -1,23 +1,14 @@
-- Dynamic screenshake anbd audio on shard.
-- Recipes: Charger and shards
-- Translations
-- Textures and models
-- Sistema de protecciones muy customizable:
+- Test if the protector settings are being applied even before saving.
 
-Niveles de areas, mas rango, con coste. Tiers de bloque? Mas energia? Un item? A lo mejor dejar al usuario elegir el rango de forma libre pero que haya un limite y para ampliarlo tenga que hacer algo.
-Permisos, añadir permisos individuales o crear roles y aplicar un rol a una persona, como si fuese discord. (Debe ser muy facil)
-Flags (Mirar mod de estatuas)
-Version del bloque en creativo? Que no haga falta una network, sea standalone. Esto requiere de abstraccion? Una interfaz q implementa el Node y el bloque creativo? Tendria cosas mas op como saltarse los limites.
-Tipos de acciones, es decir, Denegar, Dañar (Con variacion de una sola vez, como poner un bloque, o por tiempo, como sneak, ej: 2 corazones cada 20 ticks)
-Beacon
+- Accessors and transfers:
+  - Being able to send items with nbt, such as kinetic crystals.
+  - Being able to specify nbt data, such as, ignoring nbt or selecting specific data, such as only getting crystals with >= 95% energy.
+  - Improve the UI.
 
-- Disable tab si no hay protectors
-
-- Interactions (Abrir puerta, click derecho)
-- Entity damaging
-- (OP) Fire damage
-- (OP) Hunger
-- Explosions (Si break blocks esta activado, entonces de por si los bloques no se romperan)
-- (OP por ahora) Mob spawn
-- (OP) Fall damage
-- Mob grief (Creepers, endermans)
+- Audio station:
+  - UI
+  - Upload sound files to server
+  - Private and public sounds, json to save each user's uploads and config.
+  - Being able to edit the config and list the uploaded sounds
+  - Being able to play an audio stream
+  - being able to set radius, volume and pitch

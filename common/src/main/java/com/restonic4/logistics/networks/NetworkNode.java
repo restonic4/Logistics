@@ -38,6 +38,7 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
     public BlockPos getBlockPos() { return blockPos; }
 
     public void tick() { }
+    public void onRemove() { }
 
     public <T extends Network> Optional<T> getAdjacentNetwork(Class<T> networkClass) {
         Network ownNetwork = getNetwork();

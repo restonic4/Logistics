@@ -31,6 +31,8 @@ public class FlagWidget extends AbstractWidget {
 
     private static final int BG = 0xFF1E1E1E;
     private static final int BORDER = 0xFF2A2A2A;
+    private static final int BG_CREATIVE = 0xFF241434;
+    private static final int BORDER_CREATIVE = 0xFF5C337D;
     private static final int MSG_BOX_HEIGHT = 16;
 
     public FlagWidget(int x, int y, int width, int height, FlagDefinition flag, FlagData initialState, Consumer<FlagData> onChanged) {
@@ -236,8 +238,13 @@ public class FlagWidget extends AbstractWidget {
         int w = getWidth();
         int h = getHeight();
 
-        graphics.fill(x, y, x + w, y + h, BG);
-        graphics.renderOutline(x, y, w, h, BORDER);
+        // Determine colors based on flag category
+        boolean isCreative = flag.category() == FlagDefinition.FlagCategory.CREATIVE;
+        int currentBg = isCreative ? BG_CREATIVE : BG;
+        int currentBorder = isCreative ? BORDER_CREATIVE : BORDER;
+
+        graphics.fill(x, y, x + w, y + h, currentBg);
+        graphics.renderOutline(x, y, w, h, currentBorder);
 
         Font font = Minecraft.getInstance().font;
         String name = flag.name();
@@ -249,7 +256,7 @@ public class FlagWidget extends AbstractWidget {
 
         toggle.render(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawString(font, "Action:", x + 4, y + 28, 0xFFAAAAAA, false);
+        graphics.drawString(font, Component.translatable("screen.logistics.computer.tab.protector.action").getString() + ":", x + 4, y + 28, 0xFFAAAAAA, false);
 
         actionDropdown.render(graphics, mouseX, mouseY, partialTick);
 
@@ -266,13 +273,18 @@ public class FlagWidget extends AbstractWidget {
 
             boolean fieldHovered = mouseX >= fieldX && mouseX < fieldX + fieldW
                     && mouseY >= fieldY && mouseY < fieldY + MSG_BOX_HEIGHT;
-            int borderColor = (fieldHovered || messageField.isFocused()) ? 0xFFFFFFFF : 0xFFA0A0A0;
-            graphics.renderOutline(fieldX, fieldY, fieldW, MSG_BOX_HEIGHT, borderColor);
+
+            // Match text field outline to the creative border color if focused/hovered
+            int fieldBorderColor = (fieldHovered || messageField.isFocused())
+                    ? (isCreative ? 0xFFBE8BFA : 0xFFFFFFFF)
+                    : (isCreative ? BORDER_CREATIVE : 0xFFA0A0A0);
+
+            graphics.renderOutline(fieldX, fieldY, fieldW, MSG_BOX_HEIGHT, fieldBorderColor);
 
             messageField.render(graphics, mouseX, mouseY, partialTick);
 
             if (messageField.getValue().isEmpty() && !messageField.isFocused()) {
-                graphics.drawString(font, "Enter message...", messageField.getX(), messageField.getY(), 0xFF777777, false);
+                graphics.drawString(font, Component.translatable("screen.logistics.generic.enter_message").getString(), messageField.getX(), messageField.getY(), 0xFF777777, false);
             }
         }
     }

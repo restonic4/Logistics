@@ -192,7 +192,7 @@ public class InstallTab extends Tab {
             // 120 client ticks = 6 seconds absolute execution duration ceiling
             if (this.animationTicks >= 120) {
                 this.animationProgress = 1.0f;
-                ComputerScreen.setComputerState(new ComputerSyncPacket(ComputerScreen.getComputerNode(), null, true, this.systemName, this.rootPassword));
+                ComputerScreen.setComputerState(new ComputerSyncPacket(ComputerScreen.getComputerNode(), null, true, this.systemName, this.rootPassword, false));
                 Minecraft.getInstance().setScreen(new ComputerScreen());
                 return;
             }
@@ -236,57 +236,57 @@ public class InstallTab extends Tab {
         int contentWidth = width - 30;
 
         if (this.currentStep != Step.ANIMATION) {
-            String stepCounterStr = (currentStep.ordinal() + 1) + " / " + (Step.values().length - 1) + " Steps";
+            String stepCounterStr = (currentStep.ordinal() + 1) + " / " + (Step.values().length - 1) + " " + Component.translatable("screen.logistics.computer.tab.install.steps").getString();
             gfx.drawString(font, stepCounterStr, x + width - 15 - font.width(stepCounterStr), y + height - 19, 0xFFAAAAAA, false);
         }
 
         switch (this.currentStep) {
             case WELCOME -> {
-                currentY = renderH1(gfx, font, Component.literal("DragonOS Installer"), new ItemStack(BlockRegistry.COMPUTER_BLOCK.getBlock()), currentX, currentY);
+                currentY = renderH1(gfx, font, Component.translatable("screen.logistics.computer.tab.install.installer"), new ItemStack(BlockRegistry.COMPUTER_BLOCK.getBlock()), currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
-                renderParagraph(gfx, font, Component.literal("Welcome to the graphical configuration system utility. Click the continue option below to set up the system."), currentX, currentY, contentWidth, 0xFFFFFFFF);
+                renderParagraph(gfx, font, Component.translatable("screen.logistics.computer.tab.install.welcome"), currentX, currentY, contentWidth, 0xFFFFFFFF);
             }
             case ROOT_PASSWORD -> {
-                currentY = renderH1(gfx, font, Component.literal("Configure Credentials"), null, currentX, currentY);
+                currentY = renderH1(gfx, font, Component.translatable("screen.logistics.computer.tab.install.set_credentials"), null, currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
 
-                gfx.drawString(font, "Root Account Password", x + 15, y + 42, 0xFFAAAAAA, false);
-                gfx.drawString(font, "Confirm Password", x + 180, y + 42, 0xFFAAAAAA, false);
+                gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.install.root_password").getString(), x + 15, y + 42, 0xFFAAAAAA, false);
+                gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.install.confirm_password").getString(), x + 180, y + 42, 0xFFAAAAAA, false);
 
                 if (this.passwordField != null && this.confirmField != null) {
                     String p1 = this.passwordField.getValue();
                     String p2 = this.confirmField.getValue();
                     if (!p1.isEmpty() && !p2.isEmpty() && !p1.equals(p2)) {
-                        gfx.drawString(font, "Passwords do not match!", x + 190, y + 94, 0xFFFF5555, false);
+                        gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.install.password_not_matching").getString(), x + 190, y + 94, 0xFFFF5555, false);
                     }
                 }
             }
             case SYSTEM_NAME -> {
-                currentY = renderH1(gfx, font, Component.literal("Hostname"), null, currentX, currentY);
+                currentY = renderH1(gfx, font, Component.translatable("screen.logistics.generic.hostname"), null, currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
 
-                gfx.drawString(font, "Assign Local System Hostname", x + 15, y + 42, 0xFFAAAAAA, false);
+                gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.install.asign_admin").getString(), x + 15, y + 42, 0xFFAAAAAA, false);
             }
             case SUMMARY -> {
-                currentY = renderH1(gfx, font, Component.literal("Ready to Install"), null, currentX, currentY);
+                currentY = renderH1(gfx, font, Component.translatable("screen.logistics.computer.tab.install.ready"), null, currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 6;
 
-                currentY = renderParagraph(gfx, font, Component.literal("Parameters parsed successfully. Ready to install DragonOS:"), currentX, currentY, contentWidth, 0xFFFFFFFF);
+                currentY = renderParagraph(gfx, font, Component.translatable("screen.logistics.computer.tab.install.params_ready"), currentX, currentY, contentWidth, 0xFFFFFFFF);
                 currentY += 6;
-                gfx.drawString(font, "Hostname: " + this.systemName, currentX, currentY, 0xFF55FF55, false);
+                gfx.drawString(font, Component.translatable("screen.logistics.generic.hostname").getString() + ": " + this.systemName, currentX, currentY, 0xFF55FF55, false);
                 currentY += 12;
-                gfx.drawString(font, "Root Password: [CONFIGURED]", currentX, currentY, 0xFF55FF55, false);
+                gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.install.root_password_configured").getString(), currentX, currentY, 0xFF55FF55, false);
             }
             case ANIMATION -> {
-                currentY = renderH1(gfx, font, Component.literal("Installing DragonOS..."), null, currentX, currentY);
+                currentY = renderH1(gfx, font, Component.translatable("screen.logistics.computer.tab.install.installing"), null, currentX, currentY);
                 currentY += 4;
                 currentY = renderHorizontalLine(gfx, currentX, currentY, contentWidth, 0x44FFFFFF);
                 currentY += 20;
@@ -329,7 +329,7 @@ public class InstallTab extends Tab {
             this.currentSplashText = splashInstance.splash;
             return;
         }
-        this.currentSplashText = "Unpacking...";
+        this.currentSplashText = Component.translatable("screen.logistics.computer.tab.install.unpacking").getString();
     }
 
     private int renderH1(GuiGraphics gfx, Font font, Component text, ItemStack icon, int x, int y) {

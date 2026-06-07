@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "logistics:block/audio_station/side",
+    "north": "logistics:block/audio_station/front",
+    "south": "logistics:block/audio_station/side",
+    "east": "logistics:block/audio_station/side",
+    "west": "logistics:block/audio_station/side",
+    "up": "logistics:block/audio_station/side",
+    "down": "logistics:block/audio_station/side"
+  }
+}

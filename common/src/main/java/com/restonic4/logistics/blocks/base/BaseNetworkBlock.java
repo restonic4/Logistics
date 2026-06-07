@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.PushReaction;
 
 public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
     private NodeTypeRegistry.NetworkNodeType<?> nodeType;
@@ -45,7 +46,12 @@ public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
         if (!blockState.is(newBlockState.getBlock())) {
             if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
                 BlockPos immutableBlockPos = blockPos.immutable();
-                NetworkManager.get(serverLevel).onMemberRemoved(immutableBlockPos);
+                NetworkManager manager = NetworkManager.get(serverLevel);
+                NetworkNode node = manager.getNodeByBlockPos(immutableBlockPos);
+                if (node != null) {
+                    onNodeRemoved(node, serverLevel, immutableBlockPos);
+                }
+                manager.onMemberRemoved(immutableBlockPos);
             }
         }
 

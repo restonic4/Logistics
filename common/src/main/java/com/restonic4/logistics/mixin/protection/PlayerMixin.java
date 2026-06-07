@@ -2,7 +2,6 @@ package com.restonic4.logistics.mixin.protection;
 
 import com.restonic4.logistics.blocks.protector.ProtectionMixinUtils;
 import com.restonic4.logistics.blocks.protector.data_types.ActionType;
-import com.restonic4.logistics.blocks.protector.data_types.ClientProtectionCache;
 import com.restonic4.logistics.blocks.protector.data_types.FlagData;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import net.minecraft.core.BlockPos;
@@ -18,7 +17,6 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -36,13 +34,8 @@ public class PlayerMixin {
         Entity attacker = source.getEntity();
         if (!(attacker instanceof Player attackerPlayer) || attackerPlayer == self) return;
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                attackerPlayer.level().dimension().location(),
-                attackerPlayer.blockPosition(),
-                attackerPlayer,
-                "pvp"
-        );
-        if (fd == null || !fd.enabled()) return;
+        FlagData fd = ServerProtectionCache.getFlagState(attackerPlayer.level().dimension().location(), attackerPlayer.blockPosition(), attackerPlayer, "pvp");
+        if (!ProtectionMixinUtils.isZoneActive(attackerPlayer.level(), attackerPlayer.blockPosition(), fd)) return;
 
         ActionType action;
         try { action = ActionType.valueOf(fd.actionType()); } catch (IllegalArgumentException e) { return; }
@@ -69,30 +62,16 @@ public class PlayerMixin {
         if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
 
         if (entity instanceof AbstractVillager) {
-            FlagData villagerFd = ServerProtectionCache.getFlagState(
-                    player.level().dimension().location(), player.blockPosition(), player, "villager_trade");
-            if (villagerFd != null && !villagerFd.enabled()) return; // explicitly allowed
-            if (villagerFd != null && villagerFd.enabled()) {
-                ProtectionMixinUtils.handleResult(player, villagerFd, cir);
-                return;
-            }
+            FlagData villagerFd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "villager_trade");
+            if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), villagerFd)) return;
+
+            ProtectionMixinUtils.handleResult(player, villagerFd, cir);
+            return;
         }
 
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "entity_interaction");
+        FlagData fd = ServerProtectionCache.getFlagState(player.level().dimension().location(), player.blockPosition(), player, "entity_interaction");
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
         ProtectionMixinUtils.handleResult(player, fd, cir);
-    }
-
-    // ==================== attack_entities ====================
-    @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
-    private void onAttack(Entity target, CallbackInfo ci) {
-        Player self = (Player) (Object) this;
-        if (self.level().isClientSide() || !(self instanceof ServerPlayer player)) return;
-        if (target instanceof Player) return; // PvP handled above
-
-        FlagData fd = ServerProtectionCache.getFlagState(
-                player.level().dimension().location(), player.blockPosition(), player, "attack_entities");
-        ProtectionMixinUtils.handle(player, fd, ci);
     }
 
     // ==================== sneaking (tick) and walk_in ====================
@@ -105,7 +84,7 @@ public class PlayerMixin {
 
         // ==================== SNEAKING SYSTEM ====================
         FlagData sneakingFlag = ProtectionMixinUtils.getServerFlag(player.level(), pos, player, "sneaking");
-        if (ProtectionMixinUtils.isZoneDenied(sneakingFlag)) {
+        if (ProtectionMixinUtils.isZoneActive(player.level(), pos, sneakingFlag)) {
             ActionType sneakingAction = ProtectionMixinUtils.getActionType(sneakingFlag);
 
             switch (sneakingAction) {
@@ -133,7 +112,7 @@ public class PlayerMixin {
         if (player.tickCount % 20 == 0) {
             FlagData walkInFlag = ProtectionMixinUtils.getServerFlag(player.level(), pos, player, "walk_in");
 
-            if (ProtectionMixinUtils.isZoneDenied(walkInFlag)) {
+            if (ProtectionMixinUtils.isZoneActive(player.level(), pos, walkInFlag)) {
                 ActionType walkInAction = ProtectionMixinUtils.getActionType(walkInFlag);
 
                 switch (walkInAction) {
@@ -154,7 +133,7 @@ public class PlayerMixin {
 
         // Use the correct cache for the logical side
         FlagData fd = ProtectionMixinUtils.getFlag(player.level(), player.blockPosition(), player, "sneaking");
-        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
 
         try {
             if (ActionType.valueOf(fd.actionType()) == ActionType.DENY) {
@@ -169,7 +148,7 @@ public class PlayerMixin {
         Player player = (Player)(Object)this;
 
         FlagData fd = ProtectionMixinUtils.getFlag(player.level(), player.blockPosition(), player, "sneaking");
-        if (!ProtectionMixinUtils.isZoneDenied(fd)) return;
+        if (!ProtectionMixinUtils.isZoneActive(player.level(), player.blockPosition(), fd)) return;
 
         try {
             if (ActionType.valueOf(fd.actionType()) == ActionType.DENY) {

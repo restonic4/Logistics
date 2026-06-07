@@ -58,7 +58,7 @@ public class LogTab extends Tab {
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public LogTab() {
-        super(Component.literal("Logs"));
+        super(Component.translatable("screen.logistics.computer.tab.logs.title"));
     }
 
     // ── Tab lifecycle ─────────────────────────────────────────────────────────
@@ -77,14 +77,13 @@ public class LogTab extends Tab {
         int gap   = 2;
         int startX = x + LEFT_PAD;
 
-        addFilterButton(parent, startX,                   btnY, btnW, btnH, "All",   null);
-        addFilterButton(parent, startX + (btnW + gap),    btnY, btnW, btnH, "Info",  ComputerLogEntry.Severity.INFO);
-        addFilterButton(parent, startX + (btnW + gap) * 2,btnY, btnW, btnH, "Warn",  ComputerLogEntry.Severity.WARN);
-        addFilterButton(parent, startX + (btnW + gap) * 3,btnY, btnW, btnH, "Error", ComputerLogEntry.Severity.ERROR);
+        addFilterButton(parent, startX, btnY, btnW, btnH, Component.translatable("screen.logistics.computer.tab.logs.all").getString(), null);
+        addFilterButton(parent, startX + (btnW + gap), btnY, btnW, btnH, Component.translatable("screen.logistics.computer.tab.logs.info").getString(), ComputerLogEntry.Severity.INFO);
+        addFilterButton(parent, startX + (btnW + gap) * 2,btnY, btnW, btnH, Component.translatable("screen.logistics.computer.tab.logs.warn").getString(), ComputerLogEntry.Severity.WARN);
+        addFilterButton(parent, startX + (btnW + gap) * 3,btnY, btnW, btnH, Component.translatable("screen.logistics.computer.tab.logs.error").getString(), ComputerLogEntry.Severity.ERROR);
     }
 
-    private void addFilterButton(Screen parent, int x, int y, int w, int h,
-                                 String label, ComputerLogEntry.Severity severity) {
+    private void addFilterButton(Screen parent, int x, int y, int w, int h, String label, ComputerLogEntry.Severity severity) {
         StyledButton btn = new StyledButton(x, y, w, h,
                 Component.literal(label),
                 () -> {
@@ -210,7 +209,7 @@ public class LogTab extends Tab {
             int maxMsgWidth = (int) ((listWidth - LEFT_PAD - curX) / scale);
             String msg = entry.message();
             if (font.width(msg) > maxMsgWidth) {
-                msg = font.plainSubstrByWidth(msg, maxMsgWidth - font.width("…")) + "…";
+                msg = font.plainSubstrByWidth(msg, maxMsgWidth - font.width("...")) + "...";
             }
             gfx.drawString(font, msg, curX, 0, COL_MESSAGE, false);
 
@@ -236,7 +235,7 @@ public class LogTab extends Tab {
 
         // ── Empty state ───────────────────────────────────────────────────────
         if (visible.isEmpty()) {
-            String msg = filter == null ? "No log entries yet." : "No entries for this filter.";
+            String msg = Component.translatable(filter == null ? "screen.logistics.computer.tab.logs.no_logs" : "screen.logistics.computer.tab.logs.no_logs_here").getString();
             int tw = (int) (font.width(msg) * 0.9f);
             int tx = x + (width - tw) / 2;
             int ty = listTop + listHeight / 2 - 4;
