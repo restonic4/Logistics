@@ -3,6 +3,7 @@ package com.restonic4.logistics.blocks.audio_station;
 import com.restonic4.logistics.audio.AudioUtils;
 import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.networking.C2SPacket;
+import com.restonic4.logistics.networking.ServerNetworking;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -77,6 +78,7 @@ public class AudioUploadPacket implements C2SPacket {
                 java.nio.file.Files.write(target.toPath(), full);
                 AudioUtils.loadWav(target.getAbsolutePath());
                 System.out.println("Accepted sound upload: " + target.getAbsolutePath());
+                ServerNetworking.sendToAll(server, new UploadedAudiosSyncPacket(ServerAudioStorage.getAllSounds()));
             } catch (Exception e) {
                 System.err.println("Invalid WAV from " + playerId + ": " + e.getMessage());
                 target.delete();

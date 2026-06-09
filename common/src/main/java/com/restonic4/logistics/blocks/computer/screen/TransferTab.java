@@ -1,6 +1,7 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
@@ -37,8 +38,11 @@ public class TransferTab extends Tab {
     private BlockPos savedLeft = null;
     private BlockPos savedRight = null;
 
+    private final List<AccessorNode> accessors;
+
     public TransferTab() {
         super(Component.translatable("screen.logistics.computer.tab.transfer.title"));
+        this.accessors = ComputerScreen.getEnergyNetwork().getAccessors();
     }
 
     @Override
@@ -84,8 +88,6 @@ public class TransferTab extends Tab {
     }
 
     public void refreshAccessorDropdowns() {
-        List<ComputerSyncPacket.AccessorData> accessors = ComputerScreen.getAccessors();
-
         List<SearchableDropdownWidget.DropdownEntry<BlockPos>> leftEntries = new ArrayList<>();
         List<SearchableDropdownWidget.DropdownEntry<BlockPos>> rightEntries = new ArrayList<>();
         List<SearchableDropdownWidget.DropdownEntry<String>> itemEntries = new ArrayList<>();
@@ -96,8 +98,8 @@ public class TransferTab extends Tab {
 
         Set<String> addedItemIds = new HashSet<>();
 
-        for (ComputerSyncPacket.AccessorData accessorData : accessors) {
-            BlockPos pos = accessorData.pos();
+        for (AccessorNode accessorNode : accessors) {
+            BlockPos pos = accessorNode.getBlockPos();
 
             leftEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
                     Component.literal(pos.toShortString()),
@@ -107,7 +109,7 @@ public class TransferTab extends Tab {
                     Component.literal(pos.toShortString()),
                     SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.ACCESSOR_BLOCK.getBlock())));
 
-            for (ItemStack itemStack : accessorData.inventory()) {
+            for (ItemStack itemStack : accessorNode.getReplicatedInventory()) {
                 if (itemStack.getItem() == Items.AIR) continue;
                 ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
                 String itemId = registryName.toString();

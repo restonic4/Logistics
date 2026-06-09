@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword, boolean hasProtectors) implements S2CPacket {
+public record ComputerSyncPacket(BlockPos computerNode, boolean hasProtectors) implements S2CPacket {
     public static final ResourceLocation ID = Logistics.id("computer_sync");
 
     public ComputerSyncPacket(FriendlyByteBuf buf) {
@@ -20,7 +20,7 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
     }
 
     private ComputerSyncPacket(DecodedData data) {
-        this(data.computerNode, data.accessors, data.isInstalled, data.systemName, data.rootPassword, data.hasProtectors);
+        this(data.computerNode, data.hasProtectors);
     }
 
     @Override
@@ -31,21 +31,6 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
     @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeBlockPos(computerNode);
-        buf.writeVarInt(accessors.size());
-
-        for (AccessorData accessor : accessors) {
-            buf.writeBlockPos(accessor.pos());
-
-            List<ItemStack> inventory = accessor.inventory();
-            buf.writeVarInt(inventory.size());
-            for (ItemStack stack : inventory) {
-                buf.writeItem(stack);
-            }
-        }
-
-        buf.writeBoolean(isInstalled);
-        buf.writeUtf(systemName);
-        buf.writeUtf(rootPassword);
         buf.writeBoolean(hasProtectors);
     }
 
@@ -72,14 +57,11 @@ public record ComputerSyncPacket(BlockPos computerNode, List<AccessorData> acces
             accessors.add(new AccessorData(pos, inventory));
         }
 
-        boolean isInstalled = buf.readBoolean();
-        String systemName = buf.readUtf();
-        String rootPassword = buf.readUtf();
         boolean hasProtectors = buf.readBoolean();
 
-        return new DecodedData(computerNode, accessors, isInstalled, systemName, rootPassword, hasProtectors);
+        return new DecodedData(computerNode, hasProtectors);
     }
 
     public record AccessorData(BlockPos pos, List<ItemStack> inventory) {}
-    private record DecodedData(BlockPos computerNode, List<AccessorData> accessors, boolean isInstalled, String systemName, String rootPassword, boolean hasProtectors) {}
+    private record DecodedData(BlockPos computerNode, boolean hasProtectors) {}
 }

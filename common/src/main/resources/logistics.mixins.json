@@ -10,6 +10,7 @@
     "events.MinecraftServerMixin",
     "events.PlayerListMixin",
     "events.ServerLevelMixin",
+    "features.inventory_node.BlockEntityMixin",
     "migration.ChunkSerializerMixin",
     "migration.EntityMixin",
     "migration.PlayerMixin",

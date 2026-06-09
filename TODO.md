@@ -19,3 +19,11 @@
 
 - Ton of lag when rain hits a NetworkNode, big area
 - Batteries cull weirdly, check on spectator.
+- Recipes review
+
+CONTINUE:
+Lo he dejado en el computer screen, acabo de quitar el system anme,
+paswword y installed, y ya no se guarda el blockpos, ahora se guarda el node en el
+computer screen. Hay que hacer q se use el client manager para obtener el node del blockpos,
+la idea es tener un solo packet para abrir la pantalla y que este diga la pos del computer.
+Luego faltaria terminar el rework de los protectors y hacer el networking con las estaciones de audio.

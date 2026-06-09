@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.audio_station.AudioStationConfigPacket;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.audio_station.AudioUploadPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
+import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
@@ -37,6 +38,9 @@ public class AudioTab extends Tab {
     private StyledButton deleteButton;
     private EditBox pathField;
 
+    private final List<AudioStationNode.AudioStationData> audioStations;
+    private final List<String> sounds;
+
     // Persisted state
     private AudioStationNode.AudioStationData savedStation = null;
     private String savedSound = null;
@@ -48,6 +52,8 @@ public class AudioTab extends Tab {
 
     public AudioTab() {
         super(Component.translatable("screen.logistics.computer.tab.audio.title"));
+        this.audioStations = ComputerScreen.getEnergyNetwork().getAudioStationsData();
+        this.sounds = ClientNetworkManager.getUploadedSounds();
     }
 
     @Override
@@ -61,7 +67,7 @@ public class AudioTab extends Tab {
 
         // Station selector
         List<SearchableDropdownWidget.DropdownEntry<AudioStationNode.AudioStationData>> stationEntries = new ArrayList<>();
-        for (AudioStationNode.AudioStationData s : ComputerScreen.getAudioStations()) {
+        for (AudioStationNode.AudioStationData s : audioStations) {
             stationEntries.add(new SearchableDropdownWidget.DropdownEntry<>(s,
                     Component.literal(s.pos().toShortString()), null));
         }
@@ -148,7 +154,7 @@ public class AudioTab extends Tab {
         List<SearchableDropdownWidget.DropdownEntry<String>> list = new ArrayList<>();
         list.add(new SearchableDropdownWidget.DropdownEntry<>("",
                 Component.translatable("screen.logistics.computer.tab.audio.none"), null));
-        for (String s : ComputerScreen.getAvailableSounds()) {
+        for (String s : sounds) {
             list.add(new SearchableDropdownWidget.DropdownEntry<>(s,
                     Component.literal(s), SearchableDropdownWidget.DropdownIcon.of(Items.NOTE_BLOCK)));
         }
@@ -158,7 +164,7 @@ public class AudioTab extends Tab {
     public void refreshData() {
         if (stationSelector != null) {
             List<SearchableDropdownWidget.DropdownEntry<AudioStationNode.AudioStationData>> entries = new ArrayList<>();
-            for (AudioStationNode.AudioStationData s : ComputerScreen.getAudioStations()) {
+            for (AudioStationNode.AudioStationData s : audioStations) {
                 entries.add(new SearchableDropdownWidget.DropdownEntry<>(s,
                         Component.literal(s.pos().toShortString()), null));
             }
@@ -210,7 +216,7 @@ public class AudioTab extends Tab {
         if (!p.toString().toLowerCase().endsWith(".wav")) return;
         try {
             byte[] data = Files.readAllBytes(p);
-            if (data.length > 1024 * 1024 * 10) return; // 10MB max total
+            if (data.length > 1024 * 1024 * 15) return; // 10MB max total
             String filename = p.getFileName().toString();
 
             // Send in chunks
@@ -283,8 +289,8 @@ public class AudioTab extends Tab {
         gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.audio.library").getString(), rightX, y + 2, 0xFFAAAAAA, false);
         gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.audio.paste_path").getString(), rightX, y + 66, 0xFF777777, false);
 
-        gfx.drawString(font, "Stations: " + ComputerScreen.getAudioStations().size(), x + 10, y + 160, 0xFFFF0000, false);
-        gfx.drawString(font, "Sounds: " + ComputerScreen.getAvailableSounds().size(), x + 10, y + 172, 0xFFFF0000, false);
+        gfx.drawString(font, "Stations: " + audioStations.size(), x + 10, y + 160, 0xFFFF0000, false);
+        gfx.drawString(font, "Sounds: " + sounds.size(), x + 10, y + 172, 0xFFFF0000, false);
     }
 
     @Override

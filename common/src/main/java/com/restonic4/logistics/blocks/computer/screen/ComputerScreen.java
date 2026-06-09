@@ -1,10 +1,13 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
+import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
+import com.restonic4.logistics.networks.client.ClientNetworkManager;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.screens.tabs.TabDistribution;
 import com.restonic4.logistics.screens.tabs.TabbedScreen;
 import com.restonic4.logistics.screens.widgets.StyledButton;
@@ -22,17 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ComputerScreen extends TabbedScreen {
-    private static BlockPos computerNode;
-    private static List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
+    private static EnergyNetwork energyNetwork;
+    private static ComputerNode computerNode;
 
-    private static boolean isInstalled = false;
-    private static String systemName;
-    private static String expectedPassword;
     private static boolean hasProtectors;
     private boolean isLoggedIn = false;
     private static ProtectionEditSyncPacket lastProtectionData;
-    private static List<AudioStationNode.AudioStationData> audioStations = new ArrayList<>();
-    private static List<String> availableSounds = new ArrayList<>();
 
     private final TransferTab transferTab;
     private final ProtectionTab protectionTab;
@@ -69,7 +67,7 @@ public class ComputerScreen extends TabbedScreen {
 
     public static void setAccessors(ComputerSyncPacket payload) {
         computerNode = payload.computerNode();
-        accessors = new ArrayList<>(payload.accessors());
+        energyNetwork = (EnergyNetwork) ClientNetworkManager.getNetwork(Minecraft.getInstance().level.dimension(), computerNode);
 
         if (Minecraft.getInstance().screen instanceof ComputerScreen screen) {
             screen.transferTab.refreshAccessorDropdowns();
@@ -85,27 +83,11 @@ public class ComputerScreen extends TabbedScreen {
     }
 
     public static void setComputerState(ComputerSyncPacket computerSyncPacket) {
-        isInstalled = computerSyncPacket.isInstalled();
-        systemName = computerSyncPacket.systemName();
-        expectedPassword = computerSyncPacket.rootPassword();
         hasProtectors = computerSyncPacket.hasProtectors();
     }
 
-    public static void setAudioStations(List<AudioStationNode.AudioStationData> stations, List<String> sounds) {
-        audioStations = stations;
-        availableSounds = sounds;
-        if (Minecraft.getInstance().screen instanceof ComputerScreen screen) {
-            screen.updateTabs();
-            screen.rebuildTabBar();
-            if (screen.audioTab != null) screen.audioTab.refreshData();
-        }
-    }
-
-    public static List<AudioStationNode.AudioStationData> getAudioStations() { return audioStations; }
-    public static List<String> getAvailableSounds() { return availableSounds; }
-
-    public static ProtectionEditSyncPacket getLastProtectionData() {
-        return lastProtectionData;
+    public static EnergyNetwork getEnergyNetwork() {
+        return energyNetwork;
     }
 
     public void performLogin() {
@@ -125,11 +107,11 @@ public class ComputerScreen extends TabbedScreen {
         removeTab(loginTab);
         removeTab(audioTab);
 
-        if (isInstalled) {
+        if (computerNode.isInstalled()) {
             if (isLoggedIn) {
-                if (!accessors.isEmpty()) addTab(transferTab);
+                if (energyNetwork.hasAccessors()) addTab(transferTab);
                 if (hasProtectors) addTab(protectionTab);
-                if (!audioStations.isEmpty()) addTab(audioTab);
+                if (energyNetwork.hasAudioStations()) addTab(audioTab);
                 addTab(logTab);
             } else {
                 addTab(loginTab);
@@ -246,19 +228,8 @@ public class ComputerScreen extends TabbedScreen {
         return logTab;
     }
 
-    public static BlockPos getComputerNode() {
+    public static ComputerNode getComputerNode() {
         return computerNode;
-    }
-    public static List<ComputerSyncPacket.AccessorData> getAccessors() {
-        return accessors;
-    }
-
-    public static String getSystemName() {
-        return systemName;
-    }
-
-    public static String getExpectedPassword() {
-        return expectedPassword;
     }
 
     @Override
@@ -285,7 +256,7 @@ public class ComputerScreen extends TabbedScreen {
         }
 
         if (computerNode != null) {
-            ClientNetworking.sendToServer(new ComputerScreenOffPacket(computerNode));
+            ClientNetworking.sendToServer(new ComputerScreenOffPacket(computerNode.getBlockPos()));
         }
         stopAmbientSound();
         super.onClose();

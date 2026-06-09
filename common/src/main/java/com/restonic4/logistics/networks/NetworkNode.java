@@ -1,5 +1,6 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.networks.flags.DirtyFlaggable;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
@@ -41,6 +42,7 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
     public Network getNetwork() { return network; }
     public ServerLevel getLevel() { return network.getServerLevel(); }
     public BlockPos getBlockPos() { return blockPos; }
+    public boolean isClientSide() { return getNetwork().isClientSide(); }
 
     public void tick() { }
     public void onInit() { }
@@ -50,24 +52,36 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         Network ownNetwork = getNetwork();
         if (ownNetwork == null) return Optional.empty();
 
-        ServerLevel level = ownNetwork.getServerLevel();
-        return NetworkManager.get(level).getAdjacentNetwork(blockPos, networkClass);
+        if (!isClientSide()) {
+            ServerLevel level = ownNetwork.getServerLevel();
+            return NetworkManager.get(level).getAdjacentNetwork(blockPos, networkClass);
+        } else {
+            return ClientNetworkManager.getAdjacentNetwork(getNetwork().getDimensionKey(), blockPos, networkClass);
+        }
     }
 
     public Network getFacingNetwork(Direction direction) {
         Network ownNetwork = getNetwork();
         if (ownNetwork == null) return null;
 
-        ServerLevel level = ownNetwork.getServerLevel();
-        return NetworkManager.get(level).getNetworkByBlockPos(blockPos.relative(direction));
+        if (!isClientSide()) {
+            ServerLevel level = ownNetwork.getServerLevel();
+            return NetworkManager.get(level).getNetworkByBlockPos(blockPos.relative(direction));
+        } else {
+            return ClientNetworkManager.getNetwork(getNetwork().getDimensionKey(), blockPos.relative(direction));
+        }
     }
 
     public <T extends Network> Optional<T> getFacingNetwork(Class<T> networkClass, Direction direction) {
         Network ownNetwork = getNetwork();
         if (ownNetwork == null) return Optional.empty();
 
-        ServerLevel level = ownNetwork.getServerLevel();
-        return NetworkManager.get(level).getNetworkByBlockPos(networkClass, blockPos.relative(direction));
+        if (!isClientSide()) {
+            ServerLevel level = ownNetwork.getServerLevel();
+            return NetworkManager.get(level).getNetworkByBlockPos(networkClass, blockPos.relative(direction));
+        } else {
+            return (Optional<T>) Optional.of(ClientNetworkManager.getNetwork(getNetwork().getDimensionKey(), blockPos.relative(direction)));
+        }
     }
 
     // Serialization
@@ -151,6 +165,10 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         if (flag == NetworkFlag.NETWORK_DIRTY) {
             isNetworkDirty = true;
         }
+    }
+
+    public void setNetworkDirty() {
+        markDirty(NetworkFlag.NETWORK_DIRTY);
     }
 
     public void cleanNetworkDirty() {

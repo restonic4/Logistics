@@ -6,6 +6,7 @@ import com.restonic4.logistics.networks.NetworkNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,23 @@ public interface FacingNode {
             if (facing != null) {
                 setFacing(facing);
             }
+        }
+    }
+
+    default void writeFacing(FriendlyByteBuf buf) {
+        Direction facing = getFacing();
+        boolean hasFacing = facing != null;
+        buf.writeBoolean(hasFacing);
+
+        if (hasFacing) {
+            buf.writeEnum(facing);
+        }
+    }
+
+    default void readFacing(FriendlyByteBuf buf) {
+        boolean hasFacing = buf.readBoolean();
+        if (hasFacing) {
+            setFacing(buf.readEnum(Direction.class));
         }
     }
 }

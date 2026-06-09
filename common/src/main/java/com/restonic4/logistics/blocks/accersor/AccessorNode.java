@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
@@ -60,6 +61,18 @@ public class AccessorNode extends InventoryNode implements FacingNode {
     protected void loadExtra(CompoundTag tag) {
         super.loadExtra(tag);
         this.loadFacing(tag);
+    }
+
+    @Override
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {
+        super.writeExtraSyncData(buf);
+        this.writeFacing(buf);
+    }
+
+    @Override
+    protected void readExtraSyncData(FriendlyByteBuf buf) {
+        super.readExtraSyncData(buf);
+        this.readFacing(buf);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.restonic4.logistics.networks.types;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.BuiltInNetworks;
@@ -162,5 +164,26 @@ public class ItemNetwork extends Network {
     @Deprecated
     public List<Parcel> getParcels() {
         return parcels;
+    }
+
+    // Helpers
+
+    public boolean hasAccessors() {
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof AccessorNode) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<AccessorNode> getAccessors() {
+        List<AccessorNode> nodes = new ArrayList<>();
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof AccessorNode accessorNode) {
+                nodes.add(accessorNode);
+            }
+        }
+        return nodes;
     }
 }

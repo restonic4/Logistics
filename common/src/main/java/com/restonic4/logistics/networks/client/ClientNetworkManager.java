@@ -1,8 +1,12 @@
 package com.restonic4.logistics.networks.client;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
+import com.restonic4.logistics.utils.MinecraftUtils;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
@@ -10,6 +14,7 @@ import java.util.*;
 
 public class ClientNetworkManager {
     private static final Map<ResourceKey<Level>, Map<UUID, Network>> DIMENSIONAL_NETWORKS = new HashMap<>();
+    private static List<String> UPLOADED_SOUNDS = new ArrayList<>();
 
     public static void clear() {
         DIMENSIONAL_NETWORKS.clear();
@@ -25,6 +30,35 @@ public class ClientNetworkManager {
     public static Network getNetwork(ResourceKey<Level> dimension, UUID uuid) {
         Map<UUID, Network> levelNetworks = DIMENSIONAL_NETWORKS.get(dimension);
         return levelNetworks != null ? levelNetworks.get(uuid) : null;
+    }
+
+    public static Network getNetwork(ResourceKey<Level> dimension, BlockPos pos) {
+        Map<UUID, Network> levelNetworks = DIMENSIONAL_NETWORKS.get(dimension);
+        if (levelNetworks == null) return null;
+
+        for (Network network : levelNetworks.values()) {
+            NetworkNode node = network.getNodeIndex().findByBlockPos(pos);
+            if (node != null) {
+                return network;
+            }
+        }
+
+        return null;
+    }
+
+    public static  <T extends Network> Optional<T> getAdjacentNetwork(ResourceKey<Level> dimension, BlockPos pos, Class<T> networkClass) {
+        Network self = getNetwork(dimension, pos);
+        if (networkClass.isInstance(self)) {
+            return Optional.of(networkClass.cast(self));
+        }
+
+        return MinecraftUtils.findNeighbor(pos, neighborPos -> {
+            Network candidate = getNetwork(dimension, neighborPos);
+            if (networkClass.isInstance(candidate)) {
+                return networkClass.cast(candidate);
+            }
+            return null;
+        });
     }
 
     public static Map<UUID, Network> getNetworksForLevel(ResourceKey<Level> dimension) {
@@ -44,6 +78,14 @@ public class ClientNetworkManager {
     public static Collection<Network> getNetworks(ResourceKey<Level> dimension) {
         Map<UUID, Network> map = DIMENSIONAL_NETWORKS.get(dimension);
         return map != null ? map.values() : Collections.emptyList();
+    }
+
+    public static void setUploadedSounds(List<String> newSounds) {
+        UPLOADED_SOUNDS = newSounds;
+    }
+
+    public static List<String> getUploadedSounds() {
+        return UPLOADED_SOUNDS;
     }
 
     public static void dump() {

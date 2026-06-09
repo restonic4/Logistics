@@ -1,8 +1,10 @@
 package com.restonic4.logistics.blocks.network_connector;
 
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.nodes.FacingNode;
+import com.restonic4.logistics.networks.nodes.ItemNode;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.types.ItemNetwork;
@@ -11,11 +13,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -66,6 +70,18 @@ public class NetworkConnectorNode extends EnergyNode implements FacingNode {
     }
 
     @Override
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {
+        super.writeExtraSyncData(buf);
+        this.writeFacing(buf);
+    }
+
+    @Override
+    protected void readExtraSyncData(FriendlyByteBuf buf) {
+        super.readExtraSyncData(buf);
+        this.readFacing(buf);
+    }
+
+    @Override
     public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         super.buildDebugScannerTooltip(builder, isSneaking);
 
@@ -81,5 +97,21 @@ public class NetworkConnectorNode extends EnergyNode implements FacingNode {
 
 
         return true;
+    }
+
+    // Helpers
+
+    public boolean hasAccessors() {
+        Network bridgedNetwork = getBridgedNetwork();
+        if (bridgedNetwork == null) return false;
+        if (!(bridgedNetwork instanceof ItemNetwork itemNetwork)) return false;
+        return itemNetwork.hasAccessors();
+    }
+
+    public @Nullable List<AccessorNode> getAccessors() {
+        Network bridgedNetwork = getBridgedNetwork();
+        if (bridgedNetwork == null) return null;
+        if (!(bridgedNetwork instanceof ItemNetwork itemNetwork)) return null;
+        return itemNetwork.getAccessors();
     }
 }

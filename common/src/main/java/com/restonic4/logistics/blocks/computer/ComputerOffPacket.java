@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
+// TODO: Remove due to Replication?
+@Deprecated
 public record ComputerOffPacket(BlockPos computerNode) implements S2CPacket {
     public static final ResourceLocation ID = Logistics.id("computer_off");
 

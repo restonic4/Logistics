@@ -1,6 +1,9 @@
 package com.restonic4.logistics.networks.types;
 
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.cable.CableNode;
+import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.networks.Network;
@@ -13,7 +16,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -182,5 +187,62 @@ public class EnergyNetwork extends Network {
         builder.timeSinceTick("Last stored buffer update:", lastStoredUpdate, getServerLevel().getGameTime(), ChatFormatting.YELLOW);
 
         return true;
+    }
+
+    public boolean hasAudioStations() {
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof AudioStationNode) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasAccessors() {
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof NetworkConnectorNode connectorNode) {
+                return connectorNode.hasAccessors();
+            }
+        }
+        return false;
+    }
+
+    public List<AudioStationNode.AudioStationData> getAudioStationsData() {
+        List<AudioStationNode> audioNodes = new ArrayList<>();
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof AudioStationNode audioNode) {
+                audioNodes.add(audioNode);
+            }
+        }
+
+        if (!audioNodes.isEmpty()) {
+            List<AudioStationNode.AudioStationData> audioData = new ArrayList<>();
+            for (AudioStationNode audioStationNode : audioNodes) {
+                audioData.add(new AudioStationNode.AudioStationData(
+                        audioStationNode.getBlockPos(),
+                        audioStationNode.getAudioPath(),
+                        audioStationNode.getVolume(),
+                        audioStationNode.getPitch(),
+                        audioStationNode.getRadius(),
+                        audioStationNode.isLooping(),
+                        audioStationNode.isRedstoneMode()
+                ));
+            }
+            return audioData;
+        }
+
+        return null;
+    }
+
+    public List<AccessorNode> getAccessors() {
+        List<AccessorNode> nodes = new ArrayList<>();
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof NetworkConnectorNode connectorNode) {
+                List<AccessorNode> accessors = connectorNode.getAccessors();
+                if (accessors != null) nodes.addAll(accessors);
+            }
+        }
+
+        return nodes;
     }
 }

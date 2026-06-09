@@ -3,6 +3,7 @@ package com.restonic4.logistics.networks.nodes;
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
+import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.ChatFormatting;
@@ -10,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
@@ -36,8 +38,7 @@ public abstract class InventoryNode extends ItemNode {
 
     @Nullable protected abstract BlockPos resolveTargetPos();
 
-    // TODO: Broken, ghost items
-    public List<ItemStack> getRawPhysicalInventory(ServerLevel level) {
+    private List<ItemStack> getRawPhysicalInventory(ServerLevel level) {
         Container container = resolveContainer(level);
 
         if (container != null) {
@@ -53,7 +54,7 @@ public abstract class InventoryNode extends ItemNode {
         return new ArrayList<>();
     }
 
-    public void writeRawPhysicalInventory(ServerLevel level, int index, ItemStack stack) {
+    private void writeRawPhysicalInventory(ServerLevel level, int index, ItemStack stack) {
         Container container = resolveContainer(level);
 
         if (container != null) {
@@ -63,9 +64,10 @@ public abstract class InventoryNode extends ItemNode {
             InventoryDelta delta = new InventoryDelta(index, stack.copy());
             pendingDeltas.addLast(delta);
         }
+
+        this.setNetworkDirty();
     }
 
-    // TODO: Broken, ghost items
     public List<ItemStack> getVirtualInventory(ServerLevel level) {
         List<ItemStack> rawInv = getRawPhysicalInventory(level);
 
@@ -101,9 +103,13 @@ public abstract class InventoryNode extends ItemNode {
 
         Constants.LOG.info("Found container at chunk load");
 
-        detectExternalModifications(level, container);
+        boolean changedExternally = detectExternalModifications(level, container);
         flushDeltasToContainer(container);
         lastKnownSnapshot = readFromContainer(container);
+
+        if (changedExternally) {
+            this.setNetworkDirty();
+        }
     }
 
     public void onTargetChunkUnloading(ServerLevel level, LevelChunk levelChunk) {
@@ -118,9 +124,9 @@ public abstract class InventoryNode extends ItemNode {
         lastKnownSnapshot = readFromContainer(container);
     }
 
-    private void detectExternalModifications(ServerLevel serverLevel, Container container) {
+    private boolean detectExternalModifications(ServerLevel serverLevel, Container container) {
         boolean anyDivergence = false;
-        if (lastKnownSnapshot == null) return;
+        if (lastKnownSnapshot == null) return false;
 
         int checkSize = Math.min(lastKnownSnapshot.size(), container.getContainerSize());
 
@@ -165,6 +171,8 @@ public abstract class InventoryNode extends ItemNode {
                 }
             }
         }
+
+        return anyDivergence;
     }
 
     public void dumpParcelOnContainer(Parcel parcel) {
@@ -292,13 +300,20 @@ public abstract class InventoryNode extends ItemNode {
         }
     }
 
-    // TODO: Broken, ghost items
     protected List<ItemStack> readFromContainer(Container container) {
         List<ItemStack> result = new ArrayList<>(container.getContainerSize());
         for (int i = 0; i < container.getContainerSize(); i++) {
             result.add(container.getItem(i).copy());
         }
         return result;
+    }
+
+    public @Nullable List<ItemStack> getLastKnownSnapshot() {
+        return lastKnownSnapshot;
+    }
+
+    public List<ItemStack> getReplicatedInventory() {
+        return lastKnownSnapshot == null ? new ArrayList<>() : lastKnownSnapshot;
     }
 
     @Override
@@ -345,5 +360,22 @@ public abstract class InventoryNode extends ItemNode {
                 lastKnownSnapshot.add(ItemStack.of(snapshotTag.getCompound(i)));
             }
         }
+    }
+
+    @Override
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {
+        super.writeExtraSyncData(buf);
+        List<ItemStack> inv = getVirtualInventory(getLevel());
+        buf.writeCollection(inv, FriendlyByteBuf::writeItem);
+    }
+
+    @Override
+    protected void readExtraSyncData(FriendlyByteBuf buf) {
+        super.readExtraSyncData(buf);
+        lastKnownSnapshot = buf.readCollection(ArrayList::new, FriendlyByteBuf::readItem);
+    }
+
+    public void onExternalContentChanged() {
+        this.setNetworkDirty();
     }
 }

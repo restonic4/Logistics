@@ -1,10 +1,7 @@
 package com.restonic4.logistics.blocks.computer;
 
 import com.mojang.authlib.GameProfile;
-import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
-import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
-import com.restonic4.logistics.blocks.audio_station.AudioStationSyncPacket;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.blocks.base.InvertiblePlacement;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
@@ -92,22 +89,6 @@ public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlaceme
             ServerLevel serverLevel = (ServerLevel) level;
             NetworkNode node = NetworkManager.get(serverLevel).getNodeByBlockPos(pos);
             if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork energyNetwork) {
-                Set<ItemNetwork> itemNetworks = new HashSet<>();
-                for (var connectorNode : energyNetwork.getNetworkConnectors()) {
-                    if (connectorNode.getBridgedNetwork() instanceof ItemNetwork itemNetwork) {
-                        itemNetworks.add(itemNetwork);
-                    }
-                }
-
-                List<ComputerSyncPacket.AccessorData> accessors = new ArrayList<>();
-                for (ItemNetwork itemNetwork : itemNetworks) {
-                    for (NetworkNode networkNode : itemNetwork.getNodeIndex().getAllNodes()) {
-                        if (networkNode instanceof AccessorNode accessorNode) {
-                            accessors.add(new ComputerSyncPacket.AccessorData(accessorNode.getBlockPos(), accessorNode.getVirtualInventory(serverLevel)));
-                        }
-                    }
-                }
-
                 List<ProtectionZone> zones = new ArrayList<>();
                 for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
                     zones.add(new ProtectionZone(
@@ -120,31 +101,7 @@ public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlaceme
                     ));
                 }
 
-                // ── Audio stations ──
-                List<AudioStationNode> audioNodes = new ArrayList<>();
-                for (NetworkNode networkNode : energyNetwork.getNodeIndex().getAllNodes()) {
-                    if (networkNode instanceof AudioStationNode audioNode) {
-                        audioNodes.add(audioNode);
-                    }
-                }
-
-                if (!audioNodes.isEmpty()) {
-                    List<AudioStationNode.AudioStationData> audioData = new ArrayList<>();
-                    for (AudioStationNode audioStationNode : audioNodes) {
-                        audioData.add(new AudioStationNode.AudioStationData(
-                                audioStationNode.getBlockPos(),
-                                audioStationNode.getAudioPath(),
-                                audioStationNode.getVolume(),
-                                audioStationNode.getPitch(),
-                                audioStationNode.getRadius(),
-                                audioStationNode.isLooping(),
-                                audioStationNode.isRedstoneMode()
-                        ));
-                    }
-                    ServerNetworking.sendToClient(serverPlayer, new AudioStationSyncPacket(audioData, ServerAudioStorage.getAllSounds()));
-                }
-
-                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword(), !zones.isEmpty()));
+                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), !zones.isEmpty()));
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
