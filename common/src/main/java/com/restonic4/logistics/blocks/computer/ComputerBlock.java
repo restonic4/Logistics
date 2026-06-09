@@ -1,7 +1,10 @@
 package com.restonic4.logistics.blocks.computer;
 
 import com.mojang.authlib.GameProfile;
+import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
+import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
+import com.restonic4.logistics.blocks.audio_station.AudioStationSyncPacket;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.blocks.base.InvertiblePlacement;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
@@ -115,6 +118,30 @@ public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlaceme
                             protectorNode.getRoles(),
                             protectorNode.isPowered()
                     ));
+                }
+
+                // ── Audio stations ──
+                List<AudioStationNode> audioNodes = new ArrayList<>();
+                for (NetworkNode networkNode : energyNetwork.getNodeIndex().getAllNodes()) {
+                    if (networkNode instanceof AudioStationNode audioNode) {
+                        audioNodes.add(audioNode);
+                    }
+                }
+
+                if (!audioNodes.isEmpty()) {
+                    List<AudioStationNode.AudioStationData> audioData = new ArrayList<>();
+                    for (AudioStationNode audioStationNode : audioNodes) {
+                        audioData.add(new AudioStationNode.AudioStationData(
+                                audioStationNode.getBlockPos(),
+                                audioStationNode.getAudioPath(),
+                                audioStationNode.getVolume(),
+                                audioStationNode.getPitch(),
+                                audioStationNode.getRadius(),
+                                audioStationNode.isLooping(),
+                                audioStationNode.isRedstoneMode()
+                        ));
+                    }
+                    ServerNetworking.sendToClient(serverPlayer, new AudioStationSyncPacket(audioData, ServerAudioStorage.getAllSounds()));
                 }
 
                 ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), accessors, computerNode.isInstalled(), computerNode.getSystemName(), computerNode.getRootPassword(), !zones.isEmpty()));

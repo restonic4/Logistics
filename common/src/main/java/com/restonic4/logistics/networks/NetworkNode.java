@@ -1,14 +1,17 @@
 package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.networks.flags.DirtyFlaggable;
+import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
+import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
@@ -20,6 +23,7 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
     private UUID uuid;
     private Network network;
     private BlockPos blockPos;
+    private boolean isNetworkDirty = false;
 
     public NetworkNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         this.type = type;
@@ -35,9 +39,11 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
     public ResourceLocation getResourceLocation() { return NodeTypeRegistry.get(this.type); }
     public UUID getUUID() { return uuid; }
     public Network getNetwork() { return network; }
+    public ServerLevel getLevel() { return network.getServerLevel(); }
     public BlockPos getBlockPos() { return blockPos; }
 
     public void tick() { }
+    public void onInit() { }
     public void onRemove() { }
 
     public <T extends Network> Optional<T> getAdjacentNetwork(Class<T> networkClass) {
@@ -63,6 +69,8 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         ServerLevel level = ownNetwork.getServerLevel();
         return NetworkManager.get(level).getNetworkByBlockPos(networkClass, blockPos.relative(direction));
     }
+
+    // Serialization
 
     public final CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -96,6 +104,26 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         return node;
     }
 
+    // Packets
+
+    public final void writeSyncData(FriendlyByteBuf buf) {
+        buf.writeUUID(this.uuid);
+        buf.writeBlockPos(this.blockPos);
+        writeExtraSyncData(buf);
+    }
+
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {}
+
+    public final void readSyncData(FriendlyByteBuf buf) {
+        this.uuid = buf.readUUID();
+        this.blockPos = buf.readBlockPos();
+        readExtraSyncData(buf);
+    }
+
+    protected void readExtraSyncData(FriendlyByteBuf buf) {}
+
+    // Other
+
     @Override
     public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         return false;
@@ -109,6 +137,7 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         builder.spacer();
         builder.keyValue("Node UUID", getUUID().toString(), ChatFormatting.YELLOW);
         builder.keyValue("Node type", getResourceLocation().toString(), ChatFormatting.YELLOW);
+        builder.keyValue("Network dirty", String.valueOf(isNetworkDirty()), isNetworkDirty() ? ChatFormatting.RED : ChatFormatting.GREEN);
 
         return true;
     }
@@ -118,5 +147,17 @@ public abstract class NetworkNode implements ScannerTooltipProvider {
         if (network != null) {
             network.onNodeDirty(this, flag);
         }
+
+        if (flag == NetworkFlag.NETWORK_DIRTY) {
+            isNetworkDirty = true;
+        }
+    }
+
+    public void cleanNetworkDirty() {
+        isNetworkDirty = false;
+    }
+
+    public boolean isNetworkDirty() {
+        return isNetworkDirty;
     }
 }

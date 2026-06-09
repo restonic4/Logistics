@@ -23,6 +23,7 @@
 
   "screen.logistics.generic.continue": "Continue",
   "screen.logistics.generic.create": "Create",
+  "screen.logistics.generic.apply": "Apply",
   "screen.logistics.generic.delete": "Delete",
   "screen.logistics.generic.back": "Back",
   "screen.logistics.generic.cancel": "Cancel",
@@ -84,6 +85,21 @@
 
   "screen.logistics.computer.tab.transfer.title": "Transfer",
   "screen.logistics.computer.tab.transfer.auto": "Auto",
+
+  "screen.logistics.computer.tab.audio.title": "Audio",
+  "screen.logistics.computer.tab.audio.browse": "Browse",
+  "screen.logistics.computer.tab.audio.upload": "Upload",
+  "screen.logistics.computer.tab.audio.delete": "Delete",
+  "screen.logistics.computer.tab.audio.none": "None",
+  "screen.logistics.computer.tab.audio.station": "Station",
+  "screen.logistics.computer.tab.audio.sound": "Sound",
+  "screen.logistics.computer.tab.audio.radius": "Radius",
+  "screen.logistics.computer.tab.audio.volume": "Volume",
+  "screen.logistics.computer.tab.audio.pitch": "Pitch",
+  "screen.logistics.computer.tab.audio.loop": "Loop",
+  "screen.logistics.computer.tab.audio.redstone": "Redstone",
+  "screen.logistics.computer.tab.audio.library": "Library",
+  "screen.logistics.computer.tab.audio.paste_path": "Paste absolute .wav path above",
 
   "logistics.ponder.protector.header": "Protectors",
   "logistics.ponder.protector.text_1": "Place a Protector.",

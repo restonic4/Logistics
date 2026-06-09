@@ -47,7 +47,7 @@ public class NetworkScannerServerHandler {
         added = node.buildScannerTooltip(builder, player.isShiftKeyDown()) || added;
         if (added) builder.mainTitle("Scanner", ChatFormatting.GOLD);
 
-        if (Constants.DEBUG) {
+        if (Constants.isDebug()) {
             if (added) {
                 builder.spacer();
             }

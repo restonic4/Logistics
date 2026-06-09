@@ -6,7 +6,6 @@
   "compatibilityLevel": "${mixin_java_version}",
   "mixins": [
     "CreativeModeTabMixin",
-    "audio.MinecraftServerMixin",
     "events.LevelChunkMixin",
     "events.MinecraftServerMixin",
     "events.PlayerListMixin",
@@ -42,7 +41,10 @@
     "registries.TagLoaderMixin"
   ],
   "client": [
+    "audio.ChannelAccessor",
     "audio.MinecraftMixin",
+    "audio.SoundEngineEx",
+    "audio.SoundManagerEx",
     "events.GuiMixin",
     "events.ItemBlockRenderTypesMixin",
     "events.LevelRendererMixin",

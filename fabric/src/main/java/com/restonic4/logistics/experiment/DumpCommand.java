@@ -1,29 +1,27 @@
 package com.restonic4.logistics.experiment;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.platform.Services;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 
-public class DebugCommand {
+public class DumpCommand {
     public static void init() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                    ClientCommandManager.literal("debug_logistics")
-                            .requires(DebugCommand::isAuthorized)
+                    ClientCommandManager.literal("dump_logistics")
+                            .requires(DumpCommand::isAuthorized)
                             .executes(context -> {
                                 FabricClientCommandSource source = context.getSource();
 
                                 try {
-                                    Constants.setDebug(!Constants.isDebug());
+                                    ClientNetworkManager.dump();
 
-                                    source.sendFeedback(Component.literal("§aDebug!"));
+                                    source.sendFeedback(Component.literal("§aUse debug mode on IDE to check things!"));
                                     return 1;
                                 } catch (Exception e) {
                                     e.printStackTrace();

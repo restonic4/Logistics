@@ -5,13 +5,20 @@ import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.tooltip.ScannerTooltipProvider;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
+import com.restonic4.logistics.utils.MathHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
@@ -22,10 +29,14 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
     private final NetworkTypeRegistry.NetworkType<?> type;
     private UUID uuid;
     private final NodeIndex nodeIndex;
+
     private final ServerLevel serverLevel;
+    private ResourceKey<Level> clientDimension;
 
     private boolean isDirty = false;
     private long dirtyBits = 0L;
+
+    private long lastNBTDiskSize = -1;
 
     private final Queue<Runnable> scheduledTasks = new ConcurrentLinkedQueue<>();
 
@@ -74,6 +85,19 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
     public void setDirty() { this.isDirty = true; }
     public void cleanDirtyFlag() { this.isDirty = false; }
     public boolean isDirty() { return this.isDirty; }
+    public void setNetworkDirty() { markDirty(NetworkFlag.NETWORK_DIRTY); }
+    public boolean isNetworkDirty() { return isDirty(NetworkFlag.NETWORK_DIRTY); }
+    public void cleanNetworkDirty() { clearFlag(NetworkFlag.NETWORK_DIRTY); }
+    public boolean isClientSide() { return this.serverLevel == null; }
+
+    public ResourceKey<Level> getDimensionKey() {
+        if (this.serverLevel != null) {
+            return this.serverLevel.dimension();
+        }
+        return this.clientDimension;
+    }
+
+    // Serialization
 
     public final CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -101,12 +125,30 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
         }
 
         loadExtra(tag);
+
+        lastNBTDiskSize = estimateDiskSize();
     }
 
     protected void loadExtra(CompoundTag tag) {}
 
+    // Packets
+
+    public static Network createEmptyOnClient(UUID uuid, ResourceLocation typeId, ResourceKey<Level> dimension) {
+        NetworkTypeRegistry.NetworkType<?> type = NetworkTypeRegistry.get(typeId);
+        if (type == null) throw new IllegalStateException("Unknown network type on client: " + typeId);
+
+        Network network = type.create(null);
+        network.uuid = uuid;
+        network.clientDimension = dimension;
+        return network;
+    }
+
+    // Other
+
     public void onNodeDirty(NetworkNode node, DirtyFlaggable.DirtyFlag flag) {
         markDirty(flag);
+        setNetworkDirty();
+        lastNBTDiskSize = estimateDiskSize();
     }
 
     public static Network create(NetworkTypeRegistry.NetworkType<?> networkType, ServerLevel serverLevel) {
@@ -149,6 +191,36 @@ public abstract class Network implements DirtyFlaggable, ScannerTooltipProvider 
         List<NetworkFlag> flags = getActiveFlags(NetworkFlag.class);
         flags.forEach(f -> builder.bullet(f.name(), ChatFormatting.YELLOW));
 
+        builder.keyValue("Disk size", MathHelper.formatBytes(lastNBTDiskSize), ChatFormatting.YELLOW);
+
         return true;
     }
+
+    // Stats
+
+    public long estimateDiskSize() {
+        try {
+            CompoundTag tag = this.save();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(baos);
+            NbtIo.write(tag, dos);
+
+            return baos.size();
+        } catch (IOException ignored) {
+            return -1;
+        }
+    }
+
+    /*public long estimatePacketSize() {
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            this.writeSyncData(buffer);
+            return buffer.readableBytes();
+        } catch (Exception e) {
+            return -1;
+        } finally {
+            buffer.release();
+        }
+    }*/
 }

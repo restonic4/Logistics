@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
+import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
@@ -30,10 +31,13 @@ public class ComputerScreen extends TabbedScreen {
     private static boolean hasProtectors;
     private boolean isLoggedIn = false;
     private static ProtectionEditSyncPacket lastProtectionData;
+    private static List<AudioStationNode.AudioStationData> audioStations = new ArrayList<>();
+    private static List<String> availableSounds = new ArrayList<>();
 
     private final TransferTab transferTab;
     private final ProtectionTab protectionTab;
     private final LogTab logTab;
+    private final AudioTab audioTab;
     private final InstallTab installTab;
     private final LoginTab loginTab;
 
@@ -59,6 +63,8 @@ public class ComputerScreen extends TabbedScreen {
         installTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/parcel.png"));
         this.loginTab = new LoginTab();
         loginTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
+        this.audioTab = new AudioTab();
+        audioTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/note_block.png"));
     }
 
     public static void setAccessors(ComputerSyncPacket payload) {
@@ -85,6 +91,19 @@ public class ComputerScreen extends TabbedScreen {
         hasProtectors = computerSyncPacket.hasProtectors();
     }
 
+    public static void setAudioStations(List<AudioStationNode.AudioStationData> stations, List<String> sounds) {
+        audioStations = stations;
+        availableSounds = sounds;
+        if (Minecraft.getInstance().screen instanceof ComputerScreen screen) {
+            screen.updateTabs();
+            screen.rebuildTabBar();
+            if (screen.audioTab != null) screen.audioTab.refreshData();
+        }
+    }
+
+    public static List<AudioStationNode.AudioStationData> getAudioStations() { return audioStations; }
+    public static List<String> getAvailableSounds() { return availableSounds; }
+
     public static ProtectionEditSyncPacket getLastProtectionData() {
         return lastProtectionData;
     }
@@ -104,11 +123,13 @@ public class ComputerScreen extends TabbedScreen {
         removeTab(logTab);
         removeTab(installTab);
         removeTab(loginTab);
+        removeTab(audioTab);
 
         if (isInstalled) {
             if (isLoggedIn) {
                 if (!accessors.isEmpty()) addTab(transferTab);
                 if (hasProtectors) addTab(protectionTab);
+                if (!audioStations.isEmpty()) addTab(audioTab);
                 addTab(logTab);
             } else {
                 addTab(loginTab);

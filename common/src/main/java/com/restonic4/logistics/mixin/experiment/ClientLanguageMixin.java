@@ -11,6 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ClientLanguageMixin {
     @Inject(method = "getOrDefault(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", at = @At("RETURN"), cancellable = true)
     private void makeTranslationsGreen(String id, String fallback, CallbackInfoReturnable<String> cir) {
-        if (Constants.DEBUG) cir.setReturnValue("§aCORRECT");
+        if (Constants.isDebug()) cir.setReturnValue("§aCORRECT");
     }
 }

@@ -12,3 +12,10 @@
   - Being able to edit the config and list the uploaded sounds
   - Being able to play an audio stream
   - being able to set radius, volume and pitch
+
+- Name nodes so ui knows
+
+- Client level replication by chunks
+
+- Ton of lag when rain hits a NetworkNode, big area
+- Batteries cull weirdly, check on spectator.

@@ -1,8 +1,11 @@
 package com.restonic4.logistics;
 
-import com.restonic4.logistics.audio.network.ServerboundAudioControlPacket;
+import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
+import com.restonic4.logistics.blocks.audio_station.AudioDeletePacket;
+import com.restonic4.logistics.blocks.audio_station.AudioStationConfigPacket;
+import com.restonic4.logistics.blocks.audio_station.AudioUploadPacket;
 import com.restonic4.logistics.blocks.computer.ComputerClientLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
@@ -17,11 +20,15 @@ import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.tooltip.NetworkScannerServerHandler;
+import com.restonic4.logistics.platform.Services;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.CreativeTabEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.LevelResource;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Logistics {
     public static final CreativeTabEntry CUSTOM_TAB = PlatformRegistry
@@ -32,6 +39,8 @@ public class Logistics {
             .register();
 
     public static void init() {
+        if (Services.PLATFORM.isDevelopmentEnvironment()) Constants.setDebug(true);
+
         FlagRegistry.init();
         Items.register();
         BlockRegistry.register();
@@ -40,9 +49,15 @@ public class Logistics {
         NetworkManager.register();
         Recipes.register();
 
+        AtomicBoolean initialized = new AtomicBoolean(false);
         ServerTickEvents.END.register(server -> {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 NetworkScannerServerHandler.tick(p);
+            }
+
+            if (!initialized.get()) {
+                initialized.set(true);
+                ServerAudioStorage.init(server.getWorldPath(LevelResource.ROOT).toFile());
             }
         });
 
@@ -53,7 +68,9 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(ComputerInstallPacket.ID, ComputerInstallPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ComputerClientLogPushPacket.ID, ComputerClientLogPushPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ProtectionSavePacket.ID, ProtectionSavePacket::read);
-        NetworkingRegistry.registerServerTargetedPacket(ServerboundAudioControlPacket.ID, ServerboundAudioControlPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(AudioStationConfigPacket.ID, AudioStationConfigPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(AudioUploadPacket.ID, AudioUploadPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(AudioDeletePacket.ID, AudioDeletePacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

@@ -2,9 +2,6 @@ package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
-import com.restonic4.logistics.blocks.protector.ProtectorNode;
-import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import com.restonic4.logistics.events.ChunkEvents;
 import com.restonic4.logistics.events.PlayerEvents;
@@ -14,20 +11,19 @@ import com.restonic4.logistics.migration.MigrationManager;
 import com.restonic4.logistics.migration.NbtWalker;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.nodes.FacingNode;
+import com.restonic4.logistics.networks.packets.NetworkBatchSyncPacket;
+import com.restonic4.logistics.networks.packets.NetworkDestroyedPacket;
+import com.restonic4.logistics.networks.packets.NetworkNodeRemovedPacket;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
-import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.utils.MinecraftUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -101,11 +97,39 @@ public class NetworkManager extends SavedData {
         });
 
         PlayerEvents.JOIN.register((server, serverPlayer) -> {
+            NetworkBatchSyncPacket.syncAllNetworksToPlayer(server, serverPlayer);
+
             for (ServerLevel level : server.getAllLevels()) {
                 ServerProtectionCache.updateAllCachesForLevel(level, "Player joined");
             }
+
             return EventResult.PASS;
         });
+    }
+
+    public static void flushNetworkDeltas(ServerLevel level) {
+        NetworkManager manager = NetworkManager.get(level);
+
+        for (Network network : manager.getAllNetworks()) {
+            if (network.isNetworkDirty()) {
+                for (NetworkNode node : network.getNodeIndex().getAllNodes()) {
+                    if (node.isNetworkDirty()) {
+                        NetworkBatchSyncPacket packet = new NetworkBatchSyncPacket(network, false, List.of(node));
+                        ServerNetworking.sendToAllInLevel(level, packet);
+                        Constants.LOG.debug(
+                                "Sending network deltas on {} for {} at {} which is {}",
+                                level.dimension().location(),
+                                node.getUUID(),
+                                node.getBlockPos(),
+                                node.getResourceLocation()
+                        );
+                        node.cleanNetworkDirty();
+                    }
+                }
+
+                network.cleanNetworkDirty();
+            }
+        }
     }
 
     /**
@@ -123,6 +147,7 @@ public class NetworkManager extends SavedData {
                 setDirty();
                 network.cleanDirtyFlag();
             }
+            flushNetworkDeltas(getServerLevel());
 
             // TODO: Remove
             if (network instanceof ItemNetwork itemNetwork) {
@@ -204,11 +229,13 @@ public class NetworkManager extends SavedData {
             network.getNodeIndex().register(node);
             networks.put(network.getUUID(), network);
             nodePositionIndex.put(node.getBlockPos(), network);
+            ServerNetworking.sendToAllInLevel(serverLevel, new NetworkBatchSyncPacket(network, true, List.of(node)));
         } else if (neighborNetworks.size() == 1) {
             // Attach to existing network
             Network target = neighborNetworks.iterator().next();
             target.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), target);
+            ServerNetworking.sendToAllInLevel(serverLevel, new NetworkBatchSyncPacket(target, false, List.of(node)));
         } else {
             // Merge all networks into 1
             Iterator<Network> iter = neighborNetworks.iterator();
@@ -217,6 +244,8 @@ public class NetworkManager extends SavedData {
             survivor.getNodeIndex().register(node);
             nodePositionIndex.put(node.getBlockPos(), survivor);
 
+            ServerNetworking.sendToAllInLevel(serverLevel, new NetworkBatchSyncPacket(survivor, false, List.of(node)));
+
             while (iter.hasNext()) {
                 Network otherNetwork = iter.next();
                 if (otherNetwork == null) continue;
@@ -224,12 +253,16 @@ public class NetworkManager extends SavedData {
                 survivor.mergeDataFrom(otherNetwork);
 
                 List<NetworkNode> toMove = new ArrayList<>(otherNetwork.getNodeIndex().getAllNodes());
+
+                ServerNetworking.sendToAllInLevel(serverLevel, new NetworkDestroyedPacket(otherNetwork));
+
                 for (NetworkNode otherNode : toMove) {
                     otherNetwork.getNodeIndex().unregister(otherNode);
                     survivor.getNodeIndex().register(otherNode);
                     nodePositionIndex.put(otherNode.getBlockPos(), survivor);
                 }
 
+                ServerNetworking.sendToAllInLevel(serverLevel, new NetworkBatchSyncPacket(survivor, false, toMove));
                 networks.remove(otherNetwork.getUUID());
             }
         }
@@ -246,6 +279,8 @@ public class NetworkManager extends SavedData {
 
         network.getNodeIndex().unregister(node);
         nodePositionIndex.remove(blockPos);
+
+        ServerNetworking.sendToAllInLevel(serverLevel, new NetworkNodeRemovedPacket(network, node));
 
         // Collect neighbors that are still in the network after removal.
         List<BlockPos> neighborsInNetwork = new ArrayList<>();
@@ -270,6 +305,7 @@ public class NetworkManager extends SavedData {
         // Case 1: was the only member, network is now empty
         if (neighborsInNetwork.isEmpty()) {
             if (network.getNodeIndex().getAllNodes().isEmpty()) {
+                ServerNetworking.sendToAllInLevel(serverLevel, new NetworkDestroyedPacket(network));
                 networks.remove(network.getUUID());
             }
             return;
@@ -307,6 +343,7 @@ public class NetworkManager extends SavedData {
         if (components.size() <= 1) return;
 
         // Split: dissolve the old network and create one new network per component
+        ServerNetworking.sendToAllInLevel(serverLevel, new NetworkDestroyedPacket(network));
         networks.remove(network.getUUID());
 
         List<Network> newChildren = new ArrayList<>();
@@ -314,13 +351,17 @@ public class NetworkManager extends SavedData {
         for (Set<NetworkNode> nodeSet : components) {
             Network newNetwork = Network.create(network.getType(), serverLevel);
 
+            List<NetworkNode> nodesInChild = new ArrayList<>();
             for (NetworkNode foundNode : nodeSet) {
                 newNetwork.getNodeIndex().register(foundNode);
                 nodePositionIndex.put(foundNode.getBlockPos(), newNetwork);
+                nodesInChild.add(foundNode);
             }
 
             networks.put(newNetwork.getUUID(), newNetwork);
             newChildren.add(newNetwork);
+
+            ServerNetworking.sendToAllInLevel(serverLevel, new NetworkBatchSyncPacket(newNetwork, true, nodesInChild));
         }
 
         network.onSplit(newChildren);

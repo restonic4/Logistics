@@ -1,7 +1,10 @@
 package com.restonic4.logistics.networks;
 
+import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
+import com.restonic4.logistics.networks.packets.NetworkBatchSyncPacket;
+import com.restonic4.logistics.networks.packets.NetworkNodeRemovedPacket;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +29,7 @@ public final class NodeIndex {
         byBlockPos.put(node.getBlockPos(), node);
         network.markDirty(NetworkFlag.NODE_ADDED);
         network.markDirty(NetworkFlag.MAX_STORAGE_CHANGED); // Meh
+        node.onInit();
     }
 
     public void unregister(NetworkNode node) {
