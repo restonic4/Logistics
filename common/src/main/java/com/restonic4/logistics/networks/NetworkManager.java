@@ -1,6 +1,8 @@
 package com.restonic4.logistics.networks;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.audio.ServerAudioStorage;
+import com.restonic4.logistics.blocks.audio_station.UploadedAudiosSyncPacket;
 import com.restonic4.logistics.blocks.base.NetworkBlock;
 import com.restonic4.logistics.blocks.protector.data_types.ServerProtectionCache;
 import com.restonic4.logistics.events.ChunkEvents;
@@ -102,6 +104,8 @@ public class NetworkManager extends SavedData {
             for (ServerLevel level : server.getAllLevels()) {
                 ServerProtectionCache.updateAllCachesForLevel(level, "Player joined");
             }
+
+            ServerNetworking.sendToClient(serverPlayer, new UploadedAudiosSyncPacket(ServerAudioStorage.getAllSounds()));
 
             return EventResult.PASS;
         });

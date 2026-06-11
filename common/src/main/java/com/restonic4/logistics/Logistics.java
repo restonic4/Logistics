@@ -6,6 +6,7 @@ import com.restonic4.logistics.blocks.accersor.AccessorBlock;
 import com.restonic4.logistics.blocks.audio_station.AudioDeletePacket;
 import com.restonic4.logistics.blocks.audio_station.AudioStationConfigPacket;
 import com.restonic4.logistics.blocks.audio_station.AudioUploadPacket;
+import com.restonic4.logistics.blocks.base.RenameNodePacket;
 import com.restonic4.logistics.blocks.computer.ComputerClientLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
@@ -49,14 +50,12 @@ public class Logistics {
         NetworkManager.register();
         Recipes.register();
 
-        AtomicBoolean initialized = new AtomicBoolean(false);
         ServerTickEvents.END.register(server -> {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 NetworkScannerServerHandler.tick(p);
             }
 
-            if (!initialized.get()) {
-                initialized.set(true);
+            if (ServerAudioStorage.getBaseDir() == null) {
                 ServerAudioStorage.init(server.getWorldPath(LevelResource.ROOT).toFile());
             }
         });
@@ -71,6 +70,7 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(AudioStationConfigPacket.ID, AudioStationConfigPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioUploadPacket.ID, AudioUploadPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioDeletePacket.ID, AudioDeletePacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(RenameNodePacket.ID, RenameNodePacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

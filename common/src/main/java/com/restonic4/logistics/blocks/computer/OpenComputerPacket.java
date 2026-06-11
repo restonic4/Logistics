@@ -7,29 +7,26 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
-// TODO: Remove due to Replication?
-@Deprecated
-public record ComputerOffPacket(BlockPos computerNode) implements S2CPacket {
-    public static final ResourceLocation ID = Logistics.id("computer_off");
+import java.util.ArrayList;
+import java.util.List;
 
-    public ComputerOffPacket(FriendlyByteBuf buf) {
+public record OpenComputerPacket(BlockPos computerNodePos) implements S2CPacket {
+    public static final ResourceLocation ID = Logistics.id("open_computer");
+
+    public OpenComputerPacket(FriendlyByteBuf buf) {
         this(buf.readBlockPos());
     }
 
     @Override
     public void handle(Minecraft client) {
-        if (client.screen instanceof ComputerScreen) {
-            BlockPos loadedNode = ComputerScreen.getComputerNode().getBlockPos();
-            if (loadedNode.equals(computerNode)) {
-                client.setScreen(null);
-            }
-        }
+        ComputerScreen.open(client, this);
     }
 
     @Override
     public void write(FriendlyByteBuf buf) {
-        buf.writeBlockPos(computerNode);
+        buf.writeBlockPos(computerNodePos);
     }
 
     @Override

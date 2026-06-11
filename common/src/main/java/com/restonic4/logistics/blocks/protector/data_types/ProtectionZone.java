@@ -9,7 +9,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.*;
 import java.util.Optional;
 
-public record ProtectionZone(UUID nodeId, BlockPos pos, int radius, boolean creative, List<RoleData> roles, boolean powered) {
+public record ProtectionZone(UUID nodeId, BlockPos pos, int radius, boolean creative, String name, List<RoleData> roles, boolean powered) {
 
     public ProtectionZone {
         List<RoleData> sorted = new ArrayList<>(roles);
@@ -78,6 +78,7 @@ public record ProtectionZone(UUID nodeId, BlockPos pos, int radius, boolean crea
         buf.writeBlockPos(pos);
         buf.writeInt(radius);
         buf.writeBoolean(creative);
+        buf.writeUtf(name);
         buf.writeCollection(roles, (b, r) -> r.netWrite(b));
         buf.writeBoolean(powered);
     }
@@ -87,8 +88,9 @@ public record ProtectionZone(UUID nodeId, BlockPos pos, int radius, boolean crea
         BlockPos pos = buf.readBlockPos();
         int radius = buf.readInt();
         boolean creative = buf.readBoolean();
+        String name = buf.readUtf();
         List<RoleData> roles = buf.readList(RoleData::netRead);
         boolean powered = buf.readBoolean();
-        return new ProtectionZone(nodeId, pos, radius, creative, roles, powered);
+        return new ProtectionZone(nodeId, pos, radius, creative, name, roles, powered);
     }
 }

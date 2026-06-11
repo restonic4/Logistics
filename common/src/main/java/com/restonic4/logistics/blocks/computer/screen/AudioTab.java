@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
+import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.audio_station.AudioDeletePacket;
 import com.restonic4.logistics.blocks.audio_station.AudioStationConfigPacket;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
@@ -27,7 +28,7 @@ import java.util.List;
 public class AudioTab extends Tab {
     private static final int CHUNK_SIZE = 30000; // Under 32767 limit with header overhead
 
-    private SearchableDropdownWidget<AudioStationNode.AudioStationData> stationSelector;
+    private SearchableDropdownWidget<AudioStationNode> stationSelector;
     private SearchableDropdownWidget<String> soundSelector;
     private NumberPickerWidget radiusPicker;
     private NumberPickerWidget volumePicker;
@@ -38,11 +39,11 @@ public class AudioTab extends Tab {
     private StyledButton deleteButton;
     private EditBox pathField;
 
-    private final List<AudioStationNode.AudioStationData> audioStations;
+    private final List<AudioStationNode> audioStations;
     private final List<String> sounds;
 
     // Persisted state
-    private AudioStationNode.AudioStationData savedStation = null;
+    private AudioStationNode savedStation = null;
     private String savedSound = null;
     private double savedRadius = 32;
     private double savedVolume = 1.0;
@@ -52,7 +53,7 @@ public class AudioTab extends Tab {
 
     public AudioTab() {
         super(Component.translatable("screen.logistics.computer.tab.audio.title"));
-        this.audioStations = ComputerScreen.getEnergyNetwork().getAudioStationsData();
+        this.audioStations = ComputerScreen.getEnergyNetwork().getAudioStations();
         this.sounds = ClientNetworkManager.getUploadedSounds();
     }
 
@@ -66,10 +67,9 @@ public class AudioTab extends Tab {
         int colY = y + 10;
 
         // Station selector
-        List<SearchableDropdownWidget.DropdownEntry<AudioStationNode.AudioStationData>> stationEntries = new ArrayList<>();
-        for (AudioStationNode.AudioStationData s : audioStations) {
-            stationEntries.add(new SearchableDropdownWidget.DropdownEntry<>(s,
-                    Component.literal(s.pos().toShortString()), null));
+        List<SearchableDropdownWidget.DropdownEntry<AudioStationNode>> stationEntries = new ArrayList<>();
+        for (AudioStationNode s : audioStations) {
+            stationEntries.add(new SearchableDropdownWidget.DropdownEntry<>(s, Component.literal(s.getSafeName()), SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.AUDIO_STATION_BLOCK.getBlock())));
         }
         stationSelector = new SearchableDropdownWidget<>(leftX, colY, 160, 18,
                 Component.empty(), stationEntries, this::onStationSelected);
@@ -163,10 +163,10 @@ public class AudioTab extends Tab {
 
     public void refreshData() {
         if (stationSelector != null) {
-            List<SearchableDropdownWidget.DropdownEntry<AudioStationNode.AudioStationData>> entries = new ArrayList<>();
-            for (AudioStationNode.AudioStationData s : audioStations) {
+            List<SearchableDropdownWidget.DropdownEntry<AudioStationNode>> entries = new ArrayList<>();
+            for (AudioStationNode s : audioStations) {
                 entries.add(new SearchableDropdownWidget.DropdownEntry<>(s,
-                        Component.literal(s.pos().toShortString()), null));
+                        Component.literal(s.getSafeName()), SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.AUDIO_STATION_BLOCK.getBlock())));
             }
             stationSelector.setOptions(entries);
             if (savedStation != null) stationSelector.setSelectedValue(savedStation);
@@ -179,19 +179,19 @@ public class AudioTab extends Tab {
     }
 
     private void refreshFromSelection() {
-        AudioStationNode.AudioStationData s = stationSelector != null ? stationSelector.getSelectedValue() : null;
+        AudioStationNode s = stationSelector != null ? stationSelector.getSelectedValue() : null;
         if (s == null) return;
-        radiusPicker.setValue(s.radius());
-        volumePicker.setValue(s.volume());
-        pitchPicker.setValue(s.pitch());
-        loopToggle.setValue(s.looping());
-        redstoneToggle.setValue(s.redstoneMode());
-        if (s.audioPath() != null && !s.audioPath().isEmpty()) {
-            soundSelector.setSelectedValue(s.audioPath());
+        radiusPicker.setValue(s.getRadius());
+        volumePicker.setValue(s.getVolume());
+        pitchPicker.setValue(s.getPitch());
+        loopToggle.setValue(s.isLooping());
+        redstoneToggle.setValue(s.isRedstoneMode());
+        if (s.getAudioPath() != null && !s.getAudioPath().isEmpty()) {
+            soundSelector.setSelectedValue(s.getAudioPath());
         }
     }
 
-    private void onStationSelected(AudioStationNode.AudioStationData s) {
+    private void onStationSelected(AudioStationNode s) {
         savedStation = s;
         refreshFromSelection();
     }
@@ -241,13 +241,13 @@ public class AudioTab extends Tab {
     }
 
     private void applyConfig() {
-        AudioStationNode.AudioStationData s = stationSelector.getSelectedValue();
+        AudioStationNode s = stationSelector.getSelectedValue();
         if (s == null) return;
         String sound = soundSelector.getSelectedValue();
         if (sound == null) sound = "";
 
         ClientNetworking.sendToServer(new AudioStationConfigPacket(
-                s.pos(), sound,
+                s.getBlockPos(), sound,
                 (float) volumePicker.getValue(),
                 (float) pitchPicker.getValue(),
                 (float) radiusPicker.getValue(),

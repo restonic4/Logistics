@@ -1,18 +1,12 @@
 package com.restonic4.logistics.blocks.computer;
 
-import com.mojang.authlib.GameProfile;
-import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.base.BaseNetworkBlock;
 import com.restonic4.logistics.blocks.base.InvertiblePlacement;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
-import com.restonic4.logistics.blocks.protector.ProtectorNode;
-import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
-import com.restonic4.logistics.networks.types.ItemNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -40,7 +34,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeDown;
 import static com.restonic4.logistics.utils.MinecraftUtils.getRelativeRight;
@@ -88,26 +81,12 @@ public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlaceme
         if (player instanceof ServerPlayer serverPlayer) {
             ServerLevel serverLevel = (ServerLevel) level;
             NetworkNode node = NetworkManager.get(serverLevel).getNodeByBlockPos(pos);
-            if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork energyNetwork) {
-                List<ProtectionZone> zones = new ArrayList<>();
-                for (ProtectorNode protectorNode : energyNetwork.getProtectors()) {
-                    zones.add(new ProtectionZone(
-                            protectorNode.getUUID(),
-                            protectorNode.getBlockPos(),
-                            protectorNode.getRadius(),
-                            protectorNode.isCreative(),
-                            protectorNode.getRoles(),
-                            protectorNode.isPowered()
-                    ));
-                }
-
-                ServerNetworking.sendToClient(serverPlayer, new ComputerSyncPacket(node.getBlockPos(), !zones.isEmpty()));
+            if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork) {
                 List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
                 ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
-                List<GameProfile> profiles = serverLevel.getServer().getPlayerList().getPlayers().stream().map(ServerPlayer::getGameProfile).collect(Collectors.toList());
-                ServerNetworking.sendToClient(serverPlayer, new ProtectionEditSyncPacket(pos, zones, profiles));
+                ServerNetworking.sendToClient(serverPlayer, new OpenComputerPacket(computerNode.getBlockPos()));
             }
         }
 

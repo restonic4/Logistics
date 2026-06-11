@@ -5,10 +5,14 @@ import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
 
 public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
     private NodeTypeRegistry.NetworkNodeType<?> nodeType;
@@ -56,5 +60,16 @@ public abstract class BaseNetworkBlock extends Block implements NetworkBlock {
         }
 
         super.onRemove(blockState, level, blockPos, newBlockState, isMoving);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        InteractionResult result = onRightClick(state, level, pos, player, hand, hit);
+
+        if (result != InteractionResult.PASS) {
+            return result;
+        }
+
+        return super.use(state, level, pos, player, hand, hit);
     }
 }

@@ -1,5 +1,7 @@
 package com.restonic4.logistics.audio;
 
+import com.restonic4.logistics.Constants;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,8 @@ public class ServerAudioStorage {
     public static void init(File serverRoot) {
         baseDir = new File(serverRoot, "logistics/sounds");
         baseDir.mkdirs();
+
+        Constants.LOG.warn("Initializing server audio storage at {}", baseDir);
     }
 
     public static File getPlayerFolder(UUID playerId) {
@@ -46,5 +50,14 @@ public class ServerAudioStorage {
     public static boolean deleteSound(String soundId) {
         File f = getSoundFile(soundId);
         return f != null && f.exists() && f.delete();
+    }
+
+    public static File getBaseDir() {
+        return baseDir;
+    }
+
+    public static void clear() {
+        baseDir = null;
+        Constants.LOG.warn("Server audio storage cleaned");
     }
 }

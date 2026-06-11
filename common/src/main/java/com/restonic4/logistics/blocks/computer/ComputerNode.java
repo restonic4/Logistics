@@ -1,7 +1,5 @@
 package com.restonic4.logistics.blocks.computer;
 
-import com.restonic4.logistics.blocks.accersor.AccessorNode;
-import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -102,21 +100,10 @@ public class ComputerNode extends EnergyNode {
         setNetworkDirty();
     }
 
-    public boolean isPowered() {
-        return this.powered;
-    }
-
-    public boolean isInstalled() {
-        return this.installed;
-    }
-
-    public String getSystemName() {
-        return systemName;
-    }
-
-    public String getRootPassword() {
-        return rootPassword;
-    }
+    public boolean isPowered() { return this.powered; }
+    public boolean isInstalled() { return this.installed; }
+    public String getSystemName() { return systemName; }
+    public String getRootPassword() { return rootPassword; }
 
     @Override
     public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
@@ -128,8 +115,11 @@ public class ComputerNode extends EnergyNode {
 
             builder.spacer();
             builder.text("Connections");
-            if (getNetwork().hasAccessors()) builder.bullet("Parcel network");
-            if (getNetwork().hasAudioStations()) builder.bullet("Audio stations");
+            boolean addedConnection = false;
+            if (getNetwork().hasAccessors()) { builder.bullet("Parcel network"); addedConnection = true; }
+            if (getNetwork().hasAudioStations()) { builder.bullet("Audio stations"); addedConnection = true; }
+            if (getNetwork().hasProtectors()) { builder.bullet("Protectors"); addedConnection = true; }
+            if (!addedConnection) builder.bullet("None");
         } else {
             builder.text("OS not found, installation required!", ChatFormatting.RED);
         }

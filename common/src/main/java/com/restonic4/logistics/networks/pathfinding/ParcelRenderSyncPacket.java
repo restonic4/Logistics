@@ -1,11 +1,9 @@
 package com.restonic4.logistics.networks.pathfinding;
 
 import com.restonic4.logistics.Logistics;
-import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.networking.S2CPacket;
 import com.restonic4.logistics.rendering.ParcelRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;

@@ -36,15 +36,15 @@ public class LoginTab extends Tab {
 
         StyledButton loginBtn = new StyledButton(x + 15, y + 80, 80, 20, Component.translatable("screen.logistics.computer.tab.login.title"), () -> {
             if (parent instanceof ComputerScreen screen) {
-                if (this.passwordField.getValue().equals(ComputerScreen.getExpectedPassword())) {
+                if (this.passwordField.getValue().equals(ComputerScreen.getComputerNode().getRootPassword())) {
                     screen.performLogin();
-                    ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode(),
+                    ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode().getBlockPos(),
                             ComputerLogEntry.Severity.INFO,
                             Component.translatable("screen.logistics.computer.tab.login.granted").getString()
                     ));
                 } else {
                     this.showDeniedMsg = true;
-                    ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode(),
+                    ClientNetworking.sendToServer(new ComputerClientLogPushPacket(ComputerScreen.getComputerNode().getBlockPos(),
                             ComputerLogEntry.Severity.ERROR,
                             Component.translatable("screen.logistics.computer.tab.login.denied").getString()
                     ));
@@ -77,7 +77,7 @@ public class LoginTab extends Tab {
         currentY += 8;
 
         // Dynamic strings
-        gfx.drawString(font, Component.translatable("screen.logistics.generic.system").getString() + ": " + ComputerScreen.getSystemName(), currentX, currentY, 0xFF55FF55, false);
+        gfx.drawString(font, Component.translatable("screen.logistics.generic.system").getString() + ": " + ComputerScreen.getComputerNode().getSystemName(), currentX, currentY, 0xFF55FF55, false);
         gfx.drawString(font, Component.translatable("screen.logistics.computer.tab.login.password").getString(), currentX, currentY + 18, 0xFFAAAAAA, false);
 
         // Error message

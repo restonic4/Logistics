@@ -10,6 +10,7 @@ public class EditableProtector {
     public final BlockPos pos;
     public int radius;
     public boolean creative;
+    public String name;
     public final List<EditableRole> roles = new ArrayList<>();
 
     public EditableProtector(ProtectionZone zone) {
@@ -17,6 +18,7 @@ public class EditableProtector {
         this.pos = zone.pos();
         this.radius = zone.radius();
         this.creative = zone.creative();
+        this.name = zone.name();
         for (RoleData r : zone.roles()) this.roles.add(new EditableRole(r));
     }
 
@@ -30,6 +32,6 @@ public class EditableProtector {
             list.add(new RoleData(r.id, r.name, r.order, r.iconRl, r.type,
                     List.copyOf(r.players), Map.copyOf(completeFlags)));
         }
-        return new ProtectionZone(nodeId, pos, radius, creative, list, false); // we don't care about power here, the server handles it
+        return new ProtectionZone(nodeId, pos, radius, creative, name, list, false); // we don't care about power here, the server handles it
     }
 }

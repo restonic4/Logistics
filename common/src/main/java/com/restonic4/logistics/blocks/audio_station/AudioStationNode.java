@@ -2,6 +2,7 @@ package com.restonic4.logistics.blocks.audio_station;
 
 import com.restonic4.logistics.audio.ServerAudioManager;
 import com.restonic4.logistics.audio.ServerAudioStorage;
+import com.restonic4.logistics.blocks.base.NameIdentifier;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
 import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
@@ -11,6 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.UUID;
 
-public class AudioStationNode extends EnergyNode implements FacingNode {
+public class AudioStationNode extends EnergyNode implements FacingNode, NameIdentifier {
     private static final String NBT_AUDIO_SOURCE = "AudioSourceId";
     private static final String NBT_AUDIO_PATH = "AudioPath";
     private static final String NBT_VOLUME = "Volume";
@@ -37,6 +39,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
     private float radius = 32.0f;
     private boolean looping = false;
     private boolean redstoneMode = false;
+    @Nullable private String name = null;
 
     private boolean wasPowered = false;
 
@@ -107,22 +110,22 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
                 (ServerLevel) getLevel(), getBlockPos(), file.getAbsolutePath(),
                 volume, pitch, radius, looping
         );
+        setNetworkDirty();
     }
 
     private void stopAudio() {
         if (!getLevel().isClientSide() && this.audioSourceId != null) {
             ServerAudioManager.stop(this.audioSourceId);
             this.audioSourceId = null;
+            setNetworkDirty();
         }
     }
 
-    public void applyConfig(String audioPath, float volume, float pitch, float radius,
-                            boolean looping, boolean redstoneMode) {
+    public void applyConfig(String audioPath, float volume, float pitch, float radius, boolean looping, boolean redstoneMode) {
         boolean pathChanged = !this.audioPath.equals(audioPath);
         boolean modeChanged = this.looping != looping || this.redstoneMode != redstoneMode;
 
-        if (!pathChanged && this.volume == volume && this.pitch == pitch
-                && this.radius == radius && !modeChanged) {
+        if (!pathChanged && this.volume == volume && this.pitch == pitch && this.radius == radius && !modeChanged) {
             return;
         }
 
@@ -147,6 +150,8 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
         if (!redstoneMode && pathChanged && !audioPath.isEmpty()) {
             playAudio();
         }
+
+        setNetworkDirty();
     }
 
     public String getAudioPath() { return audioPath; }
@@ -157,9 +162,21 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
     public boolean isRedstoneMode() { return redstoneMode; }
 
     @Override
+    public void setName(@NotNull String name) {
+        this.onNameChange(this.name, name, this);
+        this.name = name;
+    }
+
+    @Override
+    public @Nullable String getName() {
+        return name;
+    }
+
+    @Override
     protected void saveExtra(CompoundTag tag) {
         super.saveExtra(tag);
         this.saveFacing(tag);
+        this.saveName(tag);
         tag.putString(NBT_AUDIO_PATH, audioPath);
         tag.putFloat(NBT_VOLUME, volume);
         tag.putFloat(NBT_PITCH, pitch);
@@ -175,6 +192,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
     protected void loadExtra(CompoundTag tag) {
         super.loadExtra(tag);
         this.loadFacing(tag);
+        this.loadName(tag);
         this.audioPath = tag.getString(NBT_AUDIO_PATH);
         this.volume = tag.getFloat(NBT_VOLUME);
         this.pitch = tag.getFloat(NBT_PITCH);
@@ -186,7 +204,39 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
         }
     }
 
-    // TODO: write and read networking operations
+    @Override
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {
+        super.writeExtraSyncData(buf);
+        this.writeFacing(buf);
+        this.writeName(buf);
+        buf.writeUtf(audioPath);
+        buf.writeFloat(volume);
+        buf.writeFloat(pitch);
+        buf.writeFloat(radius);
+        buf.writeBoolean(looping);
+        buf.writeBoolean(redstoneMode);
+        buf.writeBoolean(this.audioSourceId != null);
+        if (this.audioSourceId != null) {
+            buf.writeUUID(audioSourceId);
+        }
+    }
+
+    @Override
+    protected void readExtraSyncData(FriendlyByteBuf buf) {
+        super.readExtraSyncData(buf);
+        this.readFacing(buf);
+        this.readName(buf);
+        this.audioPath = buf.readUtf();
+        this.volume = buf.readFloat();
+        this.pitch = buf.readFloat();
+        this.radius = buf.readFloat();
+        this.looping = buf.readBoolean();
+        this.redstoneMode = buf.readBoolean();
+        boolean hasAudioSourceId = buf.readBoolean();
+        if (hasAudioSourceId) {
+            this.audioSourceId = buf.readUUID();
+        }
+    }
 
     @Override
     public void setFacing(@NotNull Direction facing) {
@@ -195,8 +245,14 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
     }
 
     @Override
-    public @Nullable Direction getFacing() {
-        return facing;
+    public @Nullable Direction getFacing() { return facing; }
+
+    @Override
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        boolean added = super.buildScannerTooltip(builder, isSneaking);
+        boolean nameAdditions = this.buildNameScannerTooltip(builder, isSneaking);
+
+        return added || nameAdditions;
     }
 
     @Override
@@ -206,8 +262,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode {
         builder.keyValue("Audio", this.audioSourceId != null ? "Active" : "Inactive", ChatFormatting.GREEN);
         builder.keyValue("Path", this.audioPath.isEmpty() ? "None" : this.audioPath, ChatFormatting.YELLOW);
         builder.keyValue("Mode", this.redstoneMode ? "Redstone" : "Continuous", ChatFormatting.YELLOW);
+        builder.keyValue("Audios", String.valueOf(ServerAudioStorage.getAllSounds().size()), ChatFormatting.GOLD);
         return true;
     }
-
-    public record AudioStationData(BlockPos pos, String audioPath, float volume, float pitch, float radius, boolean looping, boolean redstoneMode) {}
 }

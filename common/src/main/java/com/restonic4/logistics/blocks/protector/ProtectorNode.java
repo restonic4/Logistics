@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.protector;
 
+import com.restonic4.logistics.blocks.base.NameIdentifier;
 import com.restonic4.logistics.blocks.computer.ComputerLogEntry;
 import com.restonic4.logistics.blocks.computer.ComputerLogger;
 import com.restonic4.logistics.blocks.computer.ComputerOffPacket;
@@ -22,16 +23,18 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ProtectorNode extends EnergyNode {
+public class ProtectorNode extends EnergyNode implements NameIdentifier {
     private static final long FLICKER_WINDOW_MS = 10000L; // 10 seconds
     private static final int FLICKER_THRESHOLD = 10;
 
     ProtectorData data;
     private final List<Long> recentPowerChanges = new ArrayList<>();
     private boolean isBroken = false;
+    @Nullable private String name = null;
 
     private int brokenEffectTimer = 0;
 
@@ -173,16 +176,28 @@ public class ProtectorNode extends EnergyNode {
 
     public List<RoleData> getRoles() {return data.getRoles();}
     public int getRadius() {return data.getRadius();}
-    public void setRoles(@NotNull List<RoleData> roles) {this.data.setRoles(roles);}
-    public void setRadius(int radius) {this.data.setRadius(radius);}
+    public void setRoles(@NotNull List<RoleData> roles) { this.data.setRoles(roles); setNetworkDirty(); }
+    public void setRadius(int radius) { this.data.setRadius(radius); setNetworkDirty(); }
     public boolean isCreative() { return data.isCreative(); }
-    public void setCreative(boolean v) { this.data.setCreative(v); }
+    public void setCreative(boolean v) { this.data.setCreative(v); setNetworkDirty(); }
     public boolean isBroken() { return isBroken; }
+
+    @Override
+    public void setName(@NotNull String name) {
+        this.onNameChange(this.name, name, this);
+        this.name = name;
+    }
+
+    @Override
+    public @Nullable String getName() {
+        return name;
+    }
 
     @Override
     protected void saveExtra(CompoundTag tag) {
         super.saveExtra(tag);
         data.nbtWrite(tag);
+        this.saveName(tag);
         tag.putBoolean("isBroken", isBroken);
     }
 
@@ -213,6 +228,7 @@ public class ProtectorNode extends EnergyNode {
 
         // This now heals missing flags in ALL roles, including DEFAULT.
         data.validate();
+        this.loadName(tag);
         this.isBroken = tag.getBoolean("isBroken");
         if (this.isBroken) {
             data.setPowered(false);
@@ -220,8 +236,25 @@ public class ProtectorNode extends EnergyNode {
     }
 
     @Override
+    protected void writeExtraSyncData(FriendlyByteBuf buf) {
+        super.writeExtraSyncData(buf);
+        data.netWrite(buf);
+        this.writeName(buf);
+        buf.writeBoolean(isBroken);
+    }
+
+    @Override
+    protected void readExtraSyncData(FriendlyByteBuf buf) {
+        super.readExtraSyncData(buf);
+        data = ProtectorData.netRead(buf);
+        this.readName(buf);
+        isBroken = buf.readBoolean();
+    }
+
+    @Override
     public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         super.buildScannerTooltip(builder, isSneaking);
+        this.buildNameScannerTooltip(builder, isSneaking);
 
         builder.spacer();
         builder.keyValue("Energy usage", String.valueOf(calculateRequiredEnergy(data.getRadius(), getTotalEnabledFlags())), ChatFormatting.GOLD);
@@ -314,21 +347,25 @@ public class ProtectorNode extends EnergyNode {
 
     public void repair() {
         isBroken = false;
+        setNetworkDirty();
     }
 
     private void breakNode(ServerLevel serverLevel) {
         powerOff(serverLevel);
         KineticCrystalShardItem.spawnShockwave(serverLevel, getBlockPos(), data.getRadius(), 0xFED83D);
+        setNetworkDirty();
     }
 
     private void powerOff(ServerLevel serverLevel) {
         ServerProtectionCache.updateAllCachesForLevel(serverLevel, "Protector power updated to false");
         serverLevel.playSound(null, getBlockPos(), SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        setNetworkDirty();
     }
 
     private void powerOn(ServerLevel serverLevel) {
         ServerProtectionCache.updateAllCachesForLevel(serverLevel, "Protector power updated to true");
         serverLevel.playSound(null, getBlockPos(), SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        setNetworkDirty();
     }
 
     private void sparkEffect() {

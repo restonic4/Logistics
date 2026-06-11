@@ -1,12 +1,12 @@
 package com.restonic4.logistics.blocks.computer.screen;
 
 import com.mojang.authlib.GameProfile;
-import com.restonic4.logistics.blocks.computer.protection.ProtectionEditSyncPacket;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
 import com.restonic4.logistics.blocks.protector.data_types.*;
 import com.restonic4.logistics.blocks.protector.data_types.ui.EditableProtector;
 import com.restonic4.logistics.blocks.protector.data_types.ui.EditableRole;
 import com.restonic4.logistics.networking.ClientNetworking;
+import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.*;
 import net.minecraft.client.Minecraft;
@@ -25,14 +25,13 @@ import java.util.*;
 
 public class ProtectionTab extends Tab {
 
-    private int selectedNodeIndex = 0;
-    private int selectedRoleIndex = -1;
+    private int selectedNodeIndex;
+    private int selectedRoleIndex;
     private int pendingDeleteIndex = -1;
     private boolean hasUnsavedChanges = false;
 
-    private final List<EditableProtector> protectors = new ArrayList<>();
-    private List<GameProfile> playerPool = new ArrayList<>();
-    private BlockPos computerPos;
+    private final List<EditableProtector> protectors;
+    private List<GameProfile> playerPool;
 
     private AddRolePopup addRolePopup;
     private UnsavedChangesPopup unsavedPopup;
@@ -56,17 +55,14 @@ public class ProtectionTab extends Tab {
 
     public ProtectionTab() {
         super(Component.translatable("screen.logistics.computer.tab.protector.title"));
-    }
 
-    public void receiveSyncData(ProtectionEditSyncPacket packet) {
-        this.computerPos = packet.computerPos();
-        this.playerPool = packet.allPlayers();
-        this.protectors.clear();
-        for (ProtectionZone zone : packet.zones()) {
+        this.playerPool = ClientNetworkManager.getGameProfiles();
+        this.protectors = new ArrayList<>();
+        for (ProtectionZone zone : ComputerScreen.getEnergyNetwork().getProtectionZones()) {
             this.protectors.add(new EditableProtector(zone));
         }
 
-        // CRITICAL: heal client-side so missing flags appear as OFF and are saved back.
+        // Heal client-side so missing flags appear as OFF and are saved back.
         for (EditableProtector ep : this.protectors) {
             for (EditableRole role : ep.roles) {
                 for (FlagDefinition def : FlagRegistry.forZone(ep.creative)) {
@@ -89,10 +85,6 @@ public class ProtectionTab extends Tab {
 
     public int getSelectedNodeIndex() {
         return selectedNodeIndex;
-    }
-
-    public BlockPos getComputerNodePos() {
-        return computerPos;
     }
 
     @Override
@@ -130,7 +122,7 @@ public class ProtectionTab extends Tab {
         List<SearchableDropdownWidget.DropdownEntry<Integer>> nodeOptions = new ArrayList<>();
         for (int i = 0; i < protectors.size(); i++) {
             EditableProtector ep = protectors.get(i);
-            String label = "Protector @ " + ep.pos.toShortString();
+            String label = ep.name;
             SearchableDropdownWidget.DropdownIcon icon = SearchableDropdownWidget.DropdownIcon.of(Blocks.BEACON);
             nodeOptions.add(new SearchableDropdownWidget.DropdownEntry<>(i, Component.literal(label), icon));
         }
@@ -539,13 +531,13 @@ public class ProtectionTab extends Tab {
     }
 
     private void onSaveClicked() {
-        if (computerPos == null) return;
+        if (ComputerScreen.getComputerNode() == null) return;
         Map<UUID, ProtectorData> data = new HashMap<>();
         for (EditableProtector ep : protectors) {
             ProtectionZone zone = ep.toZone();
             data.put(zone.nodeId(), new ProtectorData(zone.radius(), zone.creative(), zone.roles(), zone.powered()));
         }
-        ClientNetworking.sendToServer(new ProtectionSavePacket(computerPos, data));
+        ClientNetworking.sendToServer(new ProtectionSavePacket(ComputerScreen.getComputerNode().getBlockPos(), data));
         hasUnsavedChanges = false;
     }
 

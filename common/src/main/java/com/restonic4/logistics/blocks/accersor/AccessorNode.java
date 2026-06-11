@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.accersor;
 
+import com.restonic4.logistics.blocks.base.NameIdentifier;
 import com.restonic4.logistics.networks.nodes.FacingNode;
 import com.restonic4.logistics.networks.nodes.InventoryNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
@@ -22,8 +23,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-public class AccessorNode extends InventoryNode implements FacingNode {
+public class AccessorNode extends InventoryNode implements FacingNode, NameIdentifier {
     @Nullable private Direction facing = null;
+    @Nullable private String name = null;
 
     public AccessorNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
@@ -46,6 +48,17 @@ public class AccessorNode extends InventoryNode implements FacingNode {
     }
 
     @Override
+    public void setName(@NotNull String name) {
+        this.onNameChange(this.name, name, this);
+        this.name = name;
+    }
+
+    @Override
+    public @Nullable String getName() {
+        return name;
+    }
+
+    @Override
     @Nullable protected BlockPos resolveTargetPos() {
         if (facing == null) return null;
         return getBlockPos().relative(facing);
@@ -55,24 +68,36 @@ public class AccessorNode extends InventoryNode implements FacingNode {
     protected void saveExtra(CompoundTag tag) {
         super.saveExtra(tag);
         this.saveFacing(tag);
+        this.saveName(tag);
     }
 
     @Override
     protected void loadExtra(CompoundTag tag) {
         super.loadExtra(tag);
         this.loadFacing(tag);
+        this.loadName(tag);
     }
 
     @Override
     protected void writeExtraSyncData(FriendlyByteBuf buf) {
         super.writeExtraSyncData(buf);
         this.writeFacing(buf);
+        this.writeName(buf);
     }
 
     @Override
     protected void readExtraSyncData(FriendlyByteBuf buf) {
         super.readExtraSyncData(buf);
         this.readFacing(buf);
+        this.readName(buf);
+    }
+
+    @Override
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        boolean added = super.buildScannerTooltip(builder, isSneaking);
+        boolean nameAddition = this.buildNameScannerTooltip(builder, isSneaking);
+
+        return added || nameAddition;
     }
 
     @Override
@@ -81,6 +106,7 @@ public class AccessorNode extends InventoryNode implements FacingNode {
 
         builder.spacer();
         builder.keyValue("Facing", facing != null ? facing.getName() : "unset", ChatFormatting.YELLOW);
+        builder.keyValue("Name", name != null ? name : "unset", ChatFormatting.YELLOW);
         builder.keyValue("Pending deltas", String.valueOf(getTotalPendingDeltas()), ChatFormatting.YELLOW);
         builder.keyValue("Target pos", String.valueOf(resolveTargetPos()), ChatFormatting.YELLOW);
 

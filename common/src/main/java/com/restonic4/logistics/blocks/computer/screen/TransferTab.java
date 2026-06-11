@@ -2,7 +2,6 @@ package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
-import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.Tab;
@@ -10,7 +9,6 @@ import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
 import com.restonic4.logistics.screens.widgets.StyledButton;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -18,7 +16,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -102,11 +99,11 @@ public class TransferTab extends Tab {
             BlockPos pos = accessorNode.getBlockPos();
 
             leftEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
-                    Component.literal(pos.toShortString()),
+                    Component.literal(accessorNode.getSafeName()),
                     SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.ACCESSOR_BLOCK.getBlock())));
 
             rightEntries.add(new SearchableDropdownWidget.DropdownEntry<>(pos,
-                    Component.literal(pos.toShortString()),
+                    Component.literal(accessorNode.getSafeName()),
                     SearchableDropdownWidget.DropdownIcon.of(BlockRegistry.ACCESSOR_BLOCK.getBlock())));
 
             for (ItemStack itemStack : accessorNode.getReplicatedInventory()) {
@@ -151,7 +148,7 @@ public class TransferTab extends Tab {
         savedLeft = from;
         savedRight = target;
 
-        ClientNetworking.sendToServer(new ComputerTransferPacket(ComputerScreen.getComputerNode(), from, target, qty, extra != null ? extra : ""));
+        ClientNetworking.sendToServer(new ComputerTransferPacket(ComputerScreen.getComputerNode().getBlockPos(), from, target, qty, extra != null ? extra : ""));
     }
 
     @Override

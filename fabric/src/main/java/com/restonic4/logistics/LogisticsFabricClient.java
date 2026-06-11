@@ -1,5 +1,6 @@
 package com.restonic4.logistics;
 
+import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.charging_station.ChargingStationBlockEntity;
 import com.restonic4.logistics.blocks.charging_station.ChargingStationRenderer;
@@ -11,6 +12,7 @@ import com.restonic4.logistics.registry.ClientBlockRegistry;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
@@ -37,6 +39,10 @@ public class LogisticsFabricClient implements ClientModInitializer {
 
         ClientPlayConnectionEvents.DISCONNECT.register((packetListener, minecraft) -> {
             ClientNetworkManager.clear();
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
+            ServerAudioStorage.clear();
         });
     }
 }

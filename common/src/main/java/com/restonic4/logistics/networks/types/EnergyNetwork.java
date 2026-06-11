@@ -3,9 +3,9 @@ package com.restonic4.logistics.networks.types;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.cable.CableNode;
-import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
+import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class EnergyNetwork extends Network {
@@ -207,7 +206,16 @@ public class EnergyNetwork extends Network {
         return false;
     }
 
-    public List<AudioStationNode.AudioStationData> getAudioStationsData() {
+    public boolean hasProtectors() {
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof ProtectorNode) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<AudioStationNode> getAudioStations() {
         List<AudioStationNode> audioNodes = new ArrayList<>();
         for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
             if (networkNode instanceof AudioStationNode audioNode) {
@@ -215,23 +223,7 @@ public class EnergyNetwork extends Network {
             }
         }
 
-        if (!audioNodes.isEmpty()) {
-            List<AudioStationNode.AudioStationData> audioData = new ArrayList<>();
-            for (AudioStationNode audioStationNode : audioNodes) {
-                audioData.add(new AudioStationNode.AudioStationData(
-                        audioStationNode.getBlockPos(),
-                        audioStationNode.getAudioPath(),
-                        audioStationNode.getVolume(),
-                        audioStationNode.getPitch(),
-                        audioStationNode.getRadius(),
-                        audioStationNode.isLooping(),
-                        audioStationNode.isRedstoneMode()
-                ));
-            }
-            return audioData;
-        }
-
-        return null;
+        return audioNodes;
     }
 
     public List<AccessorNode> getAccessors() {
@@ -244,5 +236,21 @@ public class EnergyNetwork extends Network {
         }
 
         return nodes;
+    }
+
+    public List<ProtectionZone> getProtectionZones() {
+        List<ProtectionZone> zones = new ArrayList<>();
+        for (ProtectorNode protectorNode : this.getProtectors()) {
+            zones.add(new ProtectionZone(
+                    protectorNode.getUUID(),
+                    protectorNode.getBlockPos(),
+                    protectorNode.getRadius(),
+                    protectorNode.isCreative(),
+                    protectorNode.getSafeName(),
+                    protectorNode.getRoles(),
+                    protectorNode.isPowered()
+            ));
+        }
+        return zones;
     }
 }

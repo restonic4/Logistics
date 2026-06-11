@@ -1,16 +1,21 @@
 package com.restonic4.logistics.networks.client;
 
+import com.mojang.authlib.GameProfile;
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.restonic4.logistics.utils.MinecraftUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ClientNetworkManager {
     private static final Map<ResourceKey<Level>, Map<UUID, Network>> DIMENSIONAL_NETWORKS = new HashMap<>();
@@ -18,6 +23,7 @@ public class ClientNetworkManager {
 
     public static void clear() {
         DIMENSIONAL_NETWORKS.clear();
+        UPLOADED_SOUNDS.clear();
         Constants.LOG.info("Cleared ClientNetworkManager caches due to world disconnect.");
     }
 
@@ -86,6 +92,15 @@ public class ClientNetworkManager {
 
     public static List<String> getUploadedSounds() {
         return UPLOADED_SOUNDS;
+    }
+
+    public static List<GameProfile> getGameProfiles() {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        List<GameProfile> profiles = Collections.emptyList();
+        if (connection != null) {
+            profiles = connection.getOnlinePlayers().stream().map(PlayerInfo::getProfile).toList();
+        }
+        return profiles;
     }
 
     public static void dump() {

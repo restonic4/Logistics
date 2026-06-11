@@ -2,7 +2,7 @@ package com.restonic4.logistics.blocks.computer.screen;
 
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
-import com.restonic4.logistics.blocks.computer.ComputerSyncPacket;
+import com.restonic4.logistics.blocks.computer.OpenComputerPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.tabs.TabbedScreen;
@@ -155,7 +155,7 @@ public class InstallTab extends Tab {
                 parent.addRenderableWidget(backBtn);
 
                 StyledButton installBtn = new StyledButton(x + 100, y + 105, 80, 20, Component.translatable("screen.logistics.generic.install"), () -> {
-                    ClientNetworking.sendToServer(new ComputerInstallPacket(ComputerScreen.getComputerNode(), this.systemName, this.rootPassword));
+                    ClientNetworking.sendToServer(new ComputerInstallPacket(ComputerScreen.getComputerNode().getBlockPos(), this.systemName, this.rootPassword));
                     this.currentStep = Step.ANIMATION;
                     this.animationTicks = 0;
                     this.animationProgress = 0.0f;
@@ -192,8 +192,7 @@ public class InstallTab extends Tab {
             // 120 client ticks = 6 seconds absolute execution duration ceiling
             if (this.animationTicks >= 120) {
                 this.animationProgress = 1.0f;
-                ComputerScreen.setComputerState(new ComputerSyncPacket(ComputerScreen.getComputerNode(), null, true, this.systemName, this.rootPassword, false));
-                Minecraft.getInstance().setScreen(new ComputerScreen());
+                ComputerScreen.open(Minecraft.getInstance(), new OpenComputerPacket(ComputerScreen.getComputerNode().getBlockPos()));
                 return;
             }
 

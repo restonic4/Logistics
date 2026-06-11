@@ -35,6 +35,7 @@ public class ServerProtectionCache {
                             protector.getBlockPos(),
                             protector.getRadius(),
                             protector.isCreative(),
+                            protector.getSafeName(),
                             protector.getRoles(),
                             protector.isPowered()
                     ));
