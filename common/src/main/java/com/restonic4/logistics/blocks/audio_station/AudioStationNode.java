@@ -1,6 +1,7 @@
 package com.restonic4.logistics.blocks.audio_station;
 
 import com.restonic4.logistics.audio.ServerAudioManager;
+import com.restonic4.logistics.audio.ServerAudioSource;
 import com.restonic4.logistics.audio.ServerAudioStorage;
 import com.restonic4.logistics.blocks.base.NameIdentifier;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
@@ -14,13 +15,27 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.UUID;
 
+/**
+ * A network speaker. Holds a configured audio (path, volume, pitch, radius, loop) and
+ * exposes a public {@link #play}/{@link #stopPlayback}/{@link #isPlaying} API used both by
+ * its own auto-play behavior and by the computer's trigger system.
+ * <p>
+ * Behavior modes:
+ * <ul>
+ *   <li><b>Auto play ON</b>: the station keeps its configured audio going by itself —
+ *       it starts on world load / config apply, and (when looping) restarts whenever it
+ *       gets interrupted (e.g. after a power outage).</li>
+ *   <li><b>Auto play OFF</b>: the station is fully passive and only plays when told to,
+ *       which is what trigger-driven setups (playlists, alarms, synced stations) want.</li>
+ * </ul>
+ * Losing network energy always stops playback.
+ */
 public class AudioStationNode extends EnergyNode implements FacingNode, NameIdentifier {
     private static final String NBT_AUDIO_SOURCE = "AudioSourceId";
     private static final String NBT_AUDIO_PATH = "AudioPath";
@@ -28,7 +43,8 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
     private static final String NBT_PITCH = "Pitch";
     private static final String NBT_RADIUS = "Radius";
     private static final String NBT_LOOPING = "Looping";
-    private static final String NBT_REDSTONE_MODE = "RedstoneMode";
+    private static final String NBT_AUTO_PLAY = "AutoPlay";
+    private static final String NBT_LEGACY_REDSTONE_MODE = "RedstoneMode";
 
     private Direction facing;
     private UUID audioSourceId;
@@ -38,10 +54,8 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
     private float pitch = 1.0f;
     private float radius = 32.0f;
     private boolean looping = false;
-    private boolean redstoneMode = false;
+    private boolean autoPlay = true;
     @Nullable private String name = null;
-
-    private boolean wasPowered = false;
 
     public AudioStationNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
@@ -52,34 +66,27 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         EnergyNetwork energyNetwork = getNetwork();
         long energy = energyNetwork.requestEnergyConsumption(1);
         if (energy < 1) {
-            stopAudio();
+            stopPlayback();
             return;
         }
 
-        ServerLevel level = (ServerLevel) getLevel();
-        BlockPos pos = getBlockPos();
-        //boolean powered = level.hasNeighborSignal(pos);
-
-        if (redstoneMode) {
-            /*if (powered && !wasPowered) {
-                playAudio();
-            }
-            if (audioSourceId != null) {
-                ServerAudioManager.tickSource(audioSourceId, level, pos);
-            }*/
-        } else {
-            if (looping) {
-                if (audioSourceId == null || ServerAudioManager.getSource(audioSourceId) == null
-                        || ServerAudioManager.getSource(audioSourceId).isStopped()) {
-                    if (!audioPath.isEmpty()) playAudio();
-                }
-            }
-            if (audioSourceId != null) {
-                ServerAudioManager.tickSource(audioSourceId, level, pos);
+        // Drop the handle once the source has actually finished, so isPlaying() and the
+        // synced client state report Idle instead of pointing at a dead source.
+        if (audioSourceId != null) {
+            ServerAudioSource source = ServerAudioManager.getSource(audioSourceId);
+            if (source == null || source.isStopped()) {
+                audioSourceId = null;
+                setNetworkDirty();
             }
         }
 
-        //wasPowered = powered;
+        if (autoPlay && looping && !isPlaying() && !audioPath.isEmpty()) {
+            play("");
+        }
+
+        if (audioSourceId != null) {
+            ServerAudioManager.tickSource(audioSourceId, (ServerLevel) getLevel(), getBlockPos());
+        }
     }
 
     @Override
@@ -87,22 +94,34 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         if (getLevel() == null) return;
         if (getLevel().isClientSide()) return;
         if (audioPath.isEmpty()) return;
-        if (redstoneMode) return;
-        playAudio();
+        if (!autoPlay) return;
+        play("");
     }
 
     @Override
     public void onRemove() {
-        stopAudio();
+        stopPlayback();
     }
 
-    private void playAudio() {
-        if (audioPath.isEmpty()) return;
-        File file = ServerAudioStorage.getSoundFile(audioPath);
+    /**
+     * Starts playback on this station, replacing whatever is currently playing.
+     * Server side only.
+     *
+     * @param overridePath the uploaded sound to play, or empty/null to play the
+     *                     station's configured audio
+     */
+    public void play(String overridePath) {
+        if (getLevel() == null || getLevel().isClientSide()) return;
+
+        String path = (overridePath == null || overridePath.isEmpty()) ? audioPath : overridePath;
+        if (path.isEmpty()) return;
+
+        File file = ServerAudioStorage.getSoundFile(path);
         if (file == null || !file.exists()) {
-            System.err.println("Missing audio file: " + audioPath);
+            System.err.println("Missing audio file: " + path);
             return;
         }
+
         if (audioSourceId != null) {
             ServerAudioManager.stop(audioSourceId);
         }
@@ -113,19 +132,33 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         setNetworkDirty();
     }
 
-    private void stopAudio() {
-        if (!getLevel().isClientSide() && this.audioSourceId != null) {
+    /** Stops whatever this station is playing. Server side only. */
+    public void stopPlayback() {
+        if (getLevel() == null || getLevel().isClientSide()) return;
+        if (this.audioSourceId != null) {
             ServerAudioManager.stop(this.audioSourceId);
             this.audioSourceId = null;
             setNetworkDirty();
         }
     }
 
-    public void applyConfig(String audioPath, float volume, float pitch, float radius, boolean looping, boolean redstoneMode) {
-        boolean pathChanged = !this.audioPath.equals(audioPath);
-        boolean modeChanged = this.looping != looping || this.redstoneMode != redstoneMode;
+    /**
+     * Whether this station is currently playing. On the server this checks the live
+     * audio source; on the client it reflects the last synced state.
+     */
+    public boolean isPlaying() {
+        if (audioSourceId == null) return false;
+        if (getLevel() == null || getLevel().isClientSide()) return true;
+        ServerAudioSource source = ServerAudioManager.getSource(audioSourceId);
+        return source != null && !source.isStopped();
+    }
 
-        if (!pathChanged && this.volume == volume && this.pitch == pitch && this.radius == radius && !modeChanged) {
+    public void applyConfig(String audioPath, float volume, float pitch, float radius, boolean looping, boolean autoPlay) {
+        boolean pathChanged = !this.audioPath.equals(audioPath);
+        boolean loopChanged = this.looping != looping;
+
+        if (!pathChanged && this.volume == volume && this.pitch == pitch && this.radius == radius
+                && !loopChanged && this.autoPlay == autoPlay) {
             return;
         }
 
@@ -134,21 +167,19 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         this.pitch = pitch;
         this.radius = radius;
         this.looping = looping;
-        this.redstoneMode = redstoneMode;
+        this.autoPlay = autoPlay;
 
-        if (audioSourceId != null && (pathChanged || modeChanged)) {
-            ServerAudioManager.stop(audioSourceId);
-            audioSourceId = null;
-        }
-
-        if (audioSourceId != null && ServerAudioManager.getSource(audioSourceId) != null) {
+        if (pathChanged || loopChanged) {
+            // The playing source no longer matches the configuration; restart below if needed.
+            stopPlayback();
+        } else if (isPlaying()) {
             ServerAudioManager.updateVolume(audioSourceId, volume);
             ServerAudioManager.updatePitch(audioSourceId, pitch);
             ServerAudioManager.updateRadius(audioSourceId, radius);
         }
 
-        if (!redstoneMode && pathChanged && !audioPath.isEmpty()) {
-            playAudio();
+        if (this.autoPlay && !isPlaying() && !this.audioPath.isEmpty()) {
+            play("");
         }
 
         setNetworkDirty();
@@ -159,7 +190,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
     public float getPitch() { return pitch; }
     public float getRadius() { return radius; }
     public boolean isLooping() { return looping; }
-    public boolean isRedstoneMode() { return redstoneMode; }
+    public boolean isAutoPlay() { return autoPlay; }
 
     @Override
     public void setName(@NotNull String name) {
@@ -182,7 +213,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         tag.putFloat(NBT_PITCH, pitch);
         tag.putFloat(NBT_RADIUS, radius);
         tag.putBoolean(NBT_LOOPING, looping);
-        tag.putBoolean(NBT_REDSTONE_MODE, redstoneMode);
+        tag.putBoolean(NBT_AUTO_PLAY, autoPlay);
         if (this.audioSourceId != null) {
             tag.putUUID(NBT_AUDIO_SOURCE, this.audioSourceId);
         }
@@ -198,7 +229,12 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         this.pitch = tag.getFloat(NBT_PITCH);
         this.radius = tag.getFloat(NBT_RADIUS);
         this.looping = tag.getBoolean(NBT_LOOPING);
-        this.redstoneMode = tag.getBoolean(NBT_REDSTONE_MODE);
+        if (tag.contains(NBT_AUTO_PLAY)) {
+            this.autoPlay = tag.getBoolean(NBT_AUTO_PLAY);
+        } else {
+            // Legacy saves: non-redstone stations behaved like auto play.
+            this.autoPlay = !tag.getBoolean(NBT_LEGACY_REDSTONE_MODE);
+        }
         if (tag.hasUUID(NBT_AUDIO_SOURCE)) {
             this.audioSourceId = tag.getUUID(NBT_AUDIO_SOURCE);
         }
@@ -214,7 +250,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         buf.writeFloat(pitch);
         buf.writeFloat(radius);
         buf.writeBoolean(looping);
-        buf.writeBoolean(redstoneMode);
+        buf.writeBoolean(autoPlay);
         buf.writeBoolean(this.audioSourceId != null);
         if (this.audioSourceId != null) {
             buf.writeUUID(audioSourceId);
@@ -231,11 +267,9 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         this.pitch = buf.readFloat();
         this.radius = buf.readFloat();
         this.looping = buf.readBoolean();
-        this.redstoneMode = buf.readBoolean();
+        this.autoPlay = buf.readBoolean();
         boolean hasAudioSourceId = buf.readBoolean();
-        if (hasAudioSourceId) {
-            this.audioSourceId = buf.readUUID();
-        }
+        this.audioSourceId = hasAudioSourceId ? buf.readUUID() : null;
     }
 
     @Override
@@ -261,7 +295,7 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         builder.keyValue("Facing", facing != null ? facing.getSerializedName() : "null", ChatFormatting.YELLOW);
         builder.keyValue("Audio", this.audioSourceId != null ? "Active" : "Inactive", ChatFormatting.GREEN);
         builder.keyValue("Path", this.audioPath.isEmpty() ? "None" : this.audioPath, ChatFormatting.YELLOW);
-        builder.keyValue("Mode", this.redstoneMode ? "Redstone" : "Continuous", ChatFormatting.YELLOW);
+        builder.keyValue("Mode", this.autoPlay ? "Auto play" : "Manual", ChatFormatting.YELLOW);
         builder.keyValue("Audios", String.valueOf(ServerAudioStorage.getAllSounds().size()), ChatFormatting.GOLD);
         return true;
     }

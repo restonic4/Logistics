@@ -27,8 +27,10 @@ public class ServerAudioSource {
     private final Set<UUID> knownPlayers = new HashSet<>();
     private boolean stopped;
 
-    public ServerAudioSource(UUID id, ServerLevel level, BlockPos pos, String filePath,
-                             float volume, float pitch, float radius, boolean looping) {
+    public ServerAudioSource(
+            UUID id, ServerLevel level, BlockPos pos, String filePath,
+            float volume, float pitch, float radius, boolean looping
+    ) {
         this.id = id;
         this.level = level;
         this.pos = pos;
@@ -62,7 +64,7 @@ public class ServerAudioSource {
             this.lastRealTime = currentRealTime;
         } else if (currentTick > this.lastServerTick) {
             long delta = currentRealTime - this.lastRealTime;
-            this.elapsedMs += delta;
+            this.elapsedMs += (long) (delta * this.pitch);
             this.lastServerTick = currentTick;
             this.lastRealTime = currentRealTime;
         } else {

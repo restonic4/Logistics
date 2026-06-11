@@ -21,7 +21,8 @@ public record ComputerLogPushPacket(BlockPos computerNode, ComputerLogEntry entr
     @Override
     public void handle(Minecraft client) {
         if (client.screen instanceof ComputerScreen screen
-                && computerNode.equals(ComputerScreen.getComputerNode())) {
+                && ComputerScreen.getComputerNode() != null
+                && computerNode.equals(ComputerScreen.getComputerNode().getBlockPos())) {
             screen.getLogTab().receivePush(entry);
         }
     }

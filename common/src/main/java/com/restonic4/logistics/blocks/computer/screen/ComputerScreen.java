@@ -3,6 +3,7 @@ package com.restonic4.logistics.blocks.computer.screen;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.blocks.computer.ComputerScreenOffPacket;
 import com.restonic4.logistics.blocks.computer.OpenComputerPacket;
+import com.restonic4.logistics.blocks.computer.screen.triggers.TriggersTab;
 import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -29,6 +30,7 @@ public class ComputerScreen extends TabbedScreen {
     private final ProtectionTab protectionTab;
     private final LogTab logTab;
     private final AudioTab audioTab;
+    private final TriggersTab triggersTab;
     private final InstallTab installTab;
     private final LoginTab loginTab;
 
@@ -56,6 +58,8 @@ public class ComputerScreen extends TabbedScreen {
         loginTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
         this.audioTab = new AudioTab();
         audioTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/note_block.png"));
+        this.triggersTab = new TriggersTab();
+        triggersTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
     }
 
     public static void open(Minecraft client, OpenComputerPacket payload) {
@@ -92,12 +96,14 @@ public class ComputerScreen extends TabbedScreen {
         removeTab(installTab);
         removeTab(loginTab);
         removeTab(audioTab);
+        removeTab(triggersTab);
 
         if (computerNode.isInstalled()) {
             if (isLoggedIn) {
                 if (energyNetwork.hasAccessors()) addTab(transferTab);
                 if (energyNetwork.hasProtectors()) addTab(protectionTab);
                 if (energyNetwork.hasAudioStations()) addTab(audioTab);
+                addTab(triggersTab);
                 addTab(logTab);
             } else {
                 addTab(loginTab);

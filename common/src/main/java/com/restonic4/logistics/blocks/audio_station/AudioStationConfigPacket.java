@@ -18,18 +18,20 @@ public class AudioStationConfigPacket implements C2SPacket {
     private final float pitch;
     private final float radius;
     private final boolean looping;
-    private final boolean redstoneMode;
+    private final boolean autoPlay;
 
-    public AudioStationConfigPacket(BlockPos stationPos, String audioPath,
-                                    float volume, float pitch, float radius,
-                                    boolean looping, boolean redstoneMode) {
+    public AudioStationConfigPacket(
+            BlockPos stationPos, String audioPath,
+            float volume, float pitch, float radius,
+            boolean looping, boolean autoPlay
+    ) {
         this.stationPos = stationPos;
         this.audioPath = audioPath;
         this.volume = volume;
         this.pitch = pitch;
         this.radius = radius;
         this.looping = looping;
-        this.redstoneMode = redstoneMode;
+        this.autoPlay = autoPlay;
     }
 
     public AudioStationConfigPacket(FriendlyByteBuf buf) {
@@ -39,7 +41,7 @@ public class AudioStationConfigPacket implements C2SPacket {
         this.pitch = buf.readFloat();
         this.radius = buf.readFloat();
         this.looping = buf.readBoolean();
-        this.redstoneMode = buf.readBoolean();
+        this.autoPlay = buf.readBoolean();
     }
 
     @Override
@@ -50,7 +52,7 @@ public class AudioStationConfigPacket implements C2SPacket {
         buf.writeFloat(pitch);
         buf.writeFloat(radius);
         buf.writeBoolean(looping);
-        buf.writeBoolean(redstoneMode);
+        buf.writeBoolean(autoPlay);
     }
 
     @Override
@@ -60,7 +62,7 @@ public class AudioStationConfigPacket implements C2SPacket {
     public void handle(MinecraftServer server, ServerPlayer player) {
         NetworkNode node = NetworkManager.get(player.serverLevel()).getNodeByBlockPos(stationPos);
         if (node instanceof AudioStationNode audioNode) {
-            audioNode.applyConfig(audioPath, volume, pitch, radius, looping, redstoneMode);
+            audioNode.applyConfig(audioPath, volume, pitch, radius, looping, autoPlay);
         }
     }
 }

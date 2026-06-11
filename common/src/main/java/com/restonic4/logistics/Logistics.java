@@ -5,7 +5,9 @@ import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
 import com.restonic4.logistics.blocks.audio_station.AudioDeletePacket;
 import com.restonic4.logistics.blocks.audio_station.AudioStationConfigPacket;
+import com.restonic4.logistics.blocks.audio_station.AudioStationControlPacket;
 import com.restonic4.logistics.blocks.audio_station.AudioUploadPacket;
+import com.restonic4.logistics.blocks.computer.automation.TriggerSavePacket;
 import com.restonic4.logistics.blocks.base.RenameNodePacket;
 import com.restonic4.logistics.blocks.computer.ComputerClientLogPushPacket;
 import com.restonic4.logistics.blocks.computer.ComputerInstallPacket;
@@ -28,8 +30,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Logistics {
     public static final CreativeTabEntry CUSTOM_TAB = PlatformRegistry
@@ -68,6 +68,8 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(ComputerClientLogPushPacket.ID, ComputerClientLogPushPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(ProtectionSavePacket.ID, ProtectionSavePacket::read);
         NetworkingRegistry.registerServerTargetedPacket(AudioStationConfigPacket.ID, AudioStationConfigPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(AudioStationControlPacket.ID, AudioStationControlPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(TriggerSavePacket.ID, TriggerSavePacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioUploadPacket.ID, AudioUploadPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioDeletePacket.ID, AudioDeletePacket::new);
         NetworkingRegistry.registerServerTargetedPacket(RenameNodePacket.ID, RenameNodePacket::new);

@@ -28,8 +28,10 @@ public class ClientAudioSource {
     private volatile ChannelAccess.ChannelHandle channelHandle;
     private volatile boolean released;
 
-    public ClientAudioSource(UUID id, Vec3 pos, String filePath, float volume,
-                             float pitch, float radius, long elapsedMs, boolean looping) {
+    public ClientAudioSource(
+            UUID id, Vec3 pos, String filePath, float volume,
+            float pitch, float radius, long elapsedMs, boolean looping
+    ) {
         this.id = id;
         this.pos = pos;
         this.filePath = filePath;
@@ -90,7 +92,10 @@ public class ClientAudioSource {
                 AL10.alSourcef(source, AL10.AL_ROLLOFF_FACTOR, 0.0f);
 
                 AL10.alSourcef(source, AL10.AL_PITCH, this.pitch);
-                if (this.elapsedMs > 0 && !this.looping) {
+                // Seek to the server-reported position so players (re)entering the radius
+                // join mid-playback instead of hearing the audio restart. For looping
+                // sources the server already sends the offset modulo the duration.
+                if (this.elapsedMs > 0) {
                     AL11.alSourcef(source, AL11.AL_SEC_OFFSET, this.elapsedMs / 1000.0f);
                 }
 

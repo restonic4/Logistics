@@ -82,11 +82,14 @@ public class ComputerBlock extends BaseNetworkBlock implements InvertiblePlaceme
             ServerLevel serverLevel = (ServerLevel) level;
             NetworkNode node = NetworkManager.get(serverLevel).getNodeByBlockPos(pos);
             if (node instanceof ComputerNode computerNode && computerNode.isPowered() && node.getNetwork() instanceof EnergyNetwork) {
-                List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
-                ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
                 level.playSound(null, pos, Sounds.COMPUTER_OPEN.getSoundEvent(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
+                // Open first: the log sync is only accepted while the screen is open,
+                // and the client processes these packets in order.
                 ServerNetworking.sendToClient(serverPlayer, new OpenComputerPacket(computerNode.getBlockPos()));
+
+                List<ComputerLogEntry> logEntries = ComputerLogger.get(serverLevel).getEntries(pos);
+                ServerNetworking.sendToClient(serverPlayer, new ComputerLogSyncPacket(pos, logEntries));
             }
         }
 

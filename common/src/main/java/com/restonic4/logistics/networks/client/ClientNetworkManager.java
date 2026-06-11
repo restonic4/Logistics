@@ -94,6 +94,30 @@ public class ClientNetworkManager {
         return UPLOADED_SOUNDS;
     }
 
+    /**
+     * Pretty label for an uploaded sound. Stored paths look like {@code <uploaderUuid>/<file>.wav};
+     * for display we swap the UUID for the uploader's username when they're known to the client.
+     * The returned string is for display only — keep using the raw path as the value.
+     */
+    public static String getSoundDisplayName(String path) {
+        if (path == null || path.isEmpty()) return path;
+
+        String[] parts = path.split("/", 2);
+        if (parts.length == 2) {
+            try {
+                UUID uploader = UUID.fromString(parts[0]);
+                ClientPacketListener connection = Minecraft.getInstance().getConnection();
+                PlayerInfo info = connection != null ? connection.getPlayerInfo(uploader) : null;
+                if (info != null) {
+                    return info.getProfile().getName() + "/" + parts[1];
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Prefix isn't a UUID — show the path as is.
+            }
+        }
+        return path; // TODO: Minecraft saves usernames on the usercache.json file at server root on dedicated servers. So we might be able to use this if the player is not online? Maybe? Packet to track this data? Like, only the users who uploaded a sound, not all players, so we have some cache.
+    }
+
     public static List<GameProfile> getGameProfiles() {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         List<GameProfile> profiles = Collections.emptyList();
@@ -101,11 +125,5 @@ public class ClientNetworkManager {
             profiles = connection.getOnlinePlayers().stream().map(PlayerInfo::getProfile).toList();
         }
         return profiles;
-    }
-
-    public static void dump() {
-        Constants.LOG.debug("Hello");
-        Constants.LOG.debug(String.valueOf(DIMENSIONAL_NETWORKS.size()));
-        Constants.LOG.debug("Bye");
     }
 }

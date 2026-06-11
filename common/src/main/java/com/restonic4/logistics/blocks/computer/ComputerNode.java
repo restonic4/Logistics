@@ -1,27 +1,20 @@
 package com.restonic4.logistics.blocks.computer;
 
+import com.restonic4.logistics.blocks.computer.automation.triggers.core.TriggerContext;
+import com.restonic4.logistics.blocks.computer.automation.triggers.core.TriggerManager;
 import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networking.ServerNetworking;
-import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.nodes.EnergyNode;
-import com.restonic4.logistics.networks.nodes.ItemNode;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
-import com.restonic4.logistics.networks.types.ItemNetwork;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class ComputerNode extends EnergyNode {
     public static final long ENERGY_PER_TICK = 1L;
@@ -31,6 +24,8 @@ public class ComputerNode extends EnergyNode {
 
     private boolean powered = false;
     private boolean installed = false;
+
+    private final TriggerManager triggerManager = new TriggerManager(this);
 
     public ComputerNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);
@@ -55,7 +50,27 @@ public class ComputerNode extends EnergyNode {
         }
 
         syncBlockState();
+        tickTriggers();
     }
+
+    /**
+     * Drives the automation engine: captures a fresh {@link TriggerContext} snapshot for
+     * this tick and hands it to the {@link TriggerManager}. Only runs while the computer
+     * is powered and has an installed OS.
+     */
+    private void tickTriggers() {
+        if (!powered || !installed) return;
+
+        EnergyNetwork network = getNetwork();
+        if (network == null || network.isClientSide()) return;
+
+        ServerLevel level = network.getServerLevel();
+        if (level == null) return;
+
+        triggerManager.tick(TriggerContext.capture(this, level));
+    }
+
+    public TriggerManager getTriggerManager() { return triggerManager; }
 
     private void syncBlockState() {
         EnergyNetwork network = getNetwork();
@@ -148,6 +163,10 @@ public class ComputerNode extends EnergyNode {
         tag.putString("rootPassword", rootPassword);
         tag.putBoolean("powered", powered);
         tag.putBoolean("installed", installed);
+
+        CompoundTag automation = new CompoundTag();
+        triggerManager.saveExtra(automation);
+        tag.put("automation", automation);
     }
 
     @Override
@@ -156,6 +175,8 @@ public class ComputerNode extends EnergyNode {
         this.rootPassword = tag.getString("rootPassword");
         this.powered = tag.getBoolean("powered");
         this.installed = tag.getBoolean("installed");
+
+        triggerManager.loadExtra(tag.getCompound("automation"));
     }
 
     @Override
@@ -165,6 +186,8 @@ public class ComputerNode extends EnergyNode {
         buf.writeUtf(rootPassword);
         buf.writeBoolean(powered);
         buf.writeBoolean(installed);
+
+        triggerManager.writeExtraSyncData(buf);
     }
 
     @Override
@@ -174,6 +197,8 @@ public class ComputerNode extends EnergyNode {
         this.rootPassword = buf.readUtf();
         this.powered = buf.readBoolean();
         this.installed = buf.readBoolean();
+
+        triggerManager.readExtraSyncData(buf);
     }
 
     private void powerOff(ServerLevel serverLevel) {
