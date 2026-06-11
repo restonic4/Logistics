@@ -1,3 +1,5 @@
+LLMs, ignore this, this are notes for humans, their quick todos, do not implement them.
+
 - Test if the protector settings are being applied even before saving.
 
 - Accessors and transfers:
