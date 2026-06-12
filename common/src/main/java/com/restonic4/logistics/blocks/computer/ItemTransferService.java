@@ -57,7 +57,9 @@ public final class ItemTransferService {
             return Result.FAILED;
         }
 
-        // ── Resolve the destination ──
+        // ── Resolve the destination. Parcels can only travel within one item network, so a
+        //    transfer is impossible without knowing the target's network: every source must
+        //    come from that same network or the parcel would have no route and drop. ──
         AccessorNode targetNode = null;
         ItemNetwork targetNetwork = null;
         Network resolvedTarget = NetworkManager.get(level).getNetworkByBlockPos(targetPos);
@@ -66,72 +68,70 @@ public final class ItemTransferService {
             targetNode = acc;
             targetNetwork = itemNet;
         }
+        if (targetNode == null) {
+            log(log, level, computerPos, ComputerLogEntry.Severity.WARN,
+                    String.format("Transfer failed: target %s is not an accessor on an item network.",
+                            targetPos.toShortString()));
+            return Result.FAILED;
+        }
 
         // ── Capacity gate: never ship more than the target can hold right now.
         //    Items already flying toward it count as occupying that space. ──
-        if (targetNode != null) {
-            int inFlight = targetNetwork.countInFlightTo(targetPos, filter);
-            int acceptable = targetNode.countAcceptable(filter, filter.createDisplayStack(), level) - inFlight;
-
-            if (acceptable <= 0) {
-                log(log, level, computerPos, ComputerLogEntry.Severity.WARN,
-                        String.format("Transfer skipped: target %s cannot hold any more %s%s.",
-                                targetPos.toShortString(), filter.describe(),
-                                inFlight > 0 ? " (" + inFlight + " already in flight)" : ""));
-                return Result.FAILED;
-            }
-            quantity = Math.min(quantity, acceptable);
+        int inFlight = targetNetwork.countInFlightTo(targetPos, filter);
+        int acceptable = targetNode.countAcceptable(filter, filter.createDisplayStack(), level) - inFlight;
+        if (acceptable <= 0) {
+            log(log, level, computerPos, ComputerLogEntry.Severity.WARN,
+                    String.format("Transfer skipped: target %s cannot hold any more %s%s.",
+                            targetPos.toShortString(), filter.describe(),
+                            inFlight > 0 ? " (" + inFlight + " already in flight)" : ""));
+            return Result.FAILED;
         }
+        quantity = Math.min(quantity, acceptable);
 
         AccessorNode sourceNode = null;
-        ItemNetwork sourceNetwork = null;
 
         // ── MANUAL: user picked a specific input accessor ──
         if (fromPos != null) {
-            Network network = NetworkManager.get(level).getNetworkByBlockPos(fromPos);
-            if (network instanceof ItemNetwork itemNet) {
-                var node = itemNet.getNodeIndex().findByBlockPos(fromPos);
-                if (node instanceof AccessorNode acc) {
-                    sourceNode = acc;
-                    sourceNetwork = itemNet;
-                }
+            // Resolving through the target's network enforces same-network routing: a source
+            // on a different item network simply isn't found there.
+            if (targetNetwork.getNodeIndex().findByBlockPos(fromPos) instanceof AccessorNode acc) {
+                sourceNode = acc;
+            } else {
+                log(log, level, computerPos, ComputerLogEntry.Severity.WARN,
+                        String.format("Transfer failed: source %s is not on the same item network as target %s.",
+                                fromPos.toShortString(), targetPos.toShortString()));
+                return Result.FAILED;
             }
         }
-        // ── AUTO: scan every bridged item network and pick the best-stocked accessor ──
+        // ── AUTO: pick the best-stocked accessor on the target's own network ──
         else {
             // The destination must never feed itself: exclude the target accessor AND any other
             // accessor reading the same container, or the transfer loops the chest's contents
             // back into it forever, draining energy until the network locks up.
-            BlockPos targetContainer = targetNode != null ? targetNode.getContainerPos() : null;
+            BlockPos targetContainer = targetNode.getContainerPos();
 
             int bestAvailable = 0;
-            for (var connector : energyNetwork.getNetworkConnectors()) {
-                Network bridged = connector.getBridgedNetwork();
-                if (!(bridged instanceof ItemNetwork itemNet)) continue;
-
-                for (var netNode : itemNet.getNodeIndex().getAllNodes()) {
-                    if (netNode instanceof AccessorNode acc
-                            && !acc.getBlockPos().equals(targetPos)
-                            && (targetContainer == null || !Objects.equals(targetContainer, acc.getContainerPos()))) {
-                        int available = acc.countMatching(filter, level);
-                        if (available > bestAvailable) {
-                            bestAvailable = available;
-                            sourceNode = acc;
-                            sourceNetwork = itemNet;
-                            if (available >= quantity) break;
-                        }
+            for (var netNode : targetNetwork.getNodeIndex().getAllNodes()) {
+                if (netNode instanceof AccessorNode acc
+                        && !acc.getBlockPos().equals(targetPos)
+                        && (targetContainer == null || !Objects.equals(targetContainer, acc.getContainerPos()))) {
+                    int available = acc.countMatching(filter, level);
+                    if (available > bestAvailable) {
+                        bestAvailable = available;
+                        sourceNode = acc;
+                        if (available >= quantity) break;
                     }
                 }
-                if (bestAvailable >= quantity) break;
             }
         }
 
-        if (sourceNode == null || sourceNetwork == null) {
+        if (sourceNode == null) {
             log(log, level, computerPos, ComputerLogEntry.Severity.WARN,
-                    String.format("Transfer failed: no %s available in any accessible accessor.",
+                    String.format("Transfer failed: no %s available on the target's item network.",
                             filter.describe()));
             return Result.FAILED;
         }
+        ItemNetwork sourceNetwork = targetNetwork;
 
         int available = sourceNode.countMatching(filter, level);
         int toSend = allowPartial ? Math.min(quantity, available) : quantity;

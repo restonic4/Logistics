@@ -56,7 +56,7 @@ edge-detection state, so an alarm that already fired doesn't re-fire on save.
 | Stop audio | Stop station(s); "All stations" = network-wide mute |
 | Wait for audio | Hold the sequence until the targeted station(s) finish — the playlist building block |
 | Log message | Write to the computer's Log tab (notifications/debugging) |
-| Send items | Ship filter-matching items to a target accessor via `ItemTransferService` (the Transfer tab's path: energy billing, NBT filters, parcel trails). Fixed-amount mode, or top-up mode that only sends what the target is missing. Sends partially on a shortfall; quantities clamp to what the target can hold; items in flight count as delivered (no over-send/overflow on fast re-fires); the auto source never picks the target accessor or any accessor reading the target's container. Console logging and stop-on-failure (whether a failed send aborts the sequence) are per-action toggleable, both on by default |
+| Send items | Ship filter-matching items to a target accessor via `ItemTransferService` (the Transfer tab's path: energy billing, NBT filters, parcel trails). Fixed-amount mode, or top-up mode that only sends what the target is missing. Sends partially on a shortfall; quantities clamp to what the target can hold; items in flight count as delivered (no over-send/overflow on fast re-fires); sources always come from the target's own item network (parcels can't cross networks), and auto never picks the target accessor or any accessor reading the target's container. Console logging and stop-on-failure (whether a failed send aborts the sequence) are per-action toggleable, both on by default |
 
 ### Recipes
 
