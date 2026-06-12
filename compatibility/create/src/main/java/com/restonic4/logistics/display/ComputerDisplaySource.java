@@ -3,6 +3,7 @@ package com.restonic4.logistics.display;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.types.EnergyNetwork;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.simibubi.create.content.redstone.displayLink.DisplayLinkContext;
 import com.simibubi.create.content.redstone.displayLink.target.DisplayTargetStats;
@@ -31,11 +32,17 @@ public class ComputerDisplaySource extends DisplaySource {
         int modeIndex = context.sourceConfig().getInt("DisplayMode");
         ComputerDisplayMode currentMode = ComputerDisplayMode.byIndex(modeIndex);
 
+        EnergyNetwork network = computerNode.getNetwork();
+
         // Change the displayed text depending on what mode the user selected
         String dataString = switch (currentMode) {
-            case STORED_ENERGY -> "Energy: " + computerNode.getNetwork().getStoredEnergyBuffer();
-            case TOTAL_ENERGY -> "Max E: " + computerNode.getNetwork().getTotalEnergyBuffer();
-            case NODE_COUNT -> "Nodes: " + computerNode.getNetwork().getNodeIndex().size();
+            case STORED_ENERGY -> "Energy: " + network.getStoredEnergyBuffer();
+            case TOTAL_ENERGY -> "Max E: " + network.getTotalEnergyBuffer();
+            case NODE_COUNT -> "Nodes: " + network.getNodeIndex().size();
+            case PRODUCTION -> "Prod: " + EnergyNetwork.formatEnergy(network.getLastTickProduction()) + "/t";
+            case CONSUMPTION -> "Cons: " + EnergyNetwork.formatEnergy(network.getLastTickConsumption()) + "/t";
+            case NET_ENERGY -> "Net: " + EnergyNetwork.formatEnergy(network.getLastTickNetEnergy()) + "/t";
+            case TIME_LEFT -> timeLeftString(network);
         };
 
         result.add(Component.literal(dataString));
@@ -72,6 +79,24 @@ public class ComputerDisplaySource extends DisplaySource {
                 },
                 "DisplayMode" // This string key tells Create where to auto-track it in context.sourceConfig()
         );
+    }
+
+    /**
+     * Picks the relevant countdown depending on whether the network is draining or charging,
+     * based on the last tick's net flow. Shows "Stable" when neither applies.
+     */
+    private static String timeLeftString(EnergyNetwork network) {
+        long ticksUntilEmpty = network.getTicksUntilEmpty();
+        if (ticksUntilEmpty != EnergyNetwork.NEVER) {
+            return "Empty in: " + EnergyNetwork.formatTicks(ticksUntilEmpty);
+        }
+
+        long ticksUntilFull = network.getTicksUntilFull();
+        if (ticksUntilFull != EnergyNetwork.NEVER) {
+            return "Full in: " + EnergyNetwork.formatTicks(ticksUntilFull);
+        }
+
+        return "Stable";
     }
 
     @Override

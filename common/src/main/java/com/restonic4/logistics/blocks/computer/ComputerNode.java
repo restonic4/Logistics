@@ -135,6 +135,25 @@ public class ComputerNode extends EnergyNode {
             if (getNetwork().hasAudioStations()) { builder.bullet("Audio stations"); addedConnection = true; }
             if (getNetwork().hasProtectors()) { builder.bullet("Protectors"); addedConnection = true; }
             if (!addedConnection) builder.bullet("None");
+
+            EnergyNetwork network = getNetwork();
+            if (network != null) {
+                builder.spacer();
+                builder.text("Power");
+                builder.keyValue("Production", EnergyNetwork.formatEnergy(network.getLastTickProduction()) + "/t", ChatFormatting.GREEN);
+                builder.keyValue("Consumption", EnergyNetwork.formatEnergy(network.getLastTickConsumption()) + "/t", ChatFormatting.RED);
+
+                long net = network.getLastTickNetEnergy();
+                builder.keyValue("Net", EnergyNetwork.formatEnergy(net) + "/t", net >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED);
+
+                long ticksUntilEmpty = network.getTicksUntilEmpty();
+                long ticksUntilFull = network.getTicksUntilFull();
+                if (ticksUntilEmpty != EnergyNetwork.NEVER) {
+                    builder.keyValue("Time until empty", EnergyNetwork.formatTicks(ticksUntilEmpty), ChatFormatting.RED);
+                } else if (ticksUntilFull != EnergyNetwork.NEVER) {
+                    builder.keyValue("Time until full", EnergyNetwork.formatTicks(ticksUntilFull), ChatFormatting.GREEN);
+                }
+            }
         } else {
             builder.text("OS not found, installation required!", ChatFormatting.RED);
         }

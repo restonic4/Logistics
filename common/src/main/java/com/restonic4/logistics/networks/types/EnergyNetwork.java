@@ -34,11 +34,24 @@ public class EnergyNetwork extends Network {
     private long lastTotalUpdate = 0;
     private long lastStoredUpdate = 0;
 
+    // Per-tick energy metering. Accumulators fill during the current tick (as nodes
+    // request/report energy) and are snapshotted into the "last tick" values at the
+    // start of the next tick, so the getters always expose a fully completed tick.
+    private long productionAccumulator = 0;
+    private long consumptionAccumulator = 0;
+    private long lastTickProduction = 0;
+    private long lastTickConsumption = 0;
+
     public EnergyNetwork(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
         super(type, serverLevel);
     }
 
     public void tick() {
+        lastTickProduction = productionAccumulator;
+        lastTickConsumption = consumptionAccumulator;
+        productionAccumulator = 0;
+        consumptionAccumulator = 0;
+
         super.tick();
         recalculateCaches();
     }
@@ -94,6 +107,7 @@ public class EnergyNetwork extends Network {
             }
         }
 
+        consumptionAccumulator += extracted;
         setDirty();
         return extracted;
     }
@@ -119,6 +133,7 @@ public class EnergyNetwork extends Network {
             }
         }
 
+        productionAccumulator += produced - remaining;
         setDirty();
         return remaining;
     }
@@ -156,8 +171,64 @@ public class EnergyNetwork extends Network {
         return eu + " EU";
     }
 
+    public static String formatTicks(long ticks) {
+        double seconds = ticks / 20.0;
+        if (seconds >= 3600) return String.format("%.1fh", seconds / 3600.0);
+        if (seconds >= 60) return String.format("%.1fm", seconds / 60.0);
+        return String.format("%.1fs", seconds);
+    }
+
     public long getStoredEnergyBuffer() { return cacheStoredNodeEnergyBuffer + getStoredCableEnergyBuffer(); }
     public long getTotalEnergyBuffer() { return cacheTotalNodeEnergyBuffer + getTotalCableEnergyBuffer(); }
+
+    /**
+     * Sentinel returned by the prediction getters when the network is not heading toward the
+     * given state at the current rate (e.g. asking for ticks-until-empty while it is charging).
+     */
+    public static final long NEVER = -1;
+
+    /** Energy added to the network during the last fully completed tick (EU/tick). */
+    public long getLastTickProduction() { return lastTickProduction; }
+
+    /** Energy drained from the network during the last fully completed tick (EU/tick). */
+    public long getLastTickConsumption() { return lastTickConsumption; }
+
+    /** Net energy change during the last tick. Positive: charging, negative: draining. */
+    public long getLastTickNetEnergy() { return lastTickProduction - lastTickConsumption; }
+
+    /**
+     * Estimated ticks until the network's stored energy runs out, extrapolating from the last
+     * tick's net flow. Returns {@link #NEVER} when the network is stable or charging.
+     */
+    public long getTicksUntilEmpty() {
+        long net = getLastTickNetEnergy();
+        if (net >= 0) return NEVER;
+        return getStoredEnergyBuffer() / -net;
+    }
+
+    /**
+     * Estimated ticks until the network reaches full capacity, extrapolating from the last
+     * tick's net flow. Returns {@link #NEVER} when the network is stable or draining.
+     */
+    public long getTicksUntilFull() {
+        long net = getLastTickNetEnergy();
+        if (net <= 0) return NEVER;
+        long space = getTotalEnergyBuffer() - getStoredEnergyBuffer();
+        if (space <= 0) return 0;
+        return space / net;
+    }
+
+    /** Convenience: {@link #getTicksUntilEmpty()} expressed in seconds, or {@link #NEVER}. */
+    public double getSecondsUntilEmpty() {
+        long ticks = getTicksUntilEmpty();
+        return ticks == NEVER ? NEVER : ticks / 20.0;
+    }
+
+    /** Convenience: {@link #getTicksUntilFull()} expressed in seconds, or {@link #NEVER}. */
+    public double getSecondsUntilFull() {
+        long ticks = getTicksUntilFull();
+        return ticks == NEVER ? NEVER : ticks / 20.0;
+    }
 
     public long getStoredCableEnergyBuffer() { return networkCableBuffer; }
     public long getTotalCableEnergyBuffer() { return cacheTotalCableEnergyBuffer; }
@@ -184,6 +255,19 @@ public class EnergyNetwork extends Network {
         builder.spacer();
         builder.timeSinceTick("Last total buffer update:", lastTotalUpdate, getServerLevel().getGameTime(), ChatFormatting.YELLOW);
         builder.timeSinceTick("Last stored buffer update:", lastStoredUpdate, getServerLevel().getGameTime(), ChatFormatting.YELLOW);
+
+        builder.spacer();
+        builder.keyValue("Production:", formatEnergy(getLastTickProduction()) + "/t", ChatFormatting.YELLOW);
+        builder.keyValue("Consumption:", formatEnergy(getLastTickConsumption()) + "/t", ChatFormatting.YELLOW);
+        builder.keyValue("Net:", formatEnergy(getLastTickNetEnergy()) + "/t", ChatFormatting.YELLOW);
+
+        long ticksUntilEmpty = getTicksUntilEmpty();
+        long ticksUntilFull = getTicksUntilFull();
+        if (ticksUntilEmpty != NEVER) {
+            builder.keyValue("Time until empty:", formatTicks(ticksUntilEmpty), ChatFormatting.YELLOW);
+        } else if (ticksUntilFull != NEVER) {
+            builder.keyValue("Time until full:", formatTicks(ticksUntilFull), ChatFormatting.YELLOW);
+        }
 
         return true;
     }

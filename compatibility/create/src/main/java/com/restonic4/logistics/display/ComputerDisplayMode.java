@@ -3,7 +3,11 @@ package com.restonic4.logistics.display;
 public enum ComputerDisplayMode {
     STORED_ENERGY("Stored Energy"),
     TOTAL_ENERGY("Total Capacity"),
-    NODE_COUNT("Network Nodes");
+    NODE_COUNT("Network Nodes"),
+    PRODUCTION("Production"),
+    CONSUMPTION("Consumption"),
+    NET_ENERGY("Net Energy"),
+    TIME_LEFT("Time Left");
 
     private final String displayName;
 
