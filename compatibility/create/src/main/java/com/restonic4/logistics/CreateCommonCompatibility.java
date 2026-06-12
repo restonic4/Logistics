@@ -1,19 +1,29 @@
 package com.restonic4.logistics;
 
+import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.motor.CreateMotorBlock;
 import com.restonic4.logistics.blocks.motor.CreateMotorBlockEntity;
 import com.restonic4.logistics.blocks.motor.CreateMotorNode;
 import com.restonic4.logistics.blocks.transformer.CreateTransformerBlock;
 import com.restonic4.logistics.blocks.transformer.CreateTransformerBlockEntity;
 import com.restonic4.logistics.blocks.transformer.CreateTransformerNode;
+import com.restonic4.logistics.display.ComputerDisplaySource;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.AllDisplaySources;
+import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.api.equipment.goggles.IHaveHoveringInformation;
+import com.simibubi.create.api.registry.CreateBuiltInRegistries;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -50,7 +60,19 @@ public class CreateCommonCompatibility {
             .register();
 
     public static void register() {
+        ComputerDisplaySource source = new ComputerDisplaySource();
+        ResourceLocation id = new ResourceLocation(Constants.MOD_ID, "computer_display_source");
+        Registry.register(CreateBuiltInRegistries.DISPLAY_SOURCE, id, source);
+        //DisplaySource.BY_BLOCK.add(BlockRegistry.COMPUTER_BLOCK.getBlock(), source);
 
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            ResourceLocation blockId = new ResourceLocation(Constants.MOD_ID, "computer");
+            Block block = BuiltInRegistries.BLOCK.get(blockId);
+
+            if (block != null && block != BuiltInRegistries.BLOCK.get(BuiltInRegistries.BLOCK.getDefaultKey())) {
+                DisplaySource.BY_BLOCK.add(block, source);
+            }
+        });
     }
 
     public static boolean hasGoggleOverlay(ServerLevel serverLevel, BlockPos pos) {

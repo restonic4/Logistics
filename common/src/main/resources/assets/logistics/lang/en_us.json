@@ -15,6 +15,7 @@
   "block.logistics.charging_station": "Charging Station",
   "block.logistics.protector": "Protector",
   "block.logistics.creative_protector": "[CREATIVE] Protector",
+  "block.logistics.audio_station": "Audio Station",
 
   "block.logistics.pipe": "Pipe",
   "block.logistics.accessor": "Accessor",
@@ -175,6 +176,8 @@
   "logistics.ponder.protector.text_6": "Connect it to an energy network.",
   "logistics.ponder.protector.text_7": "The Protector could break if exposed to an instable energy network.",
   "logistics.ponder.protector.text_8": "You can repair it with a brand new Kinetic Crystal Shard.",
+
+  "logistics.display_source.computer_display_source": "Computer & Network data",
 
   "potion.potency.7": "VIII",
   "potion.potency.8": "IX",

@@ -15,6 +15,7 @@
   "block.logistics.charging_station": "Estación de carga",
   "block.logistics.protector": "Protector",
   "block.logistics.creative_protector": "[CREATIVO] Protector",
+  "block.logistics.audio_station": "Estación de audio",
 
   "block.logistics.pipe": "Tubería",
   "block.logistics.accessor": "Interfaz de acceso",
@@ -115,5 +116,6 @@
   "logistics.ponder.protector.text_5": "¡Pero primero necesitamos energia para el Protector y ordenador!",
   "logistics.ponder.protector.text_6": "Conectalos a una red electrica.",
   "logistics.ponder.protector.text_7": "El protector se estropeara si la red electrica es inestable.",
-  "logistics.ponder.protector.text_8": "Podras repararlo con un Fragmento de cristal cinético."
+  "logistics.ponder.protector.text_8": "Podras repararlo con un Fragmento de cristal cinético.",
+  "logistics.display_source.computer_display_source": "Datos del ordenador y red"
 }

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "#",
+    "N",
+    "C"
+  ],
+  "key": {
+    "#": {
+      "item": "logistics:chip"
+    },
+    "N": {
+      "item": "minecraft:note_block"
+    },
+    "C": {
+      "item": "logistics:cable"
+    }
+  },
+  "result": {
+    "item": "logistics:audio_station"
+  }
+}
