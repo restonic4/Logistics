@@ -1,5 +1,6 @@
 package com.restonic4.logistics.blocks.computer.automation.triggers.core;
 
+import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
@@ -26,11 +27,12 @@ public final class TriggerContext {
     private final long totalEnergyCapacity;
     private final double energyPercent;
     private final List<AudioStationNode> audioStations;
+    private final List<AccessorNode> accessors;
 
     private TriggerContext(
             ComputerNode node, ServerLevel level, BlockPos pos, long gameTime,
             long storedEnergy, long totalEnergyCapacity, double energyPercent,
-            List<AudioStationNode> audioStations
+            List<AudioStationNode> audioStations, List<AccessorNode> accessors
     ) {
         this.node = node;
         this.level = level;
@@ -40,6 +42,7 @@ public final class TriggerContext {
         this.totalEnergyCapacity = totalEnergyCapacity;
         this.energyPercent = energyPercent;
         this.audioStations = audioStations;
+        this.accessors = accessors;
     }
 
     /**
@@ -50,16 +53,18 @@ public final class TriggerContext {
         long stored = 0L;
         long total = 0L;
         List<AudioStationNode> stations = Collections.emptyList();
+        List<AccessorNode> accessors = Collections.emptyList();
 
         EnergyNetwork network = node.getNetwork();
         if (network != null) {
             stored = network.getStoredEnergyBuffer();
             total = network.getTotalEnergyBuffer();
             stations = Collections.unmodifiableList(network.getAudioStations());
+            accessors = Collections.unmodifiableList(network.getAccessors());
         }
 
         double percent = total > 0 ? (stored * 100.0D) / total : 0.0D;
-        return new TriggerContext(node, level, node.getBlockPos(), level.getGameTime(), stored, total, percent, stations);
+        return new TriggerContext(node, level, node.getBlockPos(), level.getGameTime(), stored, total, percent, stations, accessors);
     }
 
     /** The computer node currently being ticked. */
@@ -90,6 +95,17 @@ public final class TriggerContext {
     public AudioStationNode findAudioStation(UUID stationId) {
         for (AudioStationNode station : audioStations) {
             if (station.getUUID().equals(stationId)) return station;
+        }
+        return null;
+    }
+
+    /** Every accessor bridged to the computer's network at capture time. */
+    public List<AccessorNode> getAccessors() { return accessors; }
+
+    /** Looks up a bridged accessor by node UUID, or {@code null}. */
+    public AccessorNode findAccessor(UUID accessorId) {
+        for (AccessorNode accessor : accessors) {
+            if (accessor.getUUID().equals(accessorId)) return accessor;
         }
         return null;
     }

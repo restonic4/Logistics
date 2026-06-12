@@ -1,6 +1,7 @@
 package com.restonic4.logistics.networks.nodes;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.networks.filter.ItemFilter;
 import com.restonic4.logistics.networks.flags.NetworkFlag;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
@@ -37,6 +38,9 @@ public abstract class InventoryNode extends ItemNode {
     }
 
     @Nullable protected abstract BlockPos resolveTargetPos();
+
+    /** The position of the container this node reads/writes, or {@code null} if unset. */
+    @Nullable public final BlockPos getContainerPos() { return resolveTargetPos(); }
 
     private List<ItemStack> getRawPhysicalInventory(ServerLevel level) {
         Container container = resolveContainer(level);
@@ -262,6 +266,96 @@ public abstract class InventoryNode extends ItemNode {
         }
 
         return true;
+    }
+
+    /** Total count of items matching the filter across this node's virtual inventory. */
+    public int countMatching(ItemFilter filter, ServerLevel level) {
+        int total = 0;
+        for (ItemStack stack : this.getVirtualInventory(level)) {
+            if (filter.matches(stack)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * How many more filter-matching items this node's container could accept right now:
+     * free space in stacks that match the filter, plus empty slots sized by {@code sample}'s
+     * max stack size. Tag-identical stacks always agree on filter matches, so "slots matching
+     * the filter" is exactly the set an incoming matching stack could merge into.
+     */
+    public int countAcceptable(ItemFilter filter, ItemStack sample, ServerLevel level) {
+        int capacity = 0;
+        for (ItemStack stack : this.getVirtualInventory(level)) {
+            if (stack.isEmpty()) {
+                capacity += sample.getMaxStackSize();
+            } else if (filter.matches(stack)) {
+                capacity += Math.max(0, stack.getMaxStackSize() - stack.getCount());
+            }
+        }
+        return capacity;
+    }
+
+    /**
+     * Extracts up to {@code amount} items matching the filter, in slot order.
+     * <p>
+     * The result is the concrete stacks that were removed (NBT included), merged into as few
+     * stacks as possible — identical variants are grouped up to their max stack size, while
+     * distinct NBT variants stay in separate stacks. Each returned stack maps to one parcel.
+     *
+     * @param allowPartial when {@code false}, extraction is all-or-nothing: if fewer than
+     *                     {@code amount} matching items exist, nothing is removed
+     * @return the extracted stacks; empty if nothing was extracted
+     */
+    public List<ItemStack> extractMatching(ItemFilter filter, int amount, ServerLevel level, boolean allowPartial) {
+        if (amount <= 0) return List.of();
+
+        List<ItemStack> inventory = this.getVirtualInventory(level);
+
+        int available = 0;
+        for (ItemStack stack : inventory) {
+            if (filter.matches(stack)) {
+                available += stack.getCount();
+            }
+        }
+
+        if (available <= 0 || (!allowPartial && available < amount)) return List.of();
+
+        int remaining = Math.min(amount, available);
+        List<ItemStack> extracted = new ArrayList<>();
+
+        for (int i = 0; i < inventory.size() && remaining > 0; i++) {
+            ItemStack slotStack = inventory.get(i);
+            if (slotStack.isEmpty() || !filter.matches(slotStack)) continue;
+
+            int take = Math.min(remaining, slotStack.getCount());
+
+            ItemStack taken = slotStack.copy();
+            taken.setCount(take);
+
+            ItemStack left = slotStack.copy();
+            left.shrink(take);
+
+            this.writeRawPhysicalInventory(level, i, left);
+            inventory.set(i, left);
+            remaining -= take;
+
+            // Merge into an existing output stack of the same variant; the rest becomes a new stack.
+            for (ItemStack out : extracted) {
+                if (taken.isEmpty()) break;
+                if (ItemStack.isSameItemSameTags(out, taken)) {
+                    int move = Math.min(out.getMaxStackSize() - out.getCount(), taken.getCount());
+                    out.grow(move);
+                    taken.shrink(move);
+                }
+            }
+            if (!taken.isEmpty()) {
+                extracted.add(taken);
+            }
+        }
+
+        return extracted;
     }
 
     public boolean hasPendingDeltas() {

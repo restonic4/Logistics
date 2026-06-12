@@ -6,6 +6,7 @@ import com.restonic4.logistics.blocks.computer.automation.triggers.registry.Trig
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.types.AudioStateTriggerEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.types.EnergyLevelTriggerEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.types.IntervalTriggerEditor;
+import com.restonic4.logistics.blocks.computer.screen.triggers.editors.types.ItemCountTriggerEditor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +24,7 @@ public final class TriggerEditors {
         register(TriggerRegistry.ENERGY_LEVEL, new EnergyLevelTriggerEditor());
         register(TriggerRegistry.AUDIO_STATE, new AudioStateTriggerEditor());
         register(TriggerRegistry.INTERVAL, new IntervalTriggerEditor());
+        register(TriggerRegistry.ITEM_COUNT, new ItemCountTriggerEditor());
     }
 
     private TriggerEditors() {}

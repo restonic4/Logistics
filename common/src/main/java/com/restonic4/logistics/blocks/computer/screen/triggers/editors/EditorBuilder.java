@@ -7,6 +7,7 @@ import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.ScrollablePanel;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
+import com.restonic4.logistics.screens.widgets.ToggleWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget.DropdownEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -128,6 +129,14 @@ public class EditorBuilder {
         picker.setDecimalPlaces(decimals);
         panel.addChild(picker, columnX(col), y);
         return picker;
+    }
+
+    /** An on/off switch. */
+    public ToggleWidget toggle(int col, boolean value, Consumer<Boolean> onChange) {
+        ToggleWidget toggle = new ToggleWidget(0, 0, 36, 14, value,
+                v -> { onChange.accept(v); markDirty.run(); });
+        panel.addChild(toggle, columnX(col), y + 2);
+        return toggle;
     }
 
     /** A single-line text field. */

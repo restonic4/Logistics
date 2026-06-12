@@ -4,6 +4,10 @@ import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.computer.ComputerTransferPacket;
 import com.restonic4.logistics.networking.ClientNetworking;
+import com.restonic4.logistics.networks.filter.ItemFilter;
+import com.restonic4.logistics.networks.filter.NbtProperty;
+import com.restonic4.logistics.networks.filter.NbtPropertyRegistry;
+import com.restonic4.logistics.networks.filter.NbtRule;
 import com.restonic4.logistics.screens.tabs.Tab;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
@@ -12,14 +16,19 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class TransferTab extends Tab {
@@ -29,11 +38,25 @@ public class TransferTab extends Tab {
     private SearchableDropdownWidget<BlockPos> rightAccessor;
     private StyledButton transferButton;
 
+    // NBT filter controls (shown below the quantity box, depending on the selected mode)
+    private SearchableDropdownWidget<ItemFilter.NbtMode> nbtModeDropdown;
+    private SearchableDropdownWidget<CompoundTag> variantDropdown;
+    private SearchableDropdownWidget<ResourceLocation> propertyDropdown;
+    private SearchableDropdownWidget<NbtRule.Comparison> comparisonDropdown;
+    private NumberPickerWidget ruleValueBox;
+    private SearchableDropdownWidget<Boolean> unitDropdown;
+
     // Persisted state across tab switches / resizes
     private int savedQuantity = 1;
     private String savedItem = "minecraft:chest";
     private BlockPos savedLeft = null;
     private BlockPos savedRight = null;
+    private ItemFilter.NbtMode savedNbtMode = ItemFilter.NbtMode.ANY;
+    @Nullable private CompoundTag savedVariantTag = null;
+    private ResourceLocation savedPropertyId = NbtPropertyRegistry.ENERGY.getId();
+    private NbtRule.Comparison savedComparison = NbtRule.Comparison.GREATER_EQUAL;
+    private double savedRuleValue = 50;
+    private boolean savedRulePercent = true;
 
     private final List<AccessorNode> accessors;
 
@@ -47,15 +70,16 @@ public class TransferTab extends Tab {
         int midW = 50;
         int midX = x + width / 2 - midW / 2;
         int midY = y + height / 2 - midW / 2 - 10;
+        int centerX = x + width / 2;
 
         // Quantity
         this.quantityBox = new NumberPickerWidget(midX, midY + midW + 8, midW, 20, Component.empty(), 1, val -> {});
-        this.quantityBox.setRange(1, 64);
+        this.quantityBox.setRange(1, ComputerTransferPacket.MAX_QUANTITY);
         this.quantityBox.setValue(savedQuantity);
         parent.addRenderableWidget(this.quantityBox);
 
         // Item selector
-        this.textBox = new SearchableDropdownWidget<>(midX, midY, midW, midW, Component.empty(), new ArrayList<>(), val -> {});
+        this.textBox = new SearchableDropdownWidget<>(midX, midY, midW, midW, Component.empty(), new ArrayList<>(), val -> onItemSelected());
         this.textBox.setSelectionRenderer(new SearchableDropdownWidget.CompactItemSelectorRenderer<>(4, 0.5f));
         if (savedItem != null) this.textBox.setSelectedValue(savedItem);
         parent.addRenderableWidget(this.textBox);
@@ -70,6 +94,47 @@ public class TransferTab extends Tab {
         this.rightAccessor.setSelectionRenderer(new SearchableDropdownWidget.CompactItemSelectorRenderer<>(4, 0.5f));
         parent.addRenderableWidget(this.rightAccessor);
 
+        // NBT mode + exact-variant row
+        int nbtY = midY + midW + 8 + 20 + 6;
+        this.nbtModeDropdown = new SearchableDropdownWidget<>(centerX - 72, nbtY, 70, 16, Component.empty(),
+                buildNbtModeEntries(), mode -> updateNbtControls());
+        this.nbtModeDropdown.setSelectedValueSilently(savedNbtMode);
+        parent.addRenderableWidget(this.nbtModeDropdown);
+
+        this.variantDropdown = new SearchableDropdownWidget<>(centerX + 2, nbtY, 70, 16, Component.empty(),
+                new ArrayList<>(), val -> {});
+        parent.addRenderableWidget(this.variantDropdown);
+
+        // Property rule row: <property> <comparison> <value> <unit>
+        int rulesY = nbtY + 20;
+        int ruleX = centerX - 100;
+        this.propertyDropdown = new SearchableDropdownWidget<>(ruleX, rulesY, 70, 16, Component.empty(),
+                new ArrayList<>(), val -> updateUnitOptions());
+        parent.addRenderableWidget(this.propertyDropdown);
+
+        List<SearchableDropdownWidget.DropdownEntry<NbtRule.Comparison>> cmpEntries = new ArrayList<>();
+        for (NbtRule.Comparison cmp : NbtRule.Comparison.values()) {
+            cmpEntries.add(new SearchableDropdownWidget.DropdownEntry<>(cmp, Component.literal(cmp.symbol()), null));
+        }
+        this.comparisonDropdown = new SearchableDropdownWidget<>(ruleX + 74, rulesY, 34, 16, Component.empty(),
+                cmpEntries, val -> {});
+        this.comparisonDropdown.setSelectedValueSilently(savedComparison);
+        parent.addRenderableWidget(this.comparisonDropdown);
+
+        this.ruleValueBox = new NumberPickerWidget(ruleX + 112, rulesY, 50, 16, Component.empty(), savedRuleValue, val -> {});
+        this.ruleValueBox.setRange(0, Double.MAX_VALUE);
+        parent.addRenderableWidget(this.ruleValueBox);
+
+        List<SearchableDropdownWidget.DropdownEntry<Boolean>> unitEntries = new ArrayList<>();
+        unitEntries.add(new SearchableDropdownWidget.DropdownEntry<>(Boolean.TRUE,
+                Component.translatable("screen.logistics.computer.tab.transfer.unit.percent"), null));
+        unitEntries.add(new SearchableDropdownWidget.DropdownEntry<>(Boolean.FALSE,
+                Component.translatable("screen.logistics.computer.tab.transfer.unit.absolute"), null));
+        this.unitDropdown = new SearchableDropdownWidget<>(ruleX + 166, rulesY, 34, 16, Component.empty(),
+                unitEntries, val -> {});
+        this.unitDropdown.setSelectedValueSilently(savedRulePercent);
+        parent.addRenderableWidget(this.unitDropdown);
+
         // Transfer button
         this.transferButton = new StyledButton(
                 x + width / 2 - 50,
@@ -82,6 +147,17 @@ public class TransferTab extends Tab {
         parent.addRenderableWidget(this.transferButton);
 
         refreshAccessorDropdowns();
+        onItemSelected();
+    }
+
+    private List<SearchableDropdownWidget.DropdownEntry<ItemFilter.NbtMode>> buildNbtModeEntries() {
+        List<SearchableDropdownWidget.DropdownEntry<ItemFilter.NbtMode>> entries = new ArrayList<>();
+        for (ItemFilter.NbtMode mode : ItemFilter.NbtMode.values()) {
+            entries.add(new SearchableDropdownWidget.DropdownEntry<>(mode,
+                    Component.translatable("screen.logistics.computer.tab.transfer.nbt_mode." + mode.name().toLowerCase()),
+                    null));
+        }
+        return entries;
     }
 
     public void refreshAccessorDropdowns() {
@@ -135,33 +211,187 @@ public class TransferTab extends Tab {
         }
     }
 
+    // =====================================================================
+    // NBT filter controls
+    // =====================================================================
+
+    /** Every stack of the currently selected item visible in the network's replicated inventories. */
+    private List<ItemStack> getSelectedItemStacks() {
+        String itemId = textBox != null ? textBox.getSelectedValue() : null;
+        List<ItemStack> stacks = new ArrayList<>();
+        if (itemId == null) return stacks;
+
+        for (AccessorNode accessorNode : accessors) {
+            for (ItemStack stack : accessorNode.getReplicatedInventory()) {
+                if (stack.isEmpty()) continue;
+                if (BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals(itemId)) {
+                    stacks.add(stack);
+                }
+            }
+        }
+        return stacks;
+    }
+
+    /** Rebuilds the variant and property dropdowns for the newly selected item. */
+    private void onItemSelected() {
+        if (variantDropdown == null || propertyDropdown == null) return;
+
+        List<ItemStack> stacks = getSelectedItemStacks();
+
+        // Distinct NBT variants of this item currently in the network
+        Set<CompoundTag> seenTags = new LinkedHashSet<>();
+        boolean hasUntagged = false;
+        for (ItemStack stack : stacks) {
+            if (stack.getTag() == null) hasUntagged = true;
+            else seenTags.add(stack.getTag());
+        }
+
+        List<SearchableDropdownWidget.DropdownEntry<CompoundTag>> variantEntries = new ArrayList<>();
+        if (hasUntagged || seenTags.isEmpty()) {
+            variantEntries.add(new SearchableDropdownWidget.DropdownEntry<>(null,
+                    Component.translatable("screen.logistics.computer.tab.transfer.variant.no_nbt"), null));
+        }
+        int variantIndex = 1;
+        for (CompoundTag tag : seenTags) {
+            ItemStack display = stacks.stream()
+                    .filter(s -> Objects.equals(s.getTag(), tag))
+                    .findFirst().map(ItemStack::copy).orElse(ItemStack.EMPTY);
+            variantEntries.add(new SearchableDropdownWidget.DropdownEntry<>(tag,
+                    Component.literal(describeVariant(display, variantIndex)),
+                    SearchableDropdownWidget.DropdownIcon.of(display)));
+            variantIndex++;
+        }
+        variantDropdown.setOptions(variantEntries);
+        if (savedVariantTag != null) variantDropdown.setSelectedValueSilently(savedVariantTag);
+
+        // Properties that make sense for this item; fall back to all registered ones
+        Set<NbtProperty> applicable = new LinkedHashSet<>();
+        String itemId = textBox != null ? textBox.getSelectedValue() : null;
+        if (itemId != null) {
+            Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+            if (item != Items.AIR) applicable.addAll(NbtPropertyRegistry.propertiesFor(new ItemStack(item)));
+        }
+        for (ItemStack stack : stacks) {
+            applicable.addAll(NbtPropertyRegistry.propertiesFor(stack));
+        }
+        Iterable<NbtProperty> shown = applicable.isEmpty() ? NbtPropertyRegistry.getAll() : applicable;
+
+        List<SearchableDropdownWidget.DropdownEntry<ResourceLocation>> propertyEntries = new ArrayList<>();
+        for (NbtProperty property : shown) {
+            propertyEntries.add(new SearchableDropdownWidget.DropdownEntry<>(property.getId(),
+                    property.getDisplayName(), null));
+        }
+        propertyDropdown.setOptions(propertyEntries);
+        propertyDropdown.setSelectedValueSilently(savedPropertyId);
+        if (propertyDropdown.getSelectedValue() == null && !propertyEntries.isEmpty()) {
+            propertyDropdown.setSelectedIndex(0);
+        }
+
+        updateNbtControls();
+    }
+
+    /** A short label for one NBT variant, using a registered property's value when possible. */
+    private String describeVariant(ItemStack stack, int index) {
+        List<NbtProperty> properties = NbtPropertyRegistry.propertiesFor(stack);
+        if (!properties.isEmpty()) {
+            NbtProperty property = properties.get(0);
+            return property.getDisplayName().getString() + " " + property.describeValue(stack);
+        }
+        return Component.translatable("screen.logistics.computer.tab.transfer.variant").getString() + " #" + index;
+    }
+
+    /** Shows/hides the mode-dependent widgets. */
+    private void updateNbtControls() {
+        ItemFilter.NbtMode mode = nbtModeDropdown != null ? nbtModeDropdown.getSelectedValue() : ItemFilter.NbtMode.ANY;
+        if (mode == null) mode = ItemFilter.NbtMode.ANY;
+
+        boolean exact = mode == ItemFilter.NbtMode.EXACT;
+        boolean rules = mode == ItemFilter.NbtMode.RULES;
+
+        if (variantDropdown != null) variantDropdown.visible = exact;
+        if (propertyDropdown != null) propertyDropdown.visible = rules;
+        if (comparisonDropdown != null) comparisonDropdown.visible = rules;
+        if (ruleValueBox != null) ruleValueBox.visible = rules;
+        if (unitDropdown != null) unitDropdown.visible = rules;
+
+        updateUnitOptions();
+    }
+
+    /** Clamps the rule value range when the unit is percent. */
+    private void updateUnitOptions() {
+        if (ruleValueBox == null || unitDropdown == null) return;
+        boolean percent = !Boolean.FALSE.equals(unitDropdown.getSelectedValue());
+        ruleValueBox.setRange(0, percent ? 100 : Double.MAX_VALUE);
+    }
+
+    private ItemFilter buildFilter(String itemId) {
+        ItemFilter filter = new ItemFilter(new ResourceLocation(itemId));
+
+        ItemFilter.NbtMode mode = nbtModeDropdown != null ? nbtModeDropdown.getSelectedValue() : ItemFilter.NbtMode.ANY;
+        if (mode == null) mode = ItemFilter.NbtMode.ANY;
+        filter.setMode(mode);
+
+        if (mode == ItemFilter.NbtMode.EXACT && variantDropdown != null) {
+            CompoundTag tag = variantDropdown.getSelectedValue();
+            filter.setExactTag(tag != null ? tag.copy() : null);
+        }
+
+        if (mode == ItemFilter.NbtMode.RULES && propertyDropdown != null && propertyDropdown.getSelectedValue() != null) {
+            NbtRule rule = new NbtRule();
+            rule.setPropertyId(propertyDropdown.getSelectedValue());
+            if (comparisonDropdown != null && comparisonDropdown.getSelectedValue() != null) {
+                rule.setComparison(comparisonDropdown.getSelectedValue());
+            }
+            if (ruleValueBox != null) rule.setThreshold(ruleValueBox.getValue());
+            if (unitDropdown != null) rule.setPercent(!Boolean.FALSE.equals(unitDropdown.getSelectedValue()));
+            filter.getRules().add(rule);
+        }
+
+        return filter;
+    }
+
+    // =====================================================================
+    // Transfer
+    // =====================================================================
+
     private void executeTransfer() {
         BlockPos from = leftAccessor != null ? leftAccessor.getSelectedValue() : null;
         BlockPos target = rightAccessor != null ? rightAccessor.getSelectedValue() : null;
         if (target == null) return;
 
+        String itemId = textBox != null ? textBox.getSelectedValue() : null;
+        if (itemId == null) return;
+
         int qty = quantityBox != null ? (int) quantityBox.getValue() : 1;
-        String extra = textBox != null ? textBox.getSelectedValue() : null;
 
-        savedQuantity = qty;
-        savedItem = extra;
-        savedLeft = from;
-        savedRight = target;
+        saveState();
 
-        ClientNetworking.sendToServer(new ComputerTransferPacket(ComputerScreen.getComputerNode().getBlockPos(), from, target, qty, extra != null ? extra : ""));
+        ClientNetworking.sendToServer(new ComputerTransferPacket(
+                ComputerScreen.getComputerNode().getBlockPos(), from, target, qty, buildFilter(itemId)));
     }
 
-    @Override
-    public void onHide() {
+    private void saveState() {
         if (quantityBox != null) savedQuantity = (int) quantityBox.getValue();
         if (textBox != null) savedItem = textBox.getSelectedValue();
         if (leftAccessor != null) savedLeft = leftAccessor.getSelectedValue();
         if (rightAccessor != null) savedRight = rightAccessor.getSelectedValue();
+        if (nbtModeDropdown != null && nbtModeDropdown.getSelectedValue() != null) savedNbtMode = nbtModeDropdown.getSelectedValue();
+        if (variantDropdown != null) savedVariantTag = variantDropdown.getSelectedValue();
+        if (propertyDropdown != null && propertyDropdown.getSelectedValue() != null) savedPropertyId = propertyDropdown.getSelectedValue();
+        if (comparisonDropdown != null && comparisonDropdown.getSelectedValue() != null) savedComparison = comparisonDropdown.getSelectedValue();
+        if (ruleValueBox != null) savedRuleValue = ruleValueBox.getValue();
+        if (unitDropdown != null) savedRulePercent = !Boolean.FALSE.equals(unitDropdown.getSelectedValue());
+    }
+
+    @Override
+    public void onHide() {
+        saveState();
     }
 
     @Override
     public void tick() {
         if (quantityBox != null) quantityBox.tick();
+        if (ruleValueBox != null && ruleValueBox.visible) ruleValueBox.tick();
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.computer.automation.triggers.registry.Acti
 import com.restonic4.logistics.blocks.computer.automation.triggers.registry.ActionType;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.LogMessageActionEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.PlayAudioActionEditor;
+import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.SendItemsActionEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.StopAudioActionEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.WaitAudioActionEditor;
 import com.restonic4.logistics.blocks.computer.screen.triggers.editors.actions.WaitTicksActionEditor;
@@ -27,6 +28,7 @@ public final class ActionEditors {
         register(ActionRegistry.STOP_AUDIO, new StopAudioActionEditor());
         register(ActionRegistry.WAIT_AUDIO, new WaitAudioActionEditor());
         register(ActionRegistry.LOG_MESSAGE, new LogMessageActionEditor());
+        register(ActionRegistry.SEND_ITEMS, new SendItemsActionEditor());
     }
 
     private ActionEditors() {}

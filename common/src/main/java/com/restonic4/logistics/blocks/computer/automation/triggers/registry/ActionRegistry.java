@@ -3,6 +3,7 @@ package com.restonic4.logistics.blocks.computer.automation.triggers.registry;
 import com.restonic4.logistics.Constants;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.LogMessageAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.PlayAudioAction;
+import com.restonic4.logistics.blocks.computer.automation.triggers.actions.SendItemsAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.StopAudioAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitAudioAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitTicksAction;
@@ -33,6 +34,8 @@ public final class ActionRegistry {
             new ActionType<>(new ResourceLocation(Constants.MOD_ID, "wait_audio"), WaitAudioAction::new));
     public static final ActionType<LogMessageAction> LOG_MESSAGE = register(
             new ActionType<>(new ResourceLocation(Constants.MOD_ID, "log_message"), LogMessageAction::new));
+    public static final ActionType<SendItemsAction> SEND_ITEMS = register(
+            new ActionType<>(new ResourceLocation(Constants.MOD_ID, "send_items"), SendItemsAction::new));
 
     private ActionRegistry() {}
 

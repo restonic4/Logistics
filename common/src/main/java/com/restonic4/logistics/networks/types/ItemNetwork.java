@@ -8,9 +8,11 @@ import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
+import com.restonic4.logistics.networks.filter.ItemFilter;
 import com.restonic4.logistics.networks.nodes.ItemNode;
 import com.restonic4.logistics.networks.pathfinding.Parcel;
 import com.restonic4.logistics.networks.pathfinding.ParcelRenderSyncPacket;
+import com.restonic4.logistics.networks.pathfinding.ParcelTrail;
 import com.restonic4.logistics.networks.tooltip.TooltipBuilder;
 import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import net.minecraft.ChatFormatting;
@@ -29,6 +31,7 @@ public class ItemNetwork extends Network {
     public static final double TIME_PER_BLOCK = 1000;
 
     private List<Parcel> parcels = new ArrayList<>();
+    private List<ParcelTrail> trails = new ArrayList<>();
 
     public ItemNetwork(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
         super(type, serverLevel);
@@ -38,13 +41,42 @@ public class ItemNetwork extends Network {
     public void mergeDataFrom(Network other) {
         if (other instanceof ItemNetwork itemOther) {
             this.parcels.addAll(itemOther.parcels);
+            this.trails.addAll(itemOther.trails);
             recalculateAll();
         }
     }
 
     @Override
     public void onSplit(Collection<Network> children) {
-        if (children.isEmpty() || parcels.isEmpty()) return;
+        if (children.isEmpty() || (parcels.isEmpty() && trails.isEmpty())) return;
+
+        // Trails follow the child network that kept their source node; otherwise their
+        // pending items (already extracted from the source container) drop into the world.
+        for (ParcelTrail trail : trails) {
+            ItemNetwork newOwner = null;
+            for (Network child : children) {
+                if (child instanceof ItemNetwork itemChild
+                        && itemChild.getNodeIndex().findByBlockPos(trail.getStartPos()) != null) {
+                    newOwner = itemChild;
+                    break;
+                }
+            }
+
+            if (newOwner != null) {
+                newOwner.trails.add(trail);
+            } else {
+                Constants.LOG.info("Parcel trail dropped since it lost its network on split");
+                BlockPos dropPos = trail.getStartPos();
+                for (ItemStack stack : trail.drainPending()) {
+                    getServerLevel().addFreshEntity(new ItemEntity(
+                            getServerLevel(),
+                            dropPos.getX() + 0.5, dropPos.getY() + 0.5, dropPos.getZ() + 0.5,
+                            stack
+                    ));
+                }
+            }
+        }
+        trails.clear();
 
         Set<ItemNetwork> updatedNetworks = new HashSet<>();
 
@@ -86,6 +118,29 @@ public class ItemNetwork extends Network {
     public void tick() {
         super.tick();
 
+        Iterator<ParcelTrail> trailIterator = trails.iterator();
+        while (trailIterator.hasNext()) {
+            ParcelTrail trail = trailIterator.next();
+
+            ItemStack ready = trail.pollReady();
+            if (ready != null) {
+                Parcel parcel = requestParcel(ready, trail.getStartPos(), trail.getEndPos());
+                if (parcel == null) {
+                    // Routing refused: don't void the items, drop them at the source.
+                    BlockPos dropPos = trail.getStartPos();
+                    getServerLevel().addFreshEntity(new ItemEntity(
+                            getServerLevel(),
+                            dropPos.getX() + 0.5, dropPos.getY() + 0.5, dropPos.getZ() + 0.5,
+                            ready
+                    ));
+                }
+            }
+
+            if (trail.isFinished()) {
+                trailIterator.remove();
+            }
+        }
+
         Iterator<Parcel> iterator = parcels.iterator();
         while (iterator.hasNext()) {
             Parcel parcel = iterator.next();
@@ -106,6 +161,27 @@ public class ItemNetwork extends Network {
         parcel.recalculate(getNodeIndex().getAllNodePositionsAsLongs());
         parcels.add(parcel);
         return parcel;
+    }
+
+    /**
+     * Ships a multi-stack transfer: the first stack leaves as a parcel immediately, the rest
+     * queue up as a {@link ParcelTrail} and follow every {@link ParcelTrail#DISPATCH_INTERVAL_MS}.
+     * The stacks must already be extracted from their source container (each one at most a
+     * stack's worth), e.g. via {@code InventoryNode#extractMatching}.
+     *
+     * @return the number of parcels this transfer will produce
+     */
+    public int requestTransfer(List<ItemStack> stacks, BlockPos start, BlockPos end) {
+        if (stacks.isEmpty()) return 0;
+
+        requestParcel(stacks.get(0), start, end);
+
+        if (stacks.size() > 1) {
+            trails.add(new ParcelTrail(start, end, stacks.subList(1, stacks.size())));
+        }
+
+        this.setDirty();
+        return stacks.size();
     }
 
     private void handleParcelArrival(Parcel parcel) {
@@ -134,6 +210,12 @@ public class ItemNetwork extends Network {
             parcelsTag.add(parcel.save());
         }
         tag.put("parcels", parcelsTag);
+
+        ListTag trailsTag = new ListTag();
+        for (ParcelTrail trail : trails) {
+            trailsTag.add(trail.save());
+        }
+        tag.put("trails", trailsTag);
     }
 
     @Override
@@ -144,6 +226,15 @@ public class ItemNetwork extends Network {
             this.parcels = new ArrayList<>();
             for (int i = 0; i < parcelsTag.size(); i++) {
                 this.parcels.add(Parcel.fromCompoundTag(parcelsTag.getCompound(i)));
+            }
+        }
+
+        if (tag.contains("trails", Tag.TAG_LIST)) {
+            ListTag trailsTag = tag.getList("trails", Tag.TAG_COMPOUND);
+            this.trails = new ArrayList<>();
+            for (int i = 0; i < trailsTag.size(); i++) {
+                ParcelTrail trail = ParcelTrail.fromCompoundTag(trailsTag.getCompound(i));
+                if (!trail.isFinished()) this.trails.add(trail);
             }
         }
     }
@@ -158,7 +249,37 @@ public class ItemNetwork extends Network {
             builder.bullet(parcel.getItemStackClone().toString() + ": " + TooltipBuilder.formatTime(parcel.getTimeLeft()));
         }
 
+        builder.spacer();
+        builder.text("Trails (" + this.trails.size() + "):", ChatFormatting.YELLOW);
+        for (ParcelTrail trail : trails) {
+            builder.bullet(trail.getPendingItemCount() + " items in " + trail.getPendingParcelCount()
+                    + " pending parcels -> " + trail.getEndPos().toShortString());
+        }
+
         return true;
+    }
+
+    /**
+     * Total count of filter-matching items currently travelling toward {@code end}, both as
+     * live parcels and queued in trails. Lets senders treat in-flight items as "already there"
+     * so repeated transfers don't over-send or overflow the destination.
+     */
+    public int countInFlightTo(BlockPos end, ItemFilter filter) {
+        int total = 0;
+        for (Parcel parcel : parcels) {
+            if (parcel.getEndPos().equals(end)) {
+                ItemStack stack = parcel.getItemStackClone();
+                if (filter.matches(stack)) total += stack.getCount();
+            }
+        }
+        for (ParcelTrail trail : trails) {
+            if (trail.getEndPos().equals(end)) {
+                for (ItemStack stack : trail.getPending()) {
+                    if (filter.matches(stack)) total += stack.getCount();
+                }
+            }
+        }
+        return total;
     }
 
     @Deprecated

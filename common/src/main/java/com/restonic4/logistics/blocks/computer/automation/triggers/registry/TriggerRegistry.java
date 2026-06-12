@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.computer.automation.triggers.core.Trigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.AudioStateTrigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.EnergyLevelTrigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.IntervalTrigger;
+import com.restonic4.logistics.blocks.computer.automation.triggers.types.ItemCountTrigger;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collection;
@@ -27,6 +28,8 @@ public final class TriggerRegistry {
             new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "audio_state"), AudioStateTrigger::new));
     public static final TriggerType<IntervalTrigger> INTERVAL = register(
             new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "interval"), IntervalTrigger::new));
+    public static final TriggerType<ItemCountTrigger> ITEM_COUNT = register(
+            new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "item_count"), ItemCountTrigger::new));
 
     private TriggerRegistry() {}
 

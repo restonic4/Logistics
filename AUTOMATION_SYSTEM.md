@@ -45,6 +45,7 @@ edge-detection state, so an alarm that already fired doesn't re-fire on save.
 | Energy level | Network energy % above/below a threshold |
 | Audio state | Targeted station(s) playing / stopped |
 | Interval | Every N game ticks (game-time based, so separate computers stay in sync) |
+| Item count | Items matching an item filter in one accessor (or all combined) below/above a threshold; counts via virtual inventories, so it works in unloaded chunks |
 
 ### Built-in actions
 
@@ -55,12 +56,26 @@ edge-detection state, so an alarm that already fired doesn't re-fire on save.
 | Stop audio | Stop station(s); "All stations" = network-wide mute |
 | Wait for audio | Hold the sequence until the targeted station(s) finish — the playlist building block |
 | Log message | Write to the computer's Log tab (notifications/debugging) |
+| Send items | Ship filter-matching items to a target accessor via `ItemTransferService` (the Transfer tab's path: energy billing, NBT filters, parcel trails). Fixed-amount mode, or top-up mode that only sends what the target is missing. Sends partially on a shortfall; quantities clamp to what the target can hold; items in flight count as delivered (no over-send/overflow on fast re-fires); the auto source never picks the target accessor or any accessor reading the target's container. Console logging and stop-on-failure (whether a failed send aborts the sequence) are per-action toggleable, both on by default |
 
 ### Recipes
 
 - **Low-energy alarm**: Energy level (below 25%, Once) → Play audio (alarm on all stations) → Log message.
 - **Playlist**: Interval (period 1, Continuous, overlap off) → Play track A → Wait for audio → Play track B → Wait for audio. The sequence ends, the trigger re-fires, the playlist loops. Use non-looping sounds and stations with auto play off.
 - **Power-down mute**: Energy level (below 5%, Once) → Stop audio (all stations).
+- **Auto-restock**: Item count (supply chest below 200 cobblestone, Once, overlap off) → Send items
+  (top up to 200 cobblestone, source Auto, target supply chest) → Log message. The Once mode re-arms
+  when the chest is refilled above the threshold; top-up mode makes re-fires idempotent.
+
+### Item filters (NBT-aware matching)
+
+Item triggers/actions (and the Transfer tab) select items through `networks.filter.ItemFilter`:
+an item ID plus an NBT mode — **Any** (ignore NBT), **Exact** (match one captured tag; handles
+arbitrary NBT), or **Rules** (numeric conditions like "energy ≥ 50%" over properties registered
+in `NbtPropertyRegistry`; built-ins: stored energy, durability). This is how unstackable items
+with unique NBT (e.g. kinetic crystal shards) are picked deterministically. Transfers larger
+than one stack ship as a **parcel trail**: the first parcel leaves immediately, the rest follow
+every 0.5 s (`ParcelTrail` in `ItemNetwork`).
 
 ### Audio station modes
 
