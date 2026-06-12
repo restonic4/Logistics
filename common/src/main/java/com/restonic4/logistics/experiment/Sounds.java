@@ -49,6 +49,20 @@ public class Sounds {
             .sound("computer/ambient")
             .register();
 
+    // Flicker pool: Minecraft picks one of these (by weight) every time the event is played.
+    // Add more files here as they are created; the lamp flicker logic needs no changes.
+    public static final SoundEventEntry LAMP_FLICKER = PlatformRegistry
+            .sound(new ResourceLocation(Constants.MOD_ID, "lamp/flicker"))
+            .subtitle("subtitles.logistics.lamp.flicker")
+            .sound("lamp/flicker_1")
+            .sound("lamp/flicker_2")
+            .sound("lamp/flicker_3")
+            .sound("lamp/flicker_4")
+            .sound("lamp/flicker_5")
+            .sound("lamp/flicker_6")
+            .sound("lamp/flicker_7")
+            .register();
+
     public static void register() {
 
     }

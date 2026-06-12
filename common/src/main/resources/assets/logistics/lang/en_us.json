@@ -10,6 +10,7 @@
   "block.logistics.generator": "[CREATIVE] Generator",
   "block.logistics.machine": "[CREATIVE] Machine",
   "block.logistics.lamp": "Lamp",
+  "subtitles.logistics.lamp.flicker": "Lamp flickers",
   "block.logistics.battery": "Battery",
   "block.logistics.network_connector": "Network Connector",
   "block.logistics.computer": "Computer",
