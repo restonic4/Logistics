@@ -1,38 +1,25 @@
 package com.restonic4.logistics.blocks.computer.screen.triggers;
 
-import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
-import com.restonic4.logistics.blocks.computer.ComputerLogEntry;
 import com.restonic4.logistics.blocks.computer.automation.TriggerSavePacket;
-import com.restonic4.logistics.blocks.computer.automation.triggers.actions.LogMessageAction;
-import com.restonic4.logistics.blocks.computer.automation.triggers.actions.PlayAudioAction;
-import com.restonic4.logistics.blocks.computer.automation.triggers.actions.StopAudioAction;
-import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitAudioAction;
-import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitTicksAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.core.Trigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.core.TriggerAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.registry.ActionRegistry;
 import com.restonic4.logistics.blocks.computer.automation.triggers.registry.ActionType;
 import com.restonic4.logistics.blocks.computer.automation.triggers.registry.TriggerRegistry;
 import com.restonic4.logistics.blocks.computer.automation.triggers.registry.TriggerType;
-import com.restonic4.logistics.blocks.computer.automation.triggers.types.AudioStateTrigger;
-import com.restonic4.logistics.blocks.computer.automation.triggers.types.EnergyLevelTrigger;
-import com.restonic4.logistics.blocks.computer.automation.triggers.types.IntervalTrigger;
-import com.restonic4.logistics.blocks.computer.automation.triggers.util.AudioStationTarget;
 import com.restonic4.logistics.blocks.computer.screen.ComputerScreen;
 import com.restonic4.logistics.blocks.computer.screen.UnsavedChangesPopup;
+import com.restonic4.logistics.blocks.computer.screen.triggers.editors.ActionEditors;
+import com.restonic4.logistics.blocks.computer.screen.triggers.editors.EditorBuilder;
+import com.restonic4.logistics.blocks.computer.screen.triggers.editors.TriggerEditors;
 import com.restonic4.logistics.networking.ClientNetworking;
-import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.screens.tabs.Tab;
-import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.ScrollablePanel;
 import com.restonic4.logistics.screens.widgets.SearchableDropdownWidget;
 import com.restonic4.logistics.screens.widgets.StyledButton;
 import com.restonic4.logistics.screens.widgets.ToggleWidget;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -40,8 +27,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * The computer's automation editor. Always available on an installed computer (the trigger
@@ -53,9 +38,6 @@ import java.util.function.Consumer;
  * ({@link TriggerSavePacket}); the replicated node state is never mutated directly.
  */
 public class TriggersTab extends Tab {
-    /** Dropdown sentinel meaning "all stations on the network". */
-    private static final UUID ALL_STATIONS = new UUID(0L, 0L);
-
     private static final int ROW_H = 18;
     private static final int GAP = 4;
     private static final int ENTRY_H = 26;
@@ -122,7 +104,7 @@ public class TriggersTab extends Tab {
         int currentY = 0;
 
         if (triggers.isEmpty()) {
-            leftPanel.addChild(createLabel(
+            leftPanel.addChild(EditorBuilder.createLabel(
                     Component.translatable("screen.logistics.computer.tab.triggers.empty").getString(),
                     innerWidth, 0xFF777777), 0, currentY);
             currentY += 14;
@@ -159,32 +141,11 @@ public class TriggersTab extends Tab {
         leftPanel.addChild(addBtn, innerWidth - 20, currentY);
     }
 
-    // TODO: This is hardcoded, if we add a new one it will use the fallback, we should have something better.
+    /** The trigger's own summary (from its registered editor) plus a generic action count. */
     private String summaryFor(Trigger trigger) {
-        String detail;
-        if (trigger instanceof EnergyLevelTrigger energy) {
-            String cmp = energy.getComparison() == EnergyLevelTrigger.Comparison.BELOW ? "<" : ">";
-            detail = "Energy " + cmp + " " + (int) energy.getThresholdPercent() + "%";
-        } else if (trigger instanceof AudioStateTrigger audio) {
-            detail = stationLabel(audio.getTarget()) + " " + audio.getState().name().toLowerCase();
-        } else if (trigger instanceof IntervalTrigger interval) {
-            detail = "Every " + interval.getPeriodTicks() + "t";
-        } else {
-            detail = trigger.getType().getId().getPath();
-        }
-
+        String detail = TriggerEditors.summary(trigger);
         int actions = trigger.getActions().size();
         return detail + " • " + actions + (actions == 1 ? " action" : " actions");
-    }
-
-    private String stationLabel(AudioStationTarget target) {
-        if (target.isAllStations()) {
-            return Component.translatable("screen.logistics.computer.tab.triggers.all_stations").getString();
-        }
-        for (AudioStationNode station : getStations()) {
-            if (station.getUUID().equals(target.getStationId())) return station.getSafeName();
-        }
-        return "?";
     }
 
     private void onTriggerSelected(int index) {
@@ -227,7 +188,7 @@ public class TriggersTab extends Tab {
 
         Trigger trigger = getSelectedTrigger();
         if (trigger == null) {
-            rightPanel.addChild(createLabel(
+            rightPanel.addChild(EditorBuilder.createLabel(
                     Component.translatable("screen.logistics.computer.tab.triggers.select_hint").getString(),
                     innerWidth, 0xFF777777), 0, 0);
 
@@ -242,10 +203,10 @@ public class TriggersTab extends Tab {
         int currentY = 0;
 
         // --- Firing settings ---
-        rightPanel.addChild(createLabel(
+        rightPanel.addChild(EditorBuilder.createLabel(
                 Component.translatable("screen.logistics.computer.tab.triggers.mode").getString(),
                 half, 0xFFAAAAAA), 0, currentY);
-        rightPanel.addChild(createLabel(
+        rightPanel.addChild(EditorBuilder.createLabel(
                 Component.translatable("screen.logistics.computer.tab.triggers.overlap").getString(),
                 half, 0xFFAAAAAA), half + GAP, currentY);
         currentY += 11;
@@ -267,27 +228,23 @@ public class TriggersTab extends Tab {
         rightPanel.addChild(overlapToggle, half + GAP, currentY + 2);
         currentY += ROW_H + GAP * 2;
 
-        // --- Type-specific settings ---
-        // TODO: This is hardcoded as well, if we add a new one, well, it falls apart.
-        if (trigger instanceof EnergyLevelTrigger energy) {
-            currentY = buildEnergyTriggerEditor(energy, innerWidth, half, currentY);
-        } else if (trigger instanceof AudioStateTrigger audio) {
-            currentY = buildAudioTriggerEditor(audio, innerWidth, half, currentY);
-        } else if (trigger instanceof IntervalTrigger interval) {
-            currentY = buildIntervalTriggerEditor(interval, innerWidth, half, currentY);
-        }
+        // --- Type-specific settings (delegated to the trigger's registered editor) ---
+        EditorBuilder typeBuilder = new EditorBuilder(rightPanel, innerWidth, currentY,
+                rightDropdowns, editBoxes, this::markDirty);
+        TriggerEditors.buildConfig(trigger, typeBuilder);
+        currentY = typeBuilder.y();
 
         currentY += 4;
 
         // --- Actions ---
-        rightPanel.addChild(createLabel(
+        rightPanel.addChild(EditorBuilder.createLabel(
                 Component.translatable("screen.logistics.computer.tab.triggers.actions").getString(),
                 innerWidth, 0xFFFFFFFF), 0, currentY);
         currentY += 14;
 
         List<TriggerAction> actions = trigger.getActions();
         for (int i = 0; i < actions.size(); i++) {
-            currentY = buildActionEditor(trigger, actions.get(i), i, actions.size(), innerWidth, half, currentY);
+            currentY = buildActionEditor(trigger, actions.get(i), i, actions.size(), innerWidth, currentY);
         }
 
         // Add-action row
@@ -311,89 +268,14 @@ public class TriggersTab extends Tab {
         rightPanel.addChild(saveBtn, innerWidth - 100, currentY);
     }
 
-    private int buildEnergyTriggerEditor(EnergyLevelTrigger energy, int innerWidth, int half, int currentY) {
-        rightPanel.addChild(createLabel(
-                Component.translatable("screen.logistics.computer.tab.triggers.comparison").getString(),
-                half, 0xFFAAAAAA), 0, currentY);
-        rightPanel.addChild(createLabel(
-                Component.translatable("screen.logistics.computer.tab.triggers.threshold").getString(),
-                half, 0xFFAAAAAA), half + GAP, currentY);
-        currentY += 11;
-
-        List<SearchableDropdownWidget.DropdownEntry<EnergyLevelTrigger.Comparison>> cmpEntries = new ArrayList<>();
-        for (EnergyLevelTrigger.Comparison cmp : EnergyLevelTrigger.Comparison.values()) {
-            cmpEntries.add(new SearchableDropdownWidget.DropdownEntry<>(cmp,
-                    Component.translatable("screen.logistics.computer.tab.triggers.comparison." + cmp.name().toLowerCase()), null));
-        }
-        SearchableDropdownWidget<EnergyLevelTrigger.Comparison> cmpDropdown = new SearchableDropdownWidget<>(
-                0, 0, half, ROW_H, Component.empty(), cmpEntries,
-                cmp -> { energy.setComparison(cmp); markDirty(); });
-        cmpDropdown.setSelectedValueSilently(energy.getComparison());
-        rightPanel.addChild(cmpDropdown, 0, currentY);
-        rightDropdowns.add(cmpDropdown);
-
-        NumberPickerWidget thresholdPicker = new NumberPickerWidget(0, 0, half, ROW_H,
-                Component.empty(), energy.getThresholdPercent(),
-                v -> { energy.setThresholdPercent(v); markDirty(); });
-        thresholdPicker.setRange(0, 100);
-        thresholdPicker.setDecimalPlaces(0);
-        rightPanel.addChild(thresholdPicker, half + GAP, currentY);
-
-        return currentY + ROW_H + GAP;
-    }
-
-    private int buildAudioTriggerEditor(AudioStateTrigger audio, int innerWidth, int half, int currentY) {
-        rightPanel.addChild(createLabel(
-                Component.translatable("screen.logistics.computer.tab.triggers.station").getString(),
-                half, 0xFFAAAAAA), 0, currentY);
-        rightPanel.addChild(createLabel(
-                Component.translatable("screen.logistics.computer.tab.triggers.state").getString(),
-                half, 0xFFAAAAAA), half + GAP, currentY);
-        currentY += 11;
-
-        SearchableDropdownWidget<UUID> stationDropdown = createStationDropdown(audio.getTarget(), half);
-        rightPanel.addChild(stationDropdown, 0, currentY);
-        rightDropdowns.add(stationDropdown);
-
-        List<SearchableDropdownWidget.DropdownEntry<AudioStateTrigger.State>> stateEntries = new ArrayList<>();
-        for (AudioStateTrigger.State state : AudioStateTrigger.State.values()) {
-            stateEntries.add(new SearchableDropdownWidget.DropdownEntry<>(state,
-                    Component.translatable("screen.logistics.computer.tab.triggers.state." + state.name().toLowerCase()), null));
-        }
-        SearchableDropdownWidget<AudioStateTrigger.State> stateDropdown = new SearchableDropdownWidget<>(
-                0, 0, half, ROW_H, Component.empty(), stateEntries,
-                state -> { audio.setState(state); markDirty(); });
-        stateDropdown.setSelectedValueSilently(audio.getState());
-        rightPanel.addChild(stateDropdown, half + GAP, currentY);
-        rightDropdowns.add(stateDropdown);
-
-        return currentY + ROW_H + GAP;
-    }
-
-    private int buildIntervalTriggerEditor(IntervalTrigger interval, int innerWidth, int half, int currentY) {
-        rightPanel.addChild(createLabel(
-                Component.translatable("screen.logistics.computer.tab.triggers.period").getString(),
-                half, 0xFFAAAAAA), 0, currentY);
-        currentY += 11;
-
-        NumberPickerWidget periodPicker = new NumberPickerWidget(0, 0, half, ROW_H,
-                Component.empty(), interval.getPeriodTicks(),
-                v -> { interval.setPeriodTicks(v.intValue()); markDirty(); });
-        periodPicker.setRange(1, 72000);
-        periodPicker.setDecimalPlaces(0);
-        rightPanel.addChild(periodPicker, 0, currentY);
-
-        return currentY + ROW_H + GAP;
-    }
-
     // =====================================================================
     // Action editors
     // =====================================================================
 
     private int buildActionEditor(Trigger trigger, TriggerAction action, int index, int total,
-                                  int innerWidth, int half, int currentY) {
+                                  int innerWidth, int currentY) {
         // Header bar: "N. <action name>" + move/delete controls
-        rightPanel.addChild(createHeaderBar(
+        rightPanel.addChild(EditorBuilder.createHeaderBar(
                 (index + 1) + ". " + action.getType().getDisplayName().getString(),
                 innerWidth), 0, currentY);
 
@@ -415,66 +297,11 @@ public class TriggersTab extends Tab {
         rightPanel.addChild(delete, innerWidth - btn, btnY);
         currentY += ROW_H + GAP;
 
-        // TODO: This is bad, this is a massive if statement, this is not modular. If we add a new one, it falls apart.
-        if (action instanceof WaitTicksAction wait) {
-            NumberPickerWidget ticksPicker = new NumberPickerWidget(0, 0, half, ROW_H,
-                    Component.empty(), wait.getWaitTicks(),
-                    v -> { wait.setWaitTicks(v.intValue()); markDirty(); });
-            ticksPicker.setRange(0, 72000);
-            ticksPicker.setDecimalPlaces(0);
-            rightPanel.addChild(ticksPicker, 0, currentY);
-            currentY += ROW_H + GAP;
-        } else if (action instanceof PlayAudioAction play) {
-            SearchableDropdownWidget<UUID> stationDropdown = createStationDropdown(play.getTarget(), half);
-            rightPanel.addChild(stationDropdown, 0, currentY);
-            rightDropdowns.add(stationDropdown);
-
-            SearchableDropdownWidget<String> soundDropdown = createSoundDropdown(
-                    play.getSoundPath(), half, sound -> { play.setSoundPath(sound); markDirty(); });
-            rightPanel.addChild(soundDropdown, half + GAP, currentY);
-            rightDropdowns.add(soundDropdown);
-            currentY += ROW_H + GAP;
-        } else if (action instanceof StopAudioAction stop) {
-            SearchableDropdownWidget<UUID> stationDropdown = createStationDropdown(stop.getTarget(), half);
-            rightPanel.addChild(stationDropdown, 0, currentY);
-            rightDropdowns.add(stationDropdown);
-            currentY += ROW_H + GAP;
-        } else if (action instanceof WaitAudioAction waitAudio) {
-            SearchableDropdownWidget<UUID> stationDropdown = createStationDropdown(waitAudio.getTarget(), half);
-            rightPanel.addChild(stationDropdown, 0, currentY);
-            rightDropdowns.add(stationDropdown);
-            currentY += ROW_H + GAP;
-        } else if (action instanceof LogMessageAction log) {
-            List<SearchableDropdownWidget.DropdownEntry<ComputerLogEntry.Severity>> sevEntries = new ArrayList<>();
-            for (ComputerLogEntry.Severity severity : ComputerLogEntry.Severity.values()) {
-                sevEntries.add(new SearchableDropdownWidget.DropdownEntry<>(severity,
-                        Component.literal(severity.name()), null));
-            }
-            SearchableDropdownWidget<ComputerLogEntry.Severity> sevDropdown = new SearchableDropdownWidget<>(
-                    0, 0, half, ROW_H, Component.empty(), sevEntries,
-                    severity -> { log.setSeverity(severity); markDirty(); });
-            sevDropdown.setSelectedValueSilently(log.getSeverity());
-            rightPanel.addChild(sevDropdown, 0, currentY);
-            rightDropdowns.add(sevDropdown);
-
-            // Inset by 1px: a bordered EditBox paints its frame outside its own bounds.
-            // Inside a ScrollablePanel nothing focuses widgets for us, so do it on click.
-            EditBox messageBox = new EditBox(Minecraft.getInstance().font,
-                    0, 0, half - 2, ROW_H - 2, Component.empty()) {
-                @Override
-                public boolean mouseClicked(double mx, double my, int btn) {
-                    if (this.clicked(mx, my)) this.setFocused(true);
-                    return super.mouseClicked(mx, my, btn);
-                }
-            };
-            messageBox.setMaxLength(128);
-            messageBox.setValue(log.getLogMessage());
-            messageBox.setTextColor(0xFFFFFFFF);
-            messageBox.setResponder(text -> { log.setLogMessage(text); markDirty(); });
-            rightPanel.addChild(messageBox, half + GAP + 1, currentY + 1);
-            editBoxes.add(messageBox);
-            currentY += ROW_H + GAP;
-        }
+        // Action-specific settings (delegated to the action's registered editor).
+        EditorBuilder builder = new EditorBuilder(rightPanel, innerWidth, currentY,
+                rightDropdowns, editBoxes, this::markDirty);
+        ActionEditors.buildConfig(action, builder);
+        currentY = builder.y();
 
         return currentY + GAP;
     }
@@ -507,53 +334,6 @@ public class TriggersTab extends Tab {
         markDirty();
         refreshLeftPanel();
         refreshRightPanel();
-    }
-
-    // =====================================================================
-    // Shared dropdown builders
-    // =====================================================================
-
-    private List<AudioStationNode> getStations() {
-        if (ComputerScreen.getEnergyNetwork() == null) return List.of();
-        return ComputerScreen.getEnergyNetwork().getAudioStations();
-    }
-
-    private SearchableDropdownWidget<UUID> createStationDropdown(AudioStationTarget target, int width) {
-        List<SearchableDropdownWidget.DropdownEntry<UUID>> entries = new ArrayList<>();
-        entries.add(new SearchableDropdownWidget.DropdownEntry<>(ALL_STATIONS,
-                Component.translatable("screen.logistics.computer.tab.triggers.all_stations"), null));
-        for (AudioStationNode station : getStations()) {
-            entries.add(new SearchableDropdownWidget.DropdownEntry<>(station.getUUID(),
-                    Component.literal(station.getSafeName()), null));
-        }
-
-        SearchableDropdownWidget<UUID> dropdown = new SearchableDropdownWidget<>(
-                0, 0, width, ROW_H, Component.empty(), entries,
-                uuid -> {
-                    if (uuid == null || ALL_STATIONS.equals(uuid)) target.setAllStations();
-                    else target.setStation(uuid);
-                    markDirty();
-                });
-        dropdown.setSelectedValueSilently(target.isAllStations() ? ALL_STATIONS : target.getStationId());
-        return dropdown;
-    }
-
-    private SearchableDropdownWidget<String> createSoundDropdown(
-            String selected, int width,
-            Consumer<String> onSelect
-    ) {
-        List<SearchableDropdownWidget.DropdownEntry<String>> entries = new ArrayList<>();
-        entries.add(new SearchableDropdownWidget.DropdownEntry<>("",
-                Component.translatable("screen.logistics.computer.tab.triggers.sound.station_default"), null));
-        for (String sound : ClientNetworkManager.getUploadedSounds()) {
-            entries.add(new SearchableDropdownWidget.DropdownEntry<>(sound,
-                    Component.literal(ClientNetworkManager.getSoundDisplayName(sound)), null));
-        }
-
-        SearchableDropdownWidget<String> dropdown = new SearchableDropdownWidget<>(
-                0, 0, width, ROW_H, Component.empty(), entries, onSelect);
-        dropdown.setSelectedValueSilently(selected == null ? "" : selected);
-        return dropdown;
     }
 
     // =====================================================================
@@ -598,34 +378,6 @@ public class TriggersTab extends Tab {
     private void onDiscardAndClose() {
         hasUnsavedChanges = false;
         if (parent != null) parent.onClose();
-    }
-
-    private AbstractWidget createLabel(String text, int width, int color) {
-        return new AbstractWidget(0, 0, width, 10, Component.literal(text)) {
-            @Override
-            protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-                graphics.drawString(Minecraft.getInstance().font, getMessage(), getX(), getY(), color, false);
-            }
-            @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) { return false; }
-            @Override
-            protected void updateWidgetNarration(NarrationElementOutput output) {}
-        };
-    }
-
-    private AbstractWidget createHeaderBar(String text, int width) {
-        return new AbstractWidget(0, 0, width, ROW_H, Component.literal(text)) {
-            @Override
-            protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-                graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0xFF161616);
-                graphics.drawString(Minecraft.getInstance().font, getMessage(),
-                        getX() + 4, getY() + (getHeight() - 8) / 2, 0xFFFFFFFF, false);
-            }
-            @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) { return false; }
-            @Override
-            protected void updateWidgetNarration(NarrationElementOutput output) {}
-        };
     }
 
     private void closeAllDropdowns() {

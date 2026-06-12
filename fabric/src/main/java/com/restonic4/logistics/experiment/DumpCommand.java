@@ -19,7 +19,7 @@ public class DumpCommand {
                                 FabricClientCommandSource source = context.getSource();
 
                                 try {
-                                    ClientNetworkManager.dump();
+                                    //ClientNetworkManager.dump();
 
                                     source.sendFeedback(Component.literal("§aUse debug mode on IDE to check things!"));
                                     return 1;
