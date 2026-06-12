@@ -1,6 +1,6 @@
 {
   "variants": {
-    "lit=false": { "model": "minecraft:block/redstone_lamp" },
-    "lit=true": { "model": "minecraft:block/redstone_lamp_on" }
+    "lit=false": { "model": "logistics:block/lamp/off" },
+    "lit=true": { "model": "logistics:block/lamp/on" }
   }
 }

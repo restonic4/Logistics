@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "GLG",
+    " C "
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glowstone_dust"
+    },
+    "L": {
+      "item": "minecraft:redstone_lamp"
+    },
+    "C": {
+      "item": "logistics:cable"
+    }
+  },
+  "result": {
+    "item": "logistics:lamp",
+    "count": 1
+  }
+}
