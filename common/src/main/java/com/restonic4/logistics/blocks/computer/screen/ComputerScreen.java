@@ -57,7 +57,7 @@ public class ComputerScreen extends TabbedScreen {
         this.loginTab = new LoginTab();
         loginTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
         this.audioTab = new AudioTab();
-        audioTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/note_block.png"));
+        audioTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/note.png"));
         this.triggersTab = new TriggersTab();
         triggersTab.withLeftIcon(new ResourceLocation("logistics", "textures/item/chip.png"));
     }

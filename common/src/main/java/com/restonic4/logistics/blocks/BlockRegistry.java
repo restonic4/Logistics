@@ -17,6 +17,8 @@ import com.restonic4.logistics.blocks.computer.ComputerBlock;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
 import com.restonic4.logistics.blocks.generator.GeneratorBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorNode;
+import com.restonic4.logistics.blocks.lamp.LampBlock;
+import com.restonic4.logistics.blocks.lamp.LampNode;
 import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
@@ -100,6 +102,17 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ENERGY_NETWORK, ComputerNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<LampBlock, LampNode> LAMP_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("lamp"),
+                    () -> new LampBlock(BlockBehaviour.Properties.copy(Blocks.REDSTONE_LAMP).lightLevel(state -> state.getValue(LampBlock.LIT) ? 15 : 0))
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, LampNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

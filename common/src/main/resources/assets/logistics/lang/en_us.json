@@ -9,6 +9,7 @@
   "block.logistics.cable": "Cable",
   "block.logistics.generator": "[CREATIVE] Generator",
   "block.logistics.machine": "[CREATIVE] Machine",
+  "block.logistics.lamp": "Lamp",
   "block.logistics.battery": "Battery",
   "block.logistics.network_connector": "Network Connector",
   "block.logistics.computer": "Computer",
