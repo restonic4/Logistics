@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " G ",
-    "GLG",
-    " C "
+    "K",
+    "L",
+    "C"
   ],
   "key": {
-    "G": {
-      "item": "minecraft:glowstone_dust"
+    "K": {
+      "item": "minecraft:copper_ingot"
     },
     "L": {
       "item": "minecraft:redstone_lamp"
