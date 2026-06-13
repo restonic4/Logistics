@@ -208,6 +208,77 @@
   "logistics.ponder.protector.text_7": "The Protector could break if exposed to an instable energy network.",
   "logistics.ponder.protector.text_8": "You can repair it with a brand new Kinetic Crystal Shard.",
 
+  "logistics.ponder.cable.header": "Cables",
+  "logistics.ponder.cable.text_1": "Cables carry energy between blocks.",
+  "logistics.ponder.cable.text_2": "Adjacent cables automatically link into one energy network.",
+  "logistics.ponder.cable.text_3": "Connect a power source to your machines.",
+
+  "logistics.ponder.battery.header": "Battery",
+  "logistics.ponder.battery.text_1": "The Battery stores energy, but only connects on its top and bottom.",
+  "logistics.ponder.battery.text_2": "Route cables over the top to feed it while the network has spare energy.",
+  "logistics.ponder.battery.text_3": "When production stops, the stored energy keeps your machines running.",
+
+  "logistics.ponder.network_connector.header": "Network Connector",
+  "logistics.ponder.network_connector.text_1": "The Network Connector bridges two separate networks.",
+  "logistics.ponder.network_connector.text_2": "Energy on one side, items on the other.",
+  "logistics.ponder.network_connector.text_3": "This is how a Computer reaches your item network.",
+
+  "logistics.ponder.computer.header": "Computer",
+  "logistics.ponder.computer.text_1": "The Computer is the brain of your network.",
+  "logistics.ponder.computer.text_2": "Give it power and it boots up.",
+  "logistics.ponder.computer.text_3": "Right-click to open its terminal.",
+  "logistics.ponder.computer.text_4": "Configure triggers and actions to automate the whole network.",
+
+  "logistics.ponder.lamp.header": "Lamp",
+  "logistics.ponder.lamp.text_1": "The Lamp turns network energy into light.",
+  "logistics.ponder.lamp.text_2": "Connect it to a powered network and it lights up.",
+
+  "logistics.ponder.charging_station.header": "Charging Station",
+  "logistics.ponder.charging_station.text_1": "The Charging Station refills energy-storing items.",
+  "logistics.ponder.charging_station.text_2": "Power it from the energy network.",
+  "logistics.ponder.charging_station.text_3": "Right-click with a chargeable item to top it up.",
+
+  "logistics.ponder.audio_station.header": "Audio Station",
+  "logistics.ponder.audio_station.text_1": "The Audio Station plays sounds you uploaded to a Computer.",
+  "logistics.ponder.audio_station.text_2": "Wire it to a Computer on the same network.",
+  "logistics.ponder.audio_station.text_3": "Triggers can start and stop playback automatically.",
+
+  "logistics.ponder.pipe.header": "Pipe",
+  "logistics.ponder.pipe.text_1": "Pipes move items between Accessors.",
+  "logistics.ponder.pipe.text_2": "They form an item network, kept separate from energy.",
+
+  "logistics.ponder.accessor.header": "Accessor",
+  "logistics.ponder.accessor.text_1": "The Accessor reads and writes an adjacent inventory.",
+  "logistics.ponder.accessor.text_2": "Point its front face at a chest or machine.",
+  "logistics.ponder.accessor.text_3": "Bridged to a Computer, it can push and pull items.",
+
+  "logistics.ponder.redstone_reader.header": "Redstone Reader",
+  "logistics.ponder.redstone_reader.text_1": "The Redstone Reader senses redstone on its front face.",
+  "logistics.ponder.redstone_reader.text_2": "Its other five faces are normal cable faces.",
+  "logistics.ponder.redstone_reader.text_3": "A Computer can trigger on its signal: a single pulse, on, off, or a strength.",
+
+  "logistics.ponder.network_switch.header": "Network Switch",
+  "logistics.ponder.network_switch.text_1": "Every face of the Network Switch is a cable face you can toggle.",
+  "logistics.ponder.network_switch.text_2": "A Computer can disable a face...",
+  "logistics.ponder.network_switch.text_3": "...splitting the network there, so the Lamp loses power.",
+  "logistics.ponder.network_switch.text_4": "Re-enable it to reconnect. Pair it with a Redstone Reader for a light switch!",
+
+  "logistics.ponder.create_motor.header": "Create Motor",
+  "logistics.ponder.create_motor.text_1": "The Create Motor drives a rotating shaft from its front face.",
+  "logistics.ponder.create_motor.text_2": "Feed it energy from behind, opposite the shaft, to drive your contraptions.",
+
+  "logistics.ponder.create_transformer.header": "Create Transformer",
+  "logistics.ponder.create_transformer.text_1": "The Create Transformer takes rotation on its shaft side (the back).",
+  "logistics.ponder.create_transformer.text_2": "It outputs energy from the opposite face into the network.",
+
+  "logistics.ponder.light_switch.header": "Light switch",
+  "logistics.ponder.light_switch.text_1": "A classic redstone light switch, built from the network.",
+  "logistics.ponder.light_switch.text_2": "The Computer reads a Redstone Reader and toggles a Network Switch.",
+  "logistics.ponder.light_switch.text_3": "The Switch sits between the power and the Lamp; the Reader watches the lever.",
+  "logistics.ponder.light_switch.text_4": "Flip the lever on...",
+  "logistics.ponder.light_switch.text_5": "...its signal fires a trigger that enables the Switch face. Lights on!",
+  "logistics.ponder.light_switch.text_6": "Flip it off and a second trigger cuts the face, splitting the network. Lights off.",
+
   "logistics.display_source.computer_display_source": "Computer & Network data",
 
   "potion.potency.7": "VIII",

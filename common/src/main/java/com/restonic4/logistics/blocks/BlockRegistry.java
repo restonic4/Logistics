@@ -32,7 +32,6 @@ import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.blocks.protector.CreativeProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
-import com.restonic4.logistics.experiment.Sounds;
 import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
@@ -55,9 +54,9 @@ public class BlockRegistry {
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();
 
-    public static final BlockEntry<GeneratorBlock, GeneratorNode> GENERATOR_BLOCK = PlatformRegistry
+    public static final BlockEntry<GeneratorBlock, GeneratorNode> CREATIVE_GENERATOR_BLOCK = PlatformRegistry
             .block(
-                    Logistics.id("generator"),
+                    Logistics.id("creative_generator"),
                     () -> new GeneratorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
