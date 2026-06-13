@@ -1,5 +1,6 @@
 package com.restonic4.logistics.mixin.experiment;
 
+import com.restonic4.logistics.blocks.lamp.LampStaticSoundManager;
 import com.restonic4.logistics.experiment.ScreenShakeManager;
 import com.restonic4.logistics.experiment.ShockwaveManager;
 import net.minecraft.client.Minecraft;
@@ -19,6 +20,7 @@ public class MinecraftMixin {
     private void onEndTick(CallbackInfo info) {
         Minecraft client = (Minecraft) (Object) this;
         if (client.level != null) ShockwaveManager.clientTick(client.level);
+        LampStaticSoundManager.clientTick(client);
     }
 
     @Inject(method = "tick", at = @At("TAIL"))

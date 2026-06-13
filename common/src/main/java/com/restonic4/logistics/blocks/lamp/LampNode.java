@@ -43,6 +43,13 @@ public class LampNode extends EnergyNode {
     /** What the block currently shows in the world. A transient visual; never persisted. */
     private boolean displayLit = false;
 
+    /**
+     * Whether this lamp emits the looping static hum. Off by default; the player toggles it with a
+     * sneak-use. Purely cosmetic (it never feeds the energy/visual logic), but it is persisted and
+     * synced so the client can keep the looping sound alive and the scanner can report it.
+     */
+    private boolean staticEnabled = false;
+
     // Turn-on flicker animation state.
     private boolean flickering = false;
     private int flickerFramesRemaining = 0;
@@ -194,6 +201,37 @@ public class LampNode extends EnergyNode {
 
     public boolean isLit() { return this.lit; }
 
+    public boolean isStaticEnabled() { return this.staticEnabled; }
+
+    /**
+     * Toggles the looping static hum. Persists (so it survives a reload) and syncs (so clients can
+     * start/stop the sound). {@link #setNetworkDirty()} only flags the node for the client delta;
+     * we also dirty the network so the SavedData is actually written, since an idle (unpowered) lamp
+     * network may otherwise never mark itself dirty and the toggle would be lost on shutdown.
+     */
+    public void setStaticEnabled(boolean value) {
+        if (this.staticEnabled == value) return;
+        this.staticEnabled = value;
+
+        setNetworkDirty();
+
+        EnergyNetwork network = getNetwork();
+        if (network != null) network.setDirty();
+    }
+
+    @Override
+    public boolean buildScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
+        boolean added = super.buildScannerTooltip(builder, isSneaking);
+
+        // Only surface static when it's on; an off lamp shows nothing about it.
+        if (staticEnabled) {
+            builder.keyValue("Static", "On", ChatFormatting.GRAY, ChatFormatting.GREEN);
+            added = true;
+        }
+
+        return added;
+    }
+
     @Override
     public boolean buildDebugScannerTooltip(TooltipBuilder builder, boolean isSneaking) {
         super.buildDebugScannerTooltip(builder, isSneaking);
@@ -202,6 +240,7 @@ public class LampNode extends EnergyNode {
         builder.keyValue("Energy/cycle", ENERGY_PER_CYCLE + " per " + TICKS_PER_CYCLE + "t", ChatFormatting.YELLOW);
         builder.keyValue("Lit", isLit() ? "Yes" : "No", isLit() ? ChatFormatting.GREEN : ChatFormatting.RED);
         builder.keyValue("Flickering", flickering ? "Yes" : "No", flickering ? ChatFormatting.YELLOW : ChatFormatting.GRAY);
+        builder.keyValue("Static", staticEnabled ? "On" : "Off", staticEnabled ? ChatFormatting.GREEN : ChatFormatting.GRAY);
 
         return true;
     }
@@ -210,12 +249,14 @@ public class LampNode extends EnergyNode {
     protected void saveExtra(CompoundTag tag) {
         tag.putBoolean("lit", lit);
         tag.putInt("tickCounter", tickCounter);
+        tag.putBoolean("static", staticEnabled);
     }
 
     @Override
     protected void loadExtra(CompoundTag tag) {
         this.lit = tag.getBoolean("lit");
         this.tickCounter = tag.getInt("tickCounter");
+        this.staticEnabled = tag.getBoolean("static");
 
         // No flicker on load: the world should come back already settled to the real state.
         this.displayLit = this.lit;
@@ -226,11 +267,13 @@ public class LampNode extends EnergyNode {
     protected void writeExtraSyncData(FriendlyByteBuf buf) {
         super.writeExtraSyncData(buf);
         buf.writeBoolean(lit);
+        buf.writeBoolean(staticEnabled);
     }
 
     @Override
     protected void readExtraSyncData(FriendlyByteBuf buf) {
         super.readExtraSyncData(buf);
         this.lit = buf.readBoolean();
+        this.staticEnabled = buf.readBoolean();
     }
 }
