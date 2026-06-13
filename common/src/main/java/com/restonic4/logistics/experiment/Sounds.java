@@ -63,6 +63,12 @@ public class Sounds {
             .sound("lamp/flicker_7")
             .register();
 
+    public static final SoundEventEntry LAMP_STATIC = PlatformRegistry
+            .sound(new ResourceLocation(Constants.MOD_ID, "lamp/static"))
+            .subtitle("subtitles.logistics.lamp.static")
+            .sound("lamp/static")
+            .register();
+
     public static void register() {
 
     }

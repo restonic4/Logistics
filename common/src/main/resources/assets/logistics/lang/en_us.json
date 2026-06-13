@@ -7,7 +7,7 @@
   "item.logistics.broken_kinetic_crystal_shard": "Broken Kinetic Crystal Shard",
 
   "block.logistics.cable": "Cable",
-  "block.logistics.generator": "[CREATIVE] Generator",
+  "block.logistics.creative_generator": "[CREATIVE] Generator",
   "block.logistics.machine": "[CREATIVE] Machine",
   "block.logistics.lamp": "Lamp",
   "subtitles.logistics.lamp.flicker": "Lamp flickers",
@@ -18,7 +18,6 @@
   "block.logistics.protector": "Protector",
   "block.logistics.creative_protector": "[CREATIVE] Protector",
   "block.logistics.audio_station": "Audio Station",
-
   "block.logistics.redstone_reader": "Redstone Reader",
   "block.logistics.network_switch": "Network Switch",
 

@@ -5,8 +5,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 
-import static com.restonic4.logistics.migration.MigrationManager.isItemStack;
-
 public class NbtWalker {
     public static void processContainer(CompoundTag containerTag) {
         int dataVersion = containerTag.contains(MigrationManager.VERSION_KEY) ? containerTag.getInt(MigrationManager.VERSION_KEY) : MigrationManager.MISSING_VERSION;
@@ -18,10 +16,20 @@ public class NbtWalker {
     }
 
     private static void walkAndFix(CompoundTag tag, int dataVersion) {
-        if (isItemStack(tag)) {
+        if (MigrationManager.isItemStack(tag)) {
             String id = tag.getString("id");
             if (id.startsWith(Constants.MOD_ID + ":")) {
                 MigrationManager.upgradeItemNbt(tag, dataVersion);
+            }
+        } else if (MigrationManager.isNetworkNode(tag)) {
+            String type = tag.getString("type");
+            if (type.startsWith(Constants.MOD_ID + ":")) {
+                MigrationManager.upgradeNodeNbt(tag, dataVersion);
+            }
+        } else if (MigrationManager.isBlockState(tag)) {
+            String name = tag.getString("Name");
+            if (name.startsWith(Constants.MOD_ID + ":")) {
+                MigrationManager.upgradeBlockNbt(tag, dataVersion);
             }
         }
 
