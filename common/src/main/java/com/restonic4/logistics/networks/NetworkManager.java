@@ -224,6 +224,21 @@ public class NetworkManager extends SavedData {
         pendingChanges.add(NetworkChange.remove(blockPos));
     }
 
+    /**
+     * Recomputes a node's network membership after something that can change its connectivity
+     * (a facing change, a switch face toggle, ...). The node keeps its identity and config; we
+     * just remove it and re-add it so the merge/split logic in {@link #internalOnMemberPlaced}
+     * and {@link #internalOnMemberRemoved} re-evaluates the topology around it from the current
+     * blockstate. This is the single place that re-route is expressed, so callers never copy the
+     * remove/re-add dance.
+     */
+    public void refreshMembership(NetworkNode node) {
+        BlockPos pos = node.getBlockPos();
+        serverLevel.updateNeighborsAt(pos, serverLevel.getBlockState(pos).getBlock());
+        onMemberRemoved(pos);
+        onMemberPlaced(node);
+    }
+
     public void internalOnMemberPlaced(NetworkNode node) {
         Set<Network> neighborNetworks = getNeighborNetworks(node.getBlockPos(), node.getType().networkType());
 

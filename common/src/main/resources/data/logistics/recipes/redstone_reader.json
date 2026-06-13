@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "CHC",
+    "ITI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "T": {
+      "item": "minecraft:tuff"
+    },
+    "C": {
+      "item": "logistics:cable"
+    },
+    "H": {
+      "item": "logistics:chip"
+    }
+  },
+  "result": {
+    "item": "logistics:redstone_reader",
+    "count": 1
+  }
+}

@@ -3,6 +3,8 @@ package com.restonic4.logistics.blocks.computer.automation.triggers.core;
 import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
+import com.restonic4.logistics.blocks.network_switch.NetworkSwitchNode;
+import com.restonic4.logistics.blocks.redstone_reader.RedstoneReaderNode;
 import com.restonic4.logistics.networks.types.EnergyNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -28,11 +30,14 @@ public final class TriggerContext {
     private final double energyPercent;
     private final List<AudioStationNode> audioStations;
     private final List<AccessorNode> accessors;
+    private final List<RedstoneReaderNode> redstoneReaders;
+    private final List<NetworkSwitchNode> networkSwitches;
 
     private TriggerContext(
             ComputerNode node, ServerLevel level, BlockPos pos, long gameTime,
             long storedEnergy, long totalEnergyCapacity, double energyPercent,
-            List<AudioStationNode> audioStations, List<AccessorNode> accessors
+            List<AudioStationNode> audioStations, List<AccessorNode> accessors,
+            List<RedstoneReaderNode> redstoneReaders, List<NetworkSwitchNode> networkSwitches
     ) {
         this.node = node;
         this.level = level;
@@ -43,6 +48,8 @@ public final class TriggerContext {
         this.energyPercent = energyPercent;
         this.audioStations = audioStations;
         this.accessors = accessors;
+        this.redstoneReaders = redstoneReaders;
+        this.networkSwitches = networkSwitches;
     }
 
     /**
@@ -54,6 +61,8 @@ public final class TriggerContext {
         long total = 0L;
         List<AudioStationNode> stations = Collections.emptyList();
         List<AccessorNode> accessors = Collections.emptyList();
+        List<RedstoneReaderNode> redstoneReaders = Collections.emptyList();
+        List<NetworkSwitchNode> networkSwitches = Collections.emptyList();
 
         EnergyNetwork network = node.getNetwork();
         if (network != null) {
@@ -61,10 +70,13 @@ public final class TriggerContext {
             total = network.getTotalEnergyBuffer();
             stations = Collections.unmodifiableList(network.getAudioStations());
             accessors = Collections.unmodifiableList(network.getAccessors());
+            redstoneReaders = Collections.unmodifiableList(network.getRedstoneReaders());
+            networkSwitches = Collections.unmodifiableList(network.getNetworkSwitches());
         }
 
         double percent = total > 0 ? (stored * 100.0D) / total : 0.0D;
-        return new TriggerContext(node, level, node.getBlockPos(), level.getGameTime(), stored, total, percent, stations, accessors);
+        return new TriggerContext(node, level, node.getBlockPos(), level.getGameTime(), stored, total, percent,
+                stations, accessors, redstoneReaders, networkSwitches);
     }
 
     /** The computer node currently being ticked. */
@@ -106,6 +118,28 @@ public final class TriggerContext {
     public AccessorNode findAccessor(UUID accessorId) {
         for (AccessorNode accessor : accessors) {
             if (accessor.getUUID().equals(accessorId)) return accessor;
+        }
+        return null;
+    }
+
+    /** Every redstone reader on the computer's network at capture time. */
+    public List<RedstoneReaderNode> getRedstoneReaders() { return redstoneReaders; }
+
+    /** Looks up a redstone reader on the computer's network by node UUID, or {@code null}. */
+    public RedstoneReaderNode findRedstoneReader(UUID readerId) {
+        for (RedstoneReaderNode reader : redstoneReaders) {
+            if (reader.getUUID().equals(readerId)) return reader;
+        }
+        return null;
+    }
+
+    /** Every network switch on the computer's network at capture time. */
+    public List<NetworkSwitchNode> getNetworkSwitches() { return networkSwitches; }
+
+    /** Looks up a network switch on the computer's network by node UUID, or {@code null}. */
+    public NetworkSwitchNode findNetworkSwitch(UUID switchId) {
+        for (NetworkSwitchNode networkSwitch : networkSwitches) {
+            if (networkSwitch.getUUID().equals(switchId)) return networkSwitch;
         }
         return null;
     }

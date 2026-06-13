@@ -1,0 +1,7 @@
+{
+  "multipart": [
+    {
+      "apply": { "model": "logistics:block/network_switch" }
+    }
+  ]
+}

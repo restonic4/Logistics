@@ -4,7 +4,9 @@ import com.restonic4.logistics.blocks.accersor.AccessorNode;
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
 import com.restonic4.logistics.blocks.cable.CableNode;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
+import com.restonic4.logistics.blocks.network_switch.NetworkSwitchNode;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
+import com.restonic4.logistics.blocks.redstone_reader.RedstoneReaderNode;
 import com.restonic4.logistics.blocks.protector.data_types.ProtectionZone;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkNode;
@@ -316,6 +318,28 @@ public class EnergyNetwork extends Network {
             if (networkNode instanceof NetworkConnectorNode connectorNode) {
                 List<AccessorNode> accessors = connectorNode.getAccessors();
                 if (accessors != null) nodes.addAll(accessors);
+            }
+        }
+
+        return nodes;
+    }
+
+    public List<RedstoneReaderNode> getRedstoneReaders() {
+        List<RedstoneReaderNode> nodes = new ArrayList<>();
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof RedstoneReaderNode readerNode) {
+                nodes.add(readerNode);
+            }
+        }
+
+        return nodes;
+    }
+
+    public List<NetworkSwitchNode> getNetworkSwitches() {
+        List<NetworkSwitchNode> nodes = new ArrayList<>();
+        for (NetworkNode networkNode : getNodeIndex().getAllNodes()) {
+            if (networkNode instanceof NetworkSwitchNode switchNode) {
+                nodes.add(switchNode);
             }
         }
 

@@ -1,8 +1,13 @@
 package com.restonic4.logistics.blocks.computer.screen.triggers.editors;
 
 import com.restonic4.logistics.blocks.audio_station.AudioStationNode;
+import com.restonic4.logistics.blocks.base.NameIdentifier;
 import com.restonic4.logistics.blocks.computer.automation.triggers.util.AudioStationTarget;
+import com.restonic4.logistics.blocks.computer.automation.triggers.util.NetworkNodeTarget;
 import com.restonic4.logistics.blocks.computer.screen.ComputerScreen;
+import com.restonic4.logistics.blocks.network_switch.NetworkSwitchNode;
+import com.restonic4.logistics.blocks.redstone_reader.RedstoneReaderNode;
+import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.networks.client.ClientNetworkManager;
 import com.restonic4.logistics.screens.widgets.NumberPickerWidget;
 import com.restonic4.logistics.screens.widgets.ScrollablePanel;
@@ -35,6 +40,8 @@ import java.util.function.Function;
 public class EditorBuilder {
     /** Dropdown sentinel meaning "all stations on the network". */
     public static final UUID ALL_STATIONS = new UUID(0L, 0L);
+    /** Dropdown sentinel meaning "all nodes of this kind on the network". */
+    public static final UUID ALL_NODES = new UUID(0L, 0L);
 
     private static final int ROW_H = 18;
     private static final int GAP = 4;
@@ -200,6 +207,31 @@ public class EditorBuilder {
         return dropdown;
     }
 
+    /**
+     * A picker over a list of named network nodes bound to {@code target}, including the "all" sentinel.
+     * Works for any {@link NetworkNode} that is also a {@link NameIdentifier} (redstone readers, switches).
+     */
+    public <T extends NetworkNode & NameIdentifier> SearchableDropdownWidget<UUID> nodeDropdown(
+            int col, NetworkNodeTarget<T> target, List<T> nodes, Component allLabel) {
+        List<DropdownEntry<UUID>> entries = new ArrayList<>();
+        entries.add(new DropdownEntry<>(ALL_NODES, allLabel, null));
+        for (T node : nodes) {
+            entries.add(new DropdownEntry<>(node.getUUID(), Component.literal(node.getSafeName()), null));
+        }
+
+        SearchableDropdownWidget<UUID> dropdown = new SearchableDropdownWidget<>(
+                0, 0, half, ROW_H, Component.empty(), entries,
+                uuid -> {
+                    if (uuid == null || ALL_NODES.equals(uuid)) target.setAll();
+                    else target.setNode(uuid);
+                    markDirty.run();
+                });
+        dropdown.setSelectedValueSilently(target.isAll() ? ALL_NODES : target.getNodeId());
+        panel.addChild(dropdown, columnX(col), y);
+        dropdownSink.add(dropdown);
+        return dropdown;
+    }
+
     // =====================================================================
     // Station resolution + shared widget factories (also used for summaries)
     // =====================================================================
@@ -217,6 +249,28 @@ public class EditorBuilder {
         }
         for (AudioStationNode station : stations()) {
             if (station.getUUID().equals(target.getStationId())) return station.getSafeName();
+        }
+        return "?";
+    }
+
+    /** The redstone readers on the computer's network, or empty if there is no network. */
+    public static List<RedstoneReaderNode> redstoneReaders() {
+        if (ComputerScreen.getEnergyNetwork() == null) return List.of();
+        return ComputerScreen.getEnergyNetwork().getRedstoneReaders();
+    }
+
+    /** The network switches on the computer's network, or empty if there is no network. */
+    public static List<NetworkSwitchNode> networkSwitches() {
+        if (ComputerScreen.getEnergyNetwork() == null) return List.of();
+        return ComputerScreen.getEnergyNetwork().getNetworkSwitches();
+    }
+
+    /** The display name for a node target: {@code allLabel}, the node's name, or "?" if it is gone. */
+    public static <T extends NetworkNode & NameIdentifier> String nodeLabel(
+            NetworkNodeTarget<T> target, List<T> nodes, String allLabel) {
+        if (target.isAll()) return allLabel;
+        for (T node : nodes) {
+            if (node.getUUID().equals(target.getNodeId())) return node.getSafeName();
         }
         return "?";
     }

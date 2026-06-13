@@ -5,6 +5,7 @@ import com.restonic4.logistics.blocks.computer.automation.triggers.actions.LogMe
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.PlayAudioAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.SendItemsAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.StopAudioAction;
+import com.restonic4.logistics.blocks.computer.automation.triggers.actions.SwitchAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitAudioAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.actions.WaitTicksAction;
 import com.restonic4.logistics.blocks.computer.automation.triggers.core.TriggerAction;
@@ -36,6 +37,8 @@ public final class ActionRegistry {
             new ActionType<>(new ResourceLocation(Constants.MOD_ID, "log_message"), LogMessageAction::new));
     public static final ActionType<SendItemsAction> SEND_ITEMS = register(
             new ActionType<>(new ResourceLocation(Constants.MOD_ID, "send_items"), SendItemsAction::new));
+    public static final ActionType<SwitchAction> SWITCH = register(
+            new ActionType<>(new ResourceLocation(Constants.MOD_ID, "switch"), SwitchAction::new));
 
     private ActionRegistry() {}
 

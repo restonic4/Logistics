@@ -23,6 +23,10 @@ import com.restonic4.logistics.blocks.machine.MachineBlock;
 import com.restonic4.logistics.blocks.machine.MachineNode;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorBlock;
 import com.restonic4.logistics.blocks.network_connector.NetworkConnectorNode;
+import com.restonic4.logistics.blocks.network_switch.NetworkSwitchBlock;
+import com.restonic4.logistics.blocks.network_switch.NetworkSwitchNode;
+import com.restonic4.logistics.blocks.redstone_reader.RedstoneReaderBlock;
+import com.restonic4.logistics.blocks.redstone_reader.RedstoneReaderNode;
 import com.restonic4.logistics.blocks.pipe.PipeBlock;
 import com.restonic4.logistics.blocks.pipe.PipeNode;
 import com.restonic4.logistics.blocks.protector.CreativeProtectorBlock;
@@ -180,6 +184,28 @@ public class BlockRegistry {
             )
             .mineWithPickaxe().dropSelf()
             .network(BuiltInNetworks.ITEM_NETWORK, AccessorNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<RedstoneReaderBlock, RedstoneReaderNode> REDSTONE_READER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("redstone_reader"),
+                    () -> new RedstoneReaderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, RedstoneReaderNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<NetworkSwitchBlock, NetworkSwitchNode> NETWORK_SWITCH_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("network_switch"),
+                    () -> new NetworkSwitchBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, NetworkSwitchNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
             .register();

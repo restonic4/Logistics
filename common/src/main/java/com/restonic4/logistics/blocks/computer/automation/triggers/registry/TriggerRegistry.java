@@ -6,6 +6,7 @@ import com.restonic4.logistics.blocks.computer.automation.triggers.types.AudioSt
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.EnergyLevelTrigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.IntervalTrigger;
 import com.restonic4.logistics.blocks.computer.automation.triggers.types.ItemCountTrigger;
+import com.restonic4.logistics.blocks.computer.automation.triggers.types.RedstoneTrigger;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collection;
@@ -30,6 +31,8 @@ public final class TriggerRegistry {
             new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "interval"), IntervalTrigger::new));
     public static final TriggerType<ItemCountTrigger> ITEM_COUNT = register(
             new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "item_count"), ItemCountTrigger::new));
+    public static final TriggerType<RedstoneTrigger> REDSTONE = register(
+            new TriggerType<>(new ResourceLocation(Constants.MOD_ID, "redstone"), RedstoneTrigger::new));
 
     private TriggerRegistry() {}
 

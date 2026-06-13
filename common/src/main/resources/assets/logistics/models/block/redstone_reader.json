@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "logistics:block/redstone_reader",
+    "down": "logistics:block/redstone_reader",
+    "up": "logistics:block/redstone_reader",
+    "north": "logistics:block/redstone_reader_front",
+    "east": "logistics:block/redstone_reader",
+    "south": "logistics:block/redstone_reader",
+    "west": "logistics:block/redstone_reader"
+  }
+}

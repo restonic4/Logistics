@@ -3,7 +3,6 @@ package com.restonic4.logistics.networks.nodes;
 import com.restonic4.logistics.networks.Network;
 import com.restonic4.logistics.networks.NetworkManager;
 import com.restonic4.logistics.networks.NetworkNode;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -22,12 +21,7 @@ public interface FacingNode {
 
         if (oldFacing != newFacing) {
             ServerLevel serverLevel = node.getNetwork().getServerLevel();
-            BlockPos pos = node.getBlockPos();
-
-            serverLevel.updateNeighborsAt(pos, serverLevel.getBlockState(pos).getBlock());
-
-            NetworkManager.get(serverLevel).onMemberRemoved(pos);
-            NetworkManager.get(serverLevel).onMemberPlaced(node);
+            NetworkManager.get(serverLevel).refreshMembership(node);
         }
     }
 
