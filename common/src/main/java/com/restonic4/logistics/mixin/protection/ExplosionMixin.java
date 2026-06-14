@@ -17,9 +17,10 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
@@ -48,14 +49,14 @@ public abstract class ExplosionMixin {
     /**
      * Prevents entities (mobs/players) inside a protected area from taking explosion damage.
      */
-    @Redirect(
+    @WrapOperation(
             method = "explode",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/Entity;hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z"
             )
     )
-    private boolean redirectEntityHurt(Entity entity, DamageSource source, float amount) {
+    private boolean redirectEntityHurt(Entity entity, DamageSource source, float amount, Operation<Boolean> original) {
         if (this.level != null && !this.level.isClientSide()) {
             Explosion explosion = (Explosion) (Object) this;
             LivingEntity indirectSource = explosion.getIndirectSourceEntity();
@@ -65,20 +66,20 @@ public abstract class ExplosionMixin {
                 return false; // Cancels the damage completely
             }
         }
-        return entity.hurt(source, amount);
+        return original.call(entity, source, amount);
     }
 
     /**
      * Prevents entities inside a protected area from being pushed/knocked back by explosions.
      */
-    @Redirect(
+    @WrapOperation(
             method = "explode",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/Entity;setDeltaMovement(Lnet/minecraft/world/phys/Vec3;)V"
             )
     )
-    private void redirectSetDeltaMovement(Entity entity, Vec3 motion) {
+    private void redirectSetDeltaMovement(Entity entity, Vec3 motion, Operation<Void> original) {
         if (this.level != null && !this.level.isClientSide()) {
             Explosion explosion = (Explosion) (Object) this;
             LivingEntity indirectSource = explosion.getIndirectSourceEntity();
@@ -88,7 +89,7 @@ public abstract class ExplosionMixin {
                 return; // Bypass changing the entity's velocity vector
             }
         }
-        entity.setDeltaMovement(motion);
+        original.call(entity, motion);
     }
 
     /**
