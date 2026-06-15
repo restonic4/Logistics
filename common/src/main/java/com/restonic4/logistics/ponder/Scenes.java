@@ -3,6 +3,7 @@ package com.restonic4.logistics.ponder;
 import com.restonic4.logistics.Logistics;
 import com.restonic4.logistics.ponder.scenes.AccessorScene;
 import com.restonic4.logistics.ponder.scenes.AudioStationScene;
+import com.restonic4.logistics.ponder.scenes.BackroomsScene;
 import com.restonic4.logistics.ponder.scenes.BatteryScene;
 import com.restonic4.logistics.ponder.scenes.CableScene;
 import com.restonic4.logistics.ponder.scenes.ChargingStationScene;
@@ -21,6 +22,8 @@ import net.minecraft.resources.ResourceLocation;
 public class Scenes {
     // Every scene animates blocks in code on a checkerboard baseplate structure (scenes/floor_<size>).
     private static final String FLOOR_5 = "scenes/floor_5";
+    // The backrooms joke scene loads its own 34x34x34 structure.
+    private static final String BACKROOMS = "scenes/backrooms";
 
     public static void register(PonderSceneRegistrationHelper<ResourceLocation> helper) {
         helper.forComponents(Logistics.id("protector"), Logistics.id("creative_protector"))
@@ -56,6 +59,21 @@ public class Scenes {
                         Logistics.id("computer"),
                         Logistics.id("lamp"))
                 .addStoryBoard(FLOOR_5, LightSwitchScene::lightSwitch);
+
+        // Backrooms joke scene, shown on every backrooms-themed decoration block.
+        helper.forComponents(
+                        Logistics.id("normal_wallpaper"),
+                        Logistics.id("flat_wallpaper"),
+                        Logistics.id("normal_wood_wallpaper"),
+                        Logistics.id("flat_wood_wallpaper"),
+                        Logistics.id("office_tile"),
+                        Logistics.id("office_rug"),
+                        Logistics.id("office_lamp"))
+                .addStoryBoard(BACKROOMS, BackroomsScene::backrooms);
+
+        // The office lamp is a lamp too: also show the regular lamp scene on it.
+        helper.forComponents(Logistics.id("office_lamp"))
+                .addStoryBoard(FLOOR_5, LampScene::lamp);
 
         // Create compatibility blocks: resolved via registry inside the scene, only reachable when Create is present.
         helper.forComponents(Logistics.id("create_motor"))

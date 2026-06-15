@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "logistics:normal_wallpaper"
+  },
+  "result": "logistics:office_rug",
+  "count": 1
+}

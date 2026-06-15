@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "logistics:block/wallpaper/flat_wood",
+    "top": "logistics:block/wallpaper/flat",
+    "bottom": "logistics:block/wallpaper/flat"
+  }
+}

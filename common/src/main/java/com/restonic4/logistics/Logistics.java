@@ -41,6 +41,13 @@ public class Logistics {
             )
             .register();
 
+    public static final CreativeTabEntry DECORATION_TAB = PlatformRegistry
+            .tab(
+                    id("decoration_tab"),
+                    () -> new ItemStack(BlockRegistry.NORMAL_WALLPAPER_BLOCK.getItem())
+            )
+            .register();
+
     public static void init() {
         if (Services.PLATFORM.isDevelopmentEnvironment()) Constants.setDebug(true);
 

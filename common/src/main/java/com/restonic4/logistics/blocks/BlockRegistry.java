@@ -15,6 +15,7 @@ import com.restonic4.logistics.blocks.charging_station.ChargingStationBlockEntit
 import com.restonic4.logistics.blocks.charging_station.ChargingStationNode;
 import com.restonic4.logistics.blocks.computer.ComputerBlock;
 import com.restonic4.logistics.blocks.computer.ComputerNode;
+import com.restonic4.logistics.blocks.decoration.WallpaperBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorBlock;
 import com.restonic4.logistics.blocks.generator.GeneratorNode;
 import com.restonic4.logistics.blocks.lamp.LampBlock;
@@ -33,6 +34,7 @@ import com.restonic4.logistics.blocks.protector.CreativeProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorBlock;
 import com.restonic4.logistics.blocks.protector.ProtectorNode;
 import com.restonic4.logistics.networks.BuiltInNetworks;
+import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
 import net.minecraft.world.item.Item;
@@ -112,6 +114,18 @@ public class BlockRegistry {
     public static final BlockEntry<LampBlock, LampNode> LAMP_BLOCK = PlatformRegistry
             .block(
                     Logistics.id("lamp"),
+                    () -> new LampBlock(BlockBehaviour.Properties.copy(Blocks.REDSTONE_LAMP).lightLevel(state -> state.getValue(LampBlock.LIT) ? 15 : 0))
+            )
+            .mineWithPickaxe().dropSelf()
+            .network(BuiltInNetworks.ENERGY_NETWORK, LampNode::new)
+            .withItem()
+            .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    // Office lamp: alternative texture variant of the lamp, sharing the same node/behaviour.
+    public static final BlockEntry<LampBlock, LampNode> OFFICE_LAMP_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("office_lamp"),
                     () -> new LampBlock(BlockBehaviour.Properties.copy(Blocks.REDSTONE_LAMP).lightLevel(state -> state.getValue(LampBlock.LIT) ? 15 : 0))
             )
             .mineWithPickaxe().dropSelf()
@@ -207,6 +221,69 @@ public class BlockRegistry {
             .network(BuiltInNetworks.ENERGY_NETWORK, NetworkSwitchNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
+            .register();
+
+    // Decoration blocks. Each wallpaper texture is its own non-directional block.
+    public static final BlockEntry<WallpaperBlock, NetworkNode> NORMAL_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("normal_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<WallpaperBlock, NetworkNode> FLAT_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("flat_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<WallpaperBlock, NetworkNode> NORMAL_WOOD_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("normal_wood_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<WallpaperBlock, NetworkNode> FLAT_WOOD_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("flat_wood_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    // Flat white ceiling tile.
+    public static final BlockEntry<WallpaperBlock, NetworkNode> OFFICE_TILE_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("office_tile"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    // Office floor rug.
+    public static final BlockEntry<WallpaperBlock, NetworkNode> OFFICE_RUG_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("office_rug"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
 
     public static void register() {

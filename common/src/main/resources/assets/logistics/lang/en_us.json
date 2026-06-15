@@ -1,5 +1,13 @@
 {
   "itemGroup.logistics.custom_tab": "Logistics",
+  "itemGroup.logistics.decoration_tab": "Logistics Decorations",
+
+  "block.logistics.normal_wallpaper": "Wallpaper",
+  "block.logistics.flat_wallpaper": "Flat Wallpaper",
+  "block.logistics.normal_wood_wallpaper": "Wood Wallpaper",
+  "block.logistics.flat_wood_wallpaper": "Flat Wood Wallpaper",
+  "block.logistics.office_tile": "Office Tile",
+  "block.logistics.office_rug": "Office Rug",
 
   "item.logistics.silicon": "Silicon",
   "item.logistics.chip": "Chip",
@@ -10,6 +18,7 @@
   "block.logistics.creative_generator": "[CREATIVE] Generator",
   "block.logistics.machine": "[CREATIVE] Machine",
   "block.logistics.lamp": "Lamp",
+  "block.logistics.office_lamp": "Office Lamp",
   "subtitles.logistics.lamp.flicker": "Lamp flickers",
   "subtitles.logistics.lamp.static": "Lamp buzzes",
   "logistics.lamp.static.enabled": "Static enabled",
@@ -234,6 +243,9 @@
   "logistics.ponder.lamp.header": "Lamp",
   "logistics.ponder.lamp.text_1": "The Lamp turns network energy into light.",
   "logistics.ponder.lamp.text_2": "Connect it to a powered network and it lights up.",
+
+  "logistics.ponder.backrooms.header": "Backrooms",
+  "logistics.ponder.backrooms.text_1": "Just do it...",
 
   "logistics.ponder.charging_station.header": "Charging Station",
   "logistics.ponder.charging_station.text_1": "The Charging Station refills energy-storing items.",

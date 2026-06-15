@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "logistics:normal_wallpaper" },
+    { "item": "minecraft:stick" }
+  ],
+  "result": {
+    "item": "logistics:normal_wood_wallpaper",
+    "count": 1
+  }
+}

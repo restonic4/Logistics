@@ -1,5 +1,13 @@
 {
   "itemGroup.logistics.custom_tab": "Logistics",
+  "itemGroup.logistics.decoration_tab": "Decoración de Logistics",
+
+  "block.logistics.normal_wallpaper": "Papel pintado",
+  "block.logistics.flat_wallpaper": "Papel pintado liso",
+  "block.logistics.normal_wood_wallpaper": "Papel pintado de madera",
+  "block.logistics.flat_wood_wallpaper": "Papel pintado de madera liso",
+  "block.logistics.office_tile": "Baldosa de oficina",
+  "block.logistics.office_rug": "Alfombra de oficina",
 
   "item.logistics.silicon": "Silicona",
   "item.logistics.chip": "Chip",
@@ -10,6 +18,7 @@
   "block.logistics.creative_generator": "[CREATIVO] Generador",
   "block.logistics.machine": "[CREATIVO] Máquina",
   "block.logistics.lamp": "Lámpara",
+  "block.logistics.office_lamp": "Lámpara de oficina",
   "subtitles.logistics.lamp.flicker": "La lámpara parpadea",
   "subtitles.logistics.lamp.static": "La lámpara zumba",
   "logistics.lamp.static.enabled": "Estática activada",
@@ -176,6 +185,9 @@
   "logistics.ponder.lamp.header": "Lámpara",
   "logistics.ponder.lamp.text_1": "La Lámpara convierte la energía de la red en luz.",
   "logistics.ponder.lamp.text_2": "Conéctala a una red con energía y se encenderá.",
+
+  "logistics.ponder.backrooms.header": "Backrooms",
+  "logistics.ponder.backrooms.text_1": "Solo hazlo...",
 
   "logistics.ponder.charging_station.header": "Estación de carga",
   "logistics.ponder.charging_station.text_1": "La Estación de carga recarga objetos que almacenan energía.",
