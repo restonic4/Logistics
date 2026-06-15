@@ -11,10 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerAudioManager {
     private static final Map<UUID, ServerAudioSource> SOURCES = new ConcurrentHashMap<>();
 
-    public static UUID play(ServerLevel level, BlockPos pos, String filePath,
+    public static UUID play(ServerLevel level, BlockPos pos, String soundId,
                             float volume, float pitch, float radius, boolean looping) {
         UUID id = UUID.randomUUID();
-        ServerAudioSource source = new ServerAudioSource(id, level, pos, filePath,
+        String hash = ServerAudioStorage.getHash(soundId);
+        if (hash == null) hash = "";
+        ServerAudioSource source = new ServerAudioSource(id, level, pos, soundId, hash,
                 volume, pitch, radius, looping);
         SOURCES.put(id, source);
         source.tick(level, pos);

@@ -125,8 +125,11 @@ public class AudioStationNode extends EnergyNode implements FacingNode, NameIden
         if (audioSourceId != null) {
             ServerAudioManager.stop(audioSourceId);
         }
+        // Pass the logical sound id (e.g. "uuid/file.wav"), not an absolute path: the client
+        // resolves audio from its own cache + on-demand download, which is what lets this work
+        // on remote dedicated servers.
         audioSourceId = ServerAudioManager.play(
-                (ServerLevel) getLevel(), getBlockPos(), file.getAbsolutePath(),
+                (ServerLevel) getLevel(), getBlockPos(), path,
                 volume, pitch, radius, looping
         );
         setNetworkDirty();

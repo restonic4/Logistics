@@ -3,6 +3,8 @@ package com.restonic4.logistics;
 import com.restonic4.logistics.audio.AudioPlayS2CPacket;
 import com.restonic4.logistics.audio.AudioStopS2CPacket;
 import com.restonic4.logistics.audio.AudioUpdateS2CPacket;
+import com.restonic4.logistics.audio.AudioDownloadS2CPacket;
+import com.restonic4.logistics.audio.AudioSyncS2CPacket;
 import com.restonic4.logistics.blocks.ClientBlockRegistry;
 import com.restonic4.logistics.blocks.audio_station.UploadedAudiosSyncPacket;
 import com.restonic4.logistics.blocks.computer.*;
@@ -44,6 +46,8 @@ public class LogisticsClient {
         NetworkingRegistry.registerClientTargetedPacket(AudioPlayS2CPacket.ID, AudioPlayS2CPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(AudioStopS2CPacket.ID, AudioStopS2CPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(AudioUpdateS2CPacket.ID, AudioUpdateS2CPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(AudioDownloadS2CPacket.ID, AudioDownloadS2CPacket::new);
+        NetworkingRegistry.registerClientTargetedPacket(AudioSyncS2CPacket.ID, AudioSyncS2CPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(UploadedAudiosSyncPacket.ID, UploadedAudiosSyncPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(NetworkBatchSyncPacket.ID, NetworkBatchSyncPacket::new);
         NetworkingRegistry.registerClientTargetedPacket(NetworkNodeRemovedPacket.ID, NetworkNodeRemovedPacket::new);

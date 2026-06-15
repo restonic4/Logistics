@@ -42,10 +42,8 @@
     "registries.TagLoaderMixin"
   ],
   "client": [
-    "audio.ChannelAccessor",
     "audio.MinecraftMixin",
-    "audio.SoundEngineEx",
-    "audio.SoundManagerEx",
+    "audio.SoundBufferLibraryMixin",
     "events.GuiMixin",
     "events.ItemBlockRenderTypesMixin",
     "events.LevelRendererMixin",

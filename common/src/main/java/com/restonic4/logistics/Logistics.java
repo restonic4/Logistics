@@ -1,6 +1,7 @@
 package com.restonic4.logistics;
 
 import com.restonic4.logistics.audio.ServerAudioStorage;
+import com.restonic4.logistics.audio.AudioRequestC2SPacket;
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
 import com.restonic4.logistics.blocks.audio_station.AudioDeletePacket;
@@ -71,6 +72,7 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(AudioStationControlPacket.ID, AudioStationControlPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(TriggerSavePacket.ID, TriggerSavePacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioUploadPacket.ID, AudioUploadPacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(AudioRequestC2SPacket.ID, AudioRequestC2SPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioDeletePacket.ID, AudioDeletePacket::new);
         NetworkingRegistry.registerServerTargetedPacket(RenameNodePacket.ID, RenameNodePacket::new);
     }

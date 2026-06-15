@@ -33,10 +33,9 @@ public class AudioUtils {
                 throw new RuntimeException("Unsupported WAV encoding: " + format.getEncoding() + ". Only PCM is supported.");
             }
 
+            // Stereo is allowed: we compute distance gain ourselves (see LogisticsSoundInstance),
+            // so volume/radius still work. Only OpenAL's directional panning is mono-only.
             boolean mono = format.getChannels() == 1;
-            if (!mono) {
-                throw new RuntimeException("This audio file has more than 1 channel, it needs to be mono!");
-            }
 
             byte[] bytes = stream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length).order(ByteOrder.nativeOrder());
@@ -53,6 +52,71 @@ public class AudioUtils {
         } else {
             return sampleSize == 8 ? org.lwjgl.openal.AL10.AL_FORMAT_STEREO8 : org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
         }
+    }
+
+    /** Returns the playback duration in milliseconds, dispatching by file extension. */
+    public static long getAudioDurationMs(String path) throws Exception {
+        String lower = path.toLowerCase();
+        if (lower.endsWith(".ogg")) return getOggDurationMs(path);
+        return getWavDurationMs(path);
+    }
+
+    /**
+     * Reads the duration of an Ogg/Vorbis file from its headers only, without decoding —
+     * the decoder (STB/JOrbis) is client-only and absent on a dedicated server. Duration is
+     * the last page's granule position (total PCM samples) divided by the Vorbis sample rate.
+     */
+    public static long getOggDurationMs(String path) throws Exception {
+        File file = new File(path);
+        if (!file.exists()) throw new RuntimeException("Audio file not found: " + path);
+
+        try (RandomAccessFile raf = new RandomAccessFile(path, "r")) {
+            long len = raf.length();
+
+            // Sample rate lives in the Vorbis identification header, which is the first packet
+            // of the first ("OggS") page: 0x01 "vorbis" version(4) channels(1) sampleRate(4 LE).
+            int sampleRate = readOggSampleRate(raf);
+            if (sampleRate <= 0) throw new RuntimeException("Could not read Ogg sample rate");
+
+            // Total samples = granule position of the final page. Scan backwards for the last
+            // "OggS" capture pattern and read its 64-bit little-endian granule position.
+            int scan = (int) Math.min(len, 65536L);
+            byte[] tail = new byte[scan];
+            raf.seek(len - scan);
+            raf.readFully(tail);
+
+            long granule = -1;
+            for (int i = scan - 27; i >= 0; i--) {
+                if (tail[i] == 'O' && tail[i + 1] == 'g' && tail[i + 2] == 'g' && tail[i + 3] == 'S') {
+                    long g = 0;
+                    for (int b = 0; b < 8; b++) {
+                        g |= (tail[i + 6 + b] & 0xFFL) << (8 * b);
+                    }
+                    if (g != -1L) { granule = g; break; }
+                }
+            }
+            if (granule < 0) throw new RuntimeException("Could not read Ogg granule position");
+
+            return (granule * 1000L) / sampleRate;
+        }
+    }
+
+    private static int readOggSampleRate(RandomAccessFile raf) throws Exception {
+        int head = (int) Math.min(raf.length(), 65536L);
+        byte[] buf = new byte[head];
+        raf.seek(0);
+        raf.readFully(buf);
+
+        // Find the "vorbis" identification packet marker (0x01 'vorbis').
+        for (int i = 0; i + 16 < buf.length; i++) {
+            if (buf[i] == 0x01 && buf[i + 1] == 'v' && buf[i + 2] == 'o' && buf[i + 3] == 'r'
+                    && buf[i + 4] == 'b' && buf[i + 5] == 'i' && buf[i + 6] == 's') {
+                int p = i + 7 + 4 + 1; // skip "vorbis", vorbis_version(4), audio_channels(1)
+                return (buf[p] & 0xFF) | ((buf[p + 1] & 0xFF) << 8)
+                        | ((buf[p + 2] & 0xFF) << 16) | ((buf[p + 3] & 0xFF) << 24);
+            }
+        }
+        return -1;
     }
 
     public static long getWavDurationMs(String path) throws Exception {

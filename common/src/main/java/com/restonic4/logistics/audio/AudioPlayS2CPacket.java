@@ -8,23 +8,31 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
+/**
+ * Tells the client to start (or restart) a positional audio source. Carries the logical
+ * {@code soundId} ("uuid/file.wav") plus a content {@code hash} instead of a server file
+ * path, so the client can resolve the audio from its own cache and download it on demand —
+ * this is what makes playback work on remote dedicated servers.
+ */
 public class AudioPlayS2CPacket implements S2CPacket {
     public static final ResourceLocation ID = new ResourceLocation("logistics", "audio/play");
 
     private final UUID sourceId;
     private final Vec3 pos;
-    private final String filePath;
+    private final String soundId;
+    private final String hash;
     private final float volume;
     private final float pitch;
     private final float radius;
     private final long elapsedMs;
     private final boolean looping;
 
-    public AudioPlayS2CPacket(UUID sourceId, Vec3 pos, String filePath, float volume,
+    public AudioPlayS2CPacket(UUID sourceId, Vec3 pos, String soundId, String hash, float volume,
                               float pitch, float radius, long elapsedMs, boolean looping) {
         this.sourceId = sourceId;
         this.pos = pos;
-        this.filePath = filePath;
+        this.soundId = soundId;
+        this.hash = hash;
         this.volume = volume;
         this.pitch = pitch;
         this.radius = radius;
@@ -35,7 +43,8 @@ public class AudioPlayS2CPacket implements S2CPacket {
     public AudioPlayS2CPacket(FriendlyByteBuf buf) {
         this.sourceId = buf.readUUID();
         this.pos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        this.filePath = buf.readUtf();
+        this.soundId = buf.readUtf();
+        this.hash = buf.readUtf();
         this.volume = buf.readFloat();
         this.pitch = buf.readFloat();
         this.radius = buf.readFloat();
@@ -49,7 +58,8 @@ public class AudioPlayS2CPacket implements S2CPacket {
         buf.writeDouble(this.pos.x);
         buf.writeDouble(this.pos.y);
         buf.writeDouble(this.pos.z);
-        buf.writeUtf(this.filePath);
+        buf.writeUtf(this.soundId);
+        buf.writeUtf(this.hash);
         buf.writeFloat(this.volume);
         buf.writeFloat(this.pitch);
         buf.writeFloat(this.radius);
@@ -65,7 +75,7 @@ public class AudioPlayS2CPacket implements S2CPacket {
     @Override
     public void handle(Minecraft client) {
         client.execute(() -> {
-            ClientAudioManager.play(this.sourceId, this.pos, this.filePath,
+            ClientAudioManager.play(this.sourceId, this.pos, this.soundId, this.hash,
                     this.volume, this.pitch, this.radius, this.elapsedMs, this.looping);
         });
     }

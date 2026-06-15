@@ -51,8 +51,9 @@ public class AudioUploadPacket implements C2SPacket {
 
     @Override
     public void handle(MinecraftServer server, ServerPlayer player) {
-        if (!filename.toLowerCase().endsWith(".wav")) {
-            System.err.println("Rejected non-wav upload from " + player.getUUID());
+        String lowerName = filename.toLowerCase();
+        if (!lowerName.endsWith(".wav") && !lowerName.endsWith(".ogg")) {
+            System.err.println("Rejected unsupported audio upload (only .wav/.ogg) from " + player.getUUID());
             sessions.remove(player.getUUID());
             return;
         }
@@ -65,7 +66,7 @@ public class AudioUploadPacket implements C2SPacket {
             byte[] full = session.assemble();
             sessions.remove(playerId);
 
-            if (full.length > 15 * 1024 * 1024) { // 10MB max
+            if (full.length > 15 * 1024 * 1024) { // 15MB max
                 System.err.println("Rejected oversized upload from " + playerId);
                 return;
             }
@@ -76,7 +77,8 @@ public class AudioUploadPacket implements C2SPacket {
 
             try {
                 java.nio.file.Files.write(target.toPath(), full);
-                AudioUtils.loadWav(target.getAbsolutePath());
+                // Validate by parsing headers (works for both wav and ogg, server-side, no decoder).
+                AudioUtils.getAudioDurationMs(target.getAbsolutePath());
                 System.out.println("Accepted sound upload: " + target.getAbsolutePath());
                 ServerNetworking.sendToAll(server, new UploadedAudiosSyncPacket(ServerAudioStorage.getAllSounds()));
             } catch (Exception e) {
