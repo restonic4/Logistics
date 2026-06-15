@@ -28,11 +28,12 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class KineticCrystalShardItem extends Item implements DyeableLeatherItem {
+public class KineticCrystalShardItem extends Item implements DyeableLeatherItem, EnergyTooltip {
     public static final String COLOR_KEY = "color";
     public static final String POTION_KEY = "stored_potion";
     public static final int TOTAL = 10000;
@@ -192,22 +193,12 @@ public class KineticCrystalShardItem extends Item implements DyeableLeatherItem 
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag isAdvanced) {
         super.appendHoverText(stack, level, tooltipComponents, isAdvanced);
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = this.appendEnergyTooltip(stack, tooltipComponents, TOTAL);
 
-        // --- 1. Display Energy Percentage ---
-        long storedEnergy = tag != null ? tag.getLong("stored_energy") : 0L;
-        float energyPercent = ((float) storedEnergy / TOTAL) * 100.0f;
-
-        tooltipComponents.add(
-                Component.literal("Energy: ")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal(String.format("%.1f%%", energyPercent)).withStyle(ChatFormatting.AQUA))
-        );
-
-        // --- 2. Display Potion Effect ---
+        // Display Potion Effect
         if (tag != null && tag.contains(POTION_KEY)) {
             ResourceLocation potionId = new ResourceLocation(tag.getString(POTION_KEY));
             Potion potion = BuiltInRegistries.POTION.get(potionId);
