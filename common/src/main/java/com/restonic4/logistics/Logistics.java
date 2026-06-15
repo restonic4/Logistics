@@ -18,6 +18,7 @@ import com.restonic4.logistics.blocks.computer.protection.ProtectionSavePacket;
 import com.restonic4.logistics.blocks.protector.data_types.FlagRegistry;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.ServerTickEvents;
+import com.restonic4.logistics.experiment.DebugTogglePacket;
 import com.restonic4.logistics.experiment.Items;
 import com.restonic4.logistics.experiment.Recipes;
 import com.restonic4.logistics.experiment.Sounds;
@@ -75,6 +76,7 @@ public class Logistics {
         NetworkingRegistry.registerServerTargetedPacket(AudioRequestC2SPacket.ID, AudioRequestC2SPacket::new);
         NetworkingRegistry.registerServerTargetedPacket(AudioDeletePacket.ID, AudioDeletePacket::new);
         NetworkingRegistry.registerServerTargetedPacket(RenameNodePacket.ID, RenameNodePacket::new);
+        NetworkingRegistry.registerServerTargetedPacket(DebugTogglePacket.ID, DebugTogglePacket::new);
     }
 
     public static ResourceLocation id(String id) { return new ResourceLocation(Constants.MOD_ID, id); }

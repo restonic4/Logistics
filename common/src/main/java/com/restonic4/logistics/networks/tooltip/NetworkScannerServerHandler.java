@@ -1,6 +1,6 @@
 package com.restonic4.logistics.networks.tooltip;
 
-import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.DebugState;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.networking.ServerNetworking;
 import com.restonic4.logistics.networks.Network;
@@ -47,7 +47,7 @@ public class NetworkScannerServerHandler {
         added = node.buildScannerTooltip(builder, player.isShiftKeyDown()) || added;
         if (added) builder.mainTitle("Scanner", ChatFormatting.GOLD);
 
-        if (Constants.isDebug()) {
+        if (DebugState.isDebug(player)) {
             if (added) {
                 builder.spacer();
             }

@@ -1,6 +1,7 @@
 package com.restonic4.logistics.experiment;
 
 import com.restonic4.logistics.Constants;
+import com.restonic4.logistics.networking.ClientNetworking;
 import com.restonic4.logistics.platform.Services;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -21,7 +22,9 @@ public class DebugCommand {
                                 FabricClientCommandSource source = context.getSource();
 
                                 try {
-                                    Constants.setDebug(!Constants.isDebug());
+                                    boolean newState = !Constants.isDebug();
+                                    Constants.setDebug(newState);
+                                    ClientNetworking.sendToServer(new DebugTogglePacket(newState));
 
                                     source.sendFeedback(Component.literal("§aDebug!"));
                                     return 1;

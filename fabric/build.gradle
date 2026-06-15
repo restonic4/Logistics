@@ -30,6 +30,15 @@ repositories {
     maven { url = "https://maven.createmod.net" }
 }
 
+loom {
+    runs {
+        client {
+            client()
+            programArgs "--username", "restonic4"
+        }
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
