@@ -1,7 +1,21 @@
 {
   "multipart": [
-    {
-      "apply": { "model": "logistics:block/network_switch" }
-    }
+    { "when": { "north": "true"  }, "apply": { "model": "logistics:block/network_switch/north_on"  } },
+    { "when": { "north": "false" }, "apply": { "model": "logistics:block/network_switch/north_off" } },
+
+    { "when": { "east": "true"  }, "apply": { "model": "logistics:block/network_switch/east_on"  } },
+    { "when": { "east": "false" }, "apply": { "model": "logistics:block/network_switch/east_off" } },
+
+    { "when": { "south": "true"  }, "apply": { "model": "logistics:block/network_switch/south_on"  } },
+    { "when": { "south": "false" }, "apply": { "model": "logistics:block/network_switch/south_off" } },
+
+    { "when": { "west": "true"  }, "apply": { "model": "logistics:block/network_switch/west_on"  } },
+    { "when": { "west": "false" }, "apply": { "model": "logistics:block/network_switch/west_off" } },
+
+    { "when": { "up": "true"  }, "apply": { "model": "logistics:block/network_switch/up_on"  } },
+    { "when": { "up": "false" }, "apply": { "model": "logistics:block/network_switch/up_off" } },
+
+    { "when": { "down": "true"  }, "apply": { "model": "logistics:block/network_switch/down_on"  } },
+    { "when": { "down": "false" }, "apply": { "model": "logistics:block/network_switch/down_off" } }
   ]
 }

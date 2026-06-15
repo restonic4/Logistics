@@ -1,0 +1,4 @@
+{
+  "parent": "logistics:block/network_switch/face_up",
+  "textures": { "tex": "logistics:block/network_switch/on" }
+}
