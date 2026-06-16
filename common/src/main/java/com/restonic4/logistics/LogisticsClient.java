@@ -11,7 +11,6 @@ import com.restonic4.logistics.blocks.computer.*;
 import com.restonic4.logistics.blocks.computer.protection.ProtectionCacheSyncPacket;
 import com.restonic4.logistics.compatibility.CompatibilityManager;
 import com.restonic4.logistics.events.RenderCallbacks;
-import com.restonic4.logistics.experiment.Particles;
 import com.restonic4.logistics.experiment.ShockwavePacket;
 import com.restonic4.logistics.networking.NetworkingRegistry;
 import com.restonic4.logistics.networks.packets.NetworkBatchSyncPacket;
@@ -27,7 +26,6 @@ import net.createmod.ponder.foundation.PonderIndex;
 
 public class LogisticsClient {
     public static void init() {
-        Particles.register();
         ClientBlockRegistry.register();
         CompatibilityManager.registerClient();
         NetworkScannerOverlay.register();

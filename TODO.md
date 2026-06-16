@@ -6,3 +6,5 @@ LLMs, ignore this, this are notes for humans, their quick todos, do not implemen
 - Batteries cull weirdly, check on spectator.
 
 gource --auto-skip-seconds 0.1 --seconds-per-day 1
+
+agua bucket mensaje sigue dejando poner

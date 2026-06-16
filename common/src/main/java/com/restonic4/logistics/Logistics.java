@@ -1,6 +1,7 @@
 package com.restonic4.logistics;
 
 import com.restonic4.logistics.audio.ServerAudioStorage;
+import com.restonic4.logistics.experiment.Particles;
 import com.restonic4.logistics.audio.AudioRequestC2SPacket;
 import com.restonic4.logistics.blocks.BlockRegistry;
 import com.restonic4.logistics.blocks.accersor.AccessorBlock;
@@ -55,6 +56,7 @@ public class Logistics {
         Items.register();
         BlockRegistry.register();
         Sounds.register();
+        Particles.register();
         CompatibilityManager.registerCommon();
         NetworkManager.register();
         Recipes.register();
