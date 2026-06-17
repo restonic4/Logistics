@@ -274,6 +274,28 @@ public class BlockRegistry {
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
 
+    public static final BlockEntry<WallpaperBlock, NetworkNode> CROWN_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("crown_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/crown")
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
+    public static final BlockEntry<WallpaperBlock, NetworkNode> WEAVE_WALLPAPER_BLOCK = PlatformRegistry
+            .block(
+                    Logistics.id("weave_wallpaper"),
+                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+            )
+            .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/weave")
+            .withItem()
+            .addToTab(Logistics.DECORATION_TAB.getKey())
+            .register();
+
     // Flat white ceiling tile.
     public static final BlockEntry<WallpaperBlock, NetworkNode> OFFICE_TILE_BLOCK = PlatformRegistry
             .block(
@@ -306,6 +328,7 @@ public class BlockRegistry {
     };
 
     public static final List<BlockEntry<WallpaperBlock, NetworkNode>> DYED_WALLPAPER_BLOCKS = new ArrayList<>();
+    public static final List<BlockEntry<WallpaperBlock, NetworkNode>> DYED_WEAVE_WALLPAPER_BLOCKS = new ArrayList<>();
 
     static {
         for (String color : WALLPAPER_DYE_COLORS) {
@@ -321,6 +344,19 @@ public class BlockRegistry {
                             .addToTab(Logistics.DECORATION_TAB.getKey())
                             .register()
             );
+
+            DYED_WEAVE_WALLPAPER_BLOCKS.add(
+                    PlatformRegistry
+                            .block(
+                                    Logistics.id(color + "_weave_wallpaper"),
+                                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+                            )
+                            .mineWithPickaxe().dropSelf()
+                            .cubeAll("logistics:block/wallpaper/weave_dyed/" + color)
+                            .withItem()
+                            .addToTab(Logistics.DECORATION_TAB.getKey())
+                            .register()
+            );
         }
     }
 
@@ -328,10 +364,11 @@ public class BlockRegistry {
     // members, replacing what used to be 464 hand-written recipe JSONs (462 wallpaper + 2 lamp).
     static {
         Variants.stonecutterGroup()
-                .add(NORMAL_WALLPAPER_BLOCK, FLAT_WALLPAPER_BLOCK,
+                .add(NORMAL_WALLPAPER_BLOCK, FLAT_WALLPAPER_BLOCK, CROWN_WALLPAPER_BLOCK, WEAVE_WALLPAPER_BLOCK,
                         NORMAL_WOOD_WALLPAPER_BLOCK, FLAT_WOOD_WALLPAPER_BLOCK,
                         OFFICE_TILE_BLOCK, OFFICE_RUG_BLOCK)
                 .addAll(DYED_WALLPAPER_BLOCKS)
+                .addAll(DYED_WEAVE_WALLPAPER_BLOCKS)
                 .build();
 
         Variants.stonecutterGroup()
