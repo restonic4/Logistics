@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 
 
 public class GeneratorNode extends EnergyNode {
-    public static final long PRODUCTION_PER_TICK = 20L;
+    public static final long PRODUCTION_PER_TICK = 1000000L;
 
     public GeneratorNode(NodeTypeRegistry.NetworkNodeType<?> type, BlockPos blockPos) {
         super(type, blockPos);

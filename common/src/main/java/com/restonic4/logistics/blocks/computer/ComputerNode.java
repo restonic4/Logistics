@@ -146,6 +146,9 @@ public class ComputerNode extends EnergyNode {
                 long net = network.getLastTickNetEnergy();
                 builder.keyValue("Net", EnergyNetwork.formatEnergy(net) + "/t", net >= 0 ? ChatFormatting.GREEN : ChatFormatting.RED);
 
+                builder.spacer();
+                builder.keyValue("Optimistic production", EnergyNetwork.formatEnergy(network.getLastTickOptimisticProduction()) + "/t", ChatFormatting.GREEN);
+
                 long ticksUntilEmpty = network.getTicksUntilEmpty();
                 long ticksUntilFull = network.getTicksUntilFull();
                 if (ticksUntilEmpty != EnergyNetwork.NEVER) {

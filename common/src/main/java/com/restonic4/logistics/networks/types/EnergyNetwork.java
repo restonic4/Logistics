@@ -40,8 +40,10 @@ public class EnergyNetwork extends Network {
     // request/report energy) and are snapshotted into the "last tick" values at the
     // start of the next tick, so the getters always expose a fully completed tick.
     private long productionAccumulator = 0;
+    private long optimisticProductionAccumulator = 0;
     private long consumptionAccumulator = 0;
     private long lastTickProduction = 0;
+    private long lastTickOptimisticProduction = 0;
     private long lastTickConsumption = 0;
 
     public EnergyNetwork(NetworkTypeRegistry.NetworkType<?> type, ServerLevel serverLevel) {
@@ -50,8 +52,10 @@ public class EnergyNetwork extends Network {
 
     public void tick() {
         lastTickProduction = productionAccumulator;
+        lastTickOptimisticProduction = optimisticProductionAccumulator;
         lastTickConsumption = consumptionAccumulator;
         productionAccumulator = 0;
+        optimisticProductionAccumulator = 0;
         consumptionAccumulator = 0;
 
         super.tick();
@@ -136,6 +140,7 @@ public class EnergyNetwork extends Network {
         }
 
         productionAccumulator += produced - remaining;
+        optimisticProductionAccumulator += produced;
         setDirty();
         return remaining;
     }
@@ -191,6 +196,8 @@ public class EnergyNetwork extends Network {
 
     /** Energy added to the network during the last fully completed tick (EU/tick). */
     public long getLastTickProduction() { return lastTickProduction; }
+
+    public long getLastTickOptimisticProduction() { return lastTickOptimisticProduction; }
 
     /** Energy drained from the network during the last fully completed tick (EU/tick). */
     public long getLastTickConsumption() { return lastTickConsumption; }
