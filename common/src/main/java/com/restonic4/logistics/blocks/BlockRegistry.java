@@ -37,6 +37,7 @@ import com.restonic4.logistics.networks.BuiltInNetworks;
 import com.restonic4.logistics.networks.NetworkNode;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
+import com.restonic4.logistics.registry.variants.Variants;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Blocks;
@@ -120,6 +121,7 @@ public class BlockRegistry {
                     () -> new LampBlock(BlockBehaviour.Properties.copy(Blocks.REDSTONE_LAMP).lightLevel(state -> state.getValue(LampBlock.LIT) ? 15 : 0))
             )
             .mineWithPickaxe().dropSelf()
+            .litCubeAll("logistics:block/lamp/off", "logistics:block/lamp/on")
             .network(BuiltInNetworks.ENERGY_NETWORK, LampNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -132,6 +134,7 @@ public class BlockRegistry {
                     () -> new LampBlock(BlockBehaviour.Properties.copy(Blocks.REDSTONE_LAMP).lightLevel(state -> state.getValue(LampBlock.LIT) ? 15 : 0))
             )
             .mineWithPickaxe().dropSelf()
+            .litCubeAll("logistics:block/lamp/alt/office/off", "logistics:block/lamp/alt/office/on")
             .network(BuiltInNetworks.ENERGY_NETWORK, LampNode::new)
             .withItem()
             .addToTab(Logistics.CUSTOM_TAB.getKey())
@@ -233,6 +236,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/normal")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -243,6 +247,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/flat")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -253,6 +258,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeBottomTop("logistics:block/wallpaper/normal_wood", "logistics:block/wallpaper/normal")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -263,6 +269,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeBottomTop("logistics:block/wallpaper/flat_wood", "logistics:block/wallpaper/flat")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -274,6 +281,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/office_tile")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -285,6 +293,7 @@ public class BlockRegistry {
                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
             )
             .mineWithPickaxe().dropSelf()
+            .cubeAll("logistics:block/wallpaper/office_rug")
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
@@ -307,11 +316,27 @@ public class BlockRegistry {
                                     () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
                             )
                             .mineWithPickaxe().dropSelf()
+                            .cubeAll("logistics:block/wallpaper/normal_dyed/" + color)
                             .withItem()
                             .addToTab(Logistics.DECORATION_TAB.getKey())
                             .register()
             );
         }
+    }
+
+    // Stonecutter interchange graphs. Each group generates a recipe for every ordered pair of its
+    // members, replacing what used to be 464 hand-written recipe JSONs (462 wallpaper + 2 lamp).
+    static {
+        Variants.stonecutterGroup()
+                .add(NORMAL_WALLPAPER_BLOCK, FLAT_WALLPAPER_BLOCK,
+                        NORMAL_WOOD_WALLPAPER_BLOCK, FLAT_WOOD_WALLPAPER_BLOCK,
+                        OFFICE_TILE_BLOCK, OFFICE_RUG_BLOCK)
+                .addAll(DYED_WALLPAPER_BLOCKS)
+                .build();
+
+        Variants.stonecutterGroup()
+                .add(LAMP_BLOCK, OFFICE_LAMP_BLOCK)
+                .build();
     }
 
     public static void register() {

@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": {
-    "item": "logistics:office_lamp"
-  },
-  "result": "logistics:lamp",
-  "count": 1
-}

@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": {
-    "item": "logistics:office_rug"
-  },
-  "result": "logistics:office_tile",
-  "count": 1
-}

@@ -39,6 +39,7 @@
     "protection.ServerLevelMixin",
     "protection.ServerPlayerGameModeMixin",
     "registries.LootDataManagerMixin",
+    "registries.PackRepositoryMixin",
     "registries.TagLoaderMixin"
   ],
   "client": [

@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": {
-    "item": "logistics:pink_wallpaper"
-  },
-  "result": "logistics:flat_wallpaper",
-  "count": 1
-}

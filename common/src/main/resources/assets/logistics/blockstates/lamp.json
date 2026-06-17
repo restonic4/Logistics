@@ -1,6 +1,0 @@
-{
-  "variants": {
-    "lit=false": { "model": "logistics:block/lamp/off" },
-    "lit=true": { "model": "logistics:block/lamp/on" }
-  }
-}

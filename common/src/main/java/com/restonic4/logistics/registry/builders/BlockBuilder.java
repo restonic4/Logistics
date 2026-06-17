@@ -6,6 +6,11 @@ import com.restonic4.logistics.registry.NetworkTypeRegistry;
 import com.restonic4.logistics.registry.NodeTypeRegistry;
 import com.restonic4.logistics.registry.PlatformRegistry;
 import com.restonic4.logistics.registry.entries.BlockEntry;
+import com.restonic4.logistics.registry.variants.GenerationContext;
+import com.restonic4.logistics.registry.variants.VariantArchetype;
+import com.restonic4.logistics.registry.variants.archetypes.CubeAllArchetype;
+import com.restonic4.logistics.registry.variants.archetypes.CubeBottomTopArchetype;
+import com.restonic4.logistics.registry.variants.archetypes.LitArchetype;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
@@ -32,6 +37,8 @@ public class BlockBuilder<B extends Block, N extends NetworkNode> {
     private BlockEntityType.BlockEntitySupplier<? extends BlockEntity> blockEntitySupplier;
 
     private final List<ResourceKey<CreativeModeTab>> tabs = new ArrayList<>();
+
+    private VariantArchetype variantArchetype;
 
     public BlockBuilder(ResourceLocation id, Supplier<B> blockFactory) {
         this.id = id;
@@ -121,8 +128,42 @@ public class BlockBuilder<B extends Block, N extends NetworkNode> {
         return this;
     }
 
+    /**
+     * Auto-generates this block's assets at runtime from the given archetype (blockstate, models,
+     * item model), instead of shipping hand-written JSON. Generated resources sit at the bottom of
+     * the pack stack, so dropping a real JSON file with the same id overrides any of them.
+     */
+    public BlockBuilder<B, N> variant(VariantArchetype archetype) {
+        this.variantArchetype = archetype;
+        return this;
+    }
+
+    /** Convenience: non-directional full cube, same texture on all faces (wallpapers, tiles...). */
+    public BlockBuilder<B, N> cubeAll() {
+        return variant(new CubeAllArchetype(null));
+    }
+
+    /** Convenience: cube_all with an explicit texture reference (e.g. "logistics:block/wallpaper/red"). */
+    public BlockBuilder<B, N> cubeAll(String texture) {
+        return variant(new CubeAllArchetype(texture));
+    }
+
+    /** Convenience: cube with distinct side vs top/bottom textures (wood-trim wallpapers, floors...). */
+    public BlockBuilder<B, N> cubeBottomTop(String sideTexture, String endTexture) {
+        return variant(new CubeBottomTopArchetype(sideTexture, endTexture));
+    }
+
+    /** Convenience: full cube driven by the vanilla {@code lit} property (lamps). */
+    public BlockBuilder<B, N> litCubeAll(String offTexture, String onTexture) {
+        return variant(new LitArchetype(offTexture, onTexture));
+    }
+
     @SuppressWarnings("unchecked")
     public BlockEntry<B, N> register() {
+        if (this.variantArchetype != null) {
+            this.variantArchetype.emit(new GenerationContext(this.id));
+        }
+
         NodeTypeRegistry.NetworkNodeType<N> nodeType = null;
         if (this.networkType != null && this.nodeFactory != null) {
             nodeType = new NodeTypeRegistry.NetworkNodeType<>(this.networkType, this.nodeFactory);
