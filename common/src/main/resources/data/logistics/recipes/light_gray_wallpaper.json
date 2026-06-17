@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "WWW",
+    "WDW",
+    "WWW"
+  ],
+  "key": {
+    "W": { "item": "logistics:normal_wallpaper" },
+    "D": { "item": "minecraft:light_gray_dye" }
+  },
+  "result": {
+    "item": "logistics:light_gray_wallpaper",
+    "count": 8
+  }
+}

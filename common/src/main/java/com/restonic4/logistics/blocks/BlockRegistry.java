@@ -44,6 +44,9 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.PushReaction;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BlockRegistry {
     public static final BlockEntry<CableBlock, CableNode> CABLE_BLOCK = PlatformRegistry
             .block(
@@ -285,6 +288,31 @@ public class BlockRegistry {
             .withItem()
             .addToTab(Logistics.DECORATION_TAB.getKey())
             .register();
+
+    // Dyed variants of the normal wallpaper, one block per vanilla dye colour.
+    // Registered in DyeColor order so they group nicely in the creative tab.
+    public static final String[] WALLPAPER_DYE_COLORS = {
+            "white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray",
+            "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"
+    };
+
+    public static final List<BlockEntry<WallpaperBlock, NetworkNode>> DYED_WALLPAPER_BLOCKS = new ArrayList<>();
+
+    static {
+        for (String color : WALLPAPER_DYE_COLORS) {
+            DYED_WALLPAPER_BLOCKS.add(
+                    PlatformRegistry
+                            .block(
+                                    Logistics.id(color + "_wallpaper"),
+                                    () -> new WallpaperBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.WOOL).requiresCorrectToolForDrops())
+                            )
+                            .mineWithPickaxe().dropSelf()
+                            .withItem()
+                            .addToTab(Logistics.DECORATION_TAB.getKey())
+                            .register()
+            );
+        }
+    }
 
     public static void register() {
 
